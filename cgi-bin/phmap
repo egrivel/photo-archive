@@ -1,0 +1,550 @@
+#!/usr/bin/perl -w -I .
+
+#
+# Purpose of this tool is to display a standard image page for an image
+# from the photos database.
+#
+
+use inc_all;
+
+my %googleMapsKey =
+  ("adams"=>"ABQIAAAAO7jxjJs8h3crEh_c-AgSmRRtw2SwtXtXtjJZI1cxV80WOigW-BTt3iH4yv_YzDnObMwZd91dmbGmww",
+  "71.179.0.96:31416", "ABQIAAAAO7jxjJs8h3crEh_c-AgSmRQDHkXvG8Z-2qFrKf63OWhxzMM7dRTgvGnP_pVX5akUehYqxxDazfoPyQ",
+  "96.244.82.188:31416", "ABQIAAAAO7jxjJs8h3crEh_c-AgSmRQKTR6dM-B6GlvY6PpRa6ULk5ndahRZVKfVsepQeyCMRVKj1LacJx5m4Q",
+  "96.244.50.157:31416", "ABQIAAAAO7jxjJs8h3crEh_c-AgSmRQ1WcAJQTUD81eWlrC1uGgr0-HtgxTCwvx1VoFNpTt0zU9PfOB3QG8qIw",
+   "98.117.46.69:31416", "ABQIAAAAO7jxjJs8h3crEh_c-AgSmRQsm1pGBp-JEPYe5ml9WdW96VQOmBTPKQBmj_E1GM5bDJBXACGy8PrjLg",
+   "96.244.82.86:31416", "ABQIAAAAO7jxjJs8h3crEh_c-AgSmRSykWWAWlLXFd8nBKS4IXZTK0bixRTt21OfmOt_fVyL7tAgD4szag73qw",
+   "173.64.82.238:31416", "ABQIAAAAO7jxjJs8h3crEh_c-AgSmRTMsn_aYTGtXouncH8GXCzMO_T1TxRHABYcJ9teW7GmomwDCu_H6leTvw",
+   "96.244.223.108:31416", "ABQIAAAAO7jxjJs8h3crEh_c-AgSmRSuYYnj_V6-oZdI4z_eLi00RS8bexQilxospmeF--HMoJAIBmnur5FUdQ",
+   "72.81.128.54:31416", "ABQIAAAAO7jxjJs8h3crEh_c-AgSmRTr1NPKHqI5YavmVyHgD5IWA8HKDBQmRwB_W9Y_mYkPEqp1ubTO_Sj3pQ",
+   "96.244.223.18:31416", "ABQIAAAAO7jxjJs8h3crEh_c-AgSmRRgoPCC5g2homrQ870inohXBaY8wBR51zO-Tew_2ouV34_xIuqfJ5piAQ",
+   "72.81.128.84:31416", "ABQIAAAAO7jxjJs8h3crEh_c-AgSmRTeTy2vurZ91dW993z8HrbEqPXgfxS5j7wxXrWWWdM-qv9SAdPhQZgEIw",
+   "108.3.147.201:31416", "AIzaSyAW0Ngz6wYn20erD-aS_LqJuuczayizW7A",
+   "108.3.147.131:31416", "AIzaSyCg4SViY6iqpbFKF1IMhjW-2NtAQ0LkAE4",
+  );
+my $host = $ENV{"HTTP_HOST"};
+$host = "adams" if (!defined($host));
+my $key = $googleMapsKey{$host};
+if (!defined($key)) {
+    # This default should now work for all IP addresses...
+    $key = "AIzaSyCg4SViY6iqpbFKF1IMhjW-2NtAQ0LkAE4";
+    #disp_error("No Google Maps key for $host; please contact administrator");
+    #exit(0);
+}
+
+put_init();
+put_restore_session();
+
+my $imageid = parg_get("imageid");
+if ($imageid ne "") {
+    if ($imageid =~ /,/) {
+        disp_multiple_image_map($imageid);
+    } elsif ($imageid =~ /^(\w+\-\w+)\-(\w+\-\w+)$/) {
+        disp_image_range($1, $2);
+    } else {
+        disp_single_image_map($imageid);
+    }
+} else {
+    my $setid = parg_get("setid");
+    if ($setid ne "") {
+        disp_set_map_new($setid);
+#        if ($setid =~ /^(.*?)-(.*)$/) {
+#            disp_set_map($1, $2);
+#        } else {
+#            disp_set_map($setid, $setid);
+#        }
+    } else {
+        disp_error("No image or set given");
+    }
+}
+
+sub get_coord_hash {
+    my $coord = $_[0];
+
+    if ($coord =~ /^(-?\d+\.\d\d\d)\d*(,-?\d+\.\d\d\d)\d*$/) {
+        $coord = $1.$2;
+    }
+
+    return $coord;
+}
+
+sub get_coord {
+    my $imageid = $_[0];
+
+    my $coord = "";
+    my $latlong = pdb_get_latlong($imageid);
+
+    if ($latlong =~ /(\d+) deg (\d+)\' ([\d\.]+)\" ([NS])/) {
+        # Nikon D300 coordinates - latitude
+        my $ns = $4;
+        my $val = $1 + ($2/60) + ($3/3600);
+        if ($ns eq "S") {
+            $val = -$val;
+        }
+        $coord .= $val.",";
+    }
+    if ($latlong =~ /(\d+) deg (\d+)\' ([\d\.]+)\" ([EW])/) {
+        # Nikon D300 coordinates - longtitude
+        my $ns = $4;
+        my $val = $1 + ($2/60) + ($3/3600);
+        if ($ns eq "W") {
+            $val = -$val;
+        }
+        $coord .= $val;
+    }
+
+    return $coord;
+}
+
+sub disp_single_image_map {
+    my $imageid = $_[0];
+
+    my $coord = get_coord($imageid);
+    if ($coord ne "") {
+        disp_map($coord, $imageid);
+    } else {
+        disp_error("No coordinates found in image");
+    }
+}
+
+sub disp_multiple_image_map {
+    my @images = split(/,/, $_[0]);
+    my $i;
+
+    my $markers = "";
+    my $images = "";
+    my $count = 0;
+    my @coordinate_list = ();
+    my @image_list = ();
+    my @marker_list = ();
+    my %coord_hash = ();
+
+    for ($i = 0; defined($images[$i]); $i++) {
+        my $imageid = $images[$i];
+        my $coord = get_coord($imageid);
+
+        if ($coord ne "") {
+            my $hash = get_coord_hash($coord);
+            my $category = pdb_get_category($imageid);
+            my $marker = "";
+            if ($category eq $PCOM_PRIVATE) {
+                $marker = ",red";
+            } elsif ($category eq $PCOM_EXPERIMENTAL) {
+                $marker = ",green";
+            } elsif ($category eq $PCOM_KIDS) {
+                $marker = ",yellow";
+            } elsif ($category eq $PCOM_OTHERS) {
+                $marker = ",blue";
+            }
+
+            if (defined($coord_hash{$hash})) {
+                $image_list[$coord_hash{$hash}] .= ",".$imageid;
+            } else {
+                $coord_hash{$hash} = $count;
+                $coordinate_list[$count] = $coord;
+                $image_list[$count] = $imageid;
+                $marker_list[$count] = $marker;
+                $count++;
+            }
+        }
+    }
+    for ($i = 0; $i < $count; $i++) {
+        $markers .= "|" if ($markers ne "");
+        $images .= "|" if ($images ne "");
+        $markers .= $coordinate_list[$i] . $marker_list[$i];
+        $images .= $image_list[$i];
+    }
+
+    if ($count < 1) {
+        disp_error("No image found for image list");
+    } else {
+        disp_map($markers, $images);
+    }
+}
+
+
+# The method below works; kept the code while experimenting with a newer
+# version of the map display
+sub disp_set_map_old {
+    my $setstart = $_[0];
+    my $setend = $_[1];
+    my $iter = pdb_iter_new($setstart, 40);
+    pdb_iter_filter_category($iter, put_types());
+    pdb_iter_filter_min_quality($iter, put_quality());
+    my $imageid = pdb_iter_next($iter);
+    my $markers = "";
+    my $images = "";
+    my $count = 0;
+    while ((pcom_get_set($imageid) ge $setstart)
+      && (pcom_get_set($imageid) le $setend)) {
+        my $coord = get_coord($imageid);
+        if ($coord ne "") {
+            $markers .= "|" if ($markers ne "");
+            $images .= "|" if ($images ne "");
+            my $category = pdb_get_category($imageid);
+            $markers .= $coord;
+            if ($category eq $PCOM_PRIVATE) {
+                $markers .= ",red";
+            } elsif ($category eq $PCOM_EXPERIMENTAL) {
+                $markers .= ",green";
+            } elsif ($category eq $PCOM_KIDS) {
+                $markers .= ",yellow";
+            } elsif ($category eq $PCOM_OTHERS) {
+                $markers .= ",blue";
+            }
+            $images .= $imageid;
+            $count++;
+            # last if ($count >= 50);
+        }
+        $imageid = pdb_iter_next($iter);
+    }
+
+    if ($count < 1) {
+        disp_error("No image found for set $setstart (old)");
+    } else {
+        disp_map($markers, $images);
+#        my $link = "http://maps.google.com/staticmap?";
+#        $link .= "markers=$markers";
+#        $link .= "&size=400x400&key=$key";
+#        print "content-type: text/html\n\n";
+#        print "<img src='$link' />\n";
+    }
+}
+
+sub disp_image_range {
+    my $start = $_[0];
+    my $end = $_[1];
+
+    my $imagelist = "";
+
+    my $iter = pdb_iter_new($start, 40);
+    pdb_iter_filter_category($iter, put_types());
+    pdb_iter_filter_min_quality($iter, put_quality());
+
+    my $sort_start = pdb_get_sortid($start);
+    if ($sort_start eq "") {
+        $sort_start =  pdb_create_sortid($start);
+    }
+    my $sort_end = pdb_get_sortid($end);
+    if ($sort_end eq "") {
+        $sort_end = pdb_create_sortid($end);
+    }
+
+    my $imageid = pdb_iter_next($iter);
+    while ((pdb_get_sortid($imageid) ge $sort_start
+            && (pdb_get_sortid($imageid) le $sort_end))) {
+        $imagelist .= "," if ($imagelist ne "");
+        $imagelist .= $imageid;
+        $imageid = pdb_iter_next($iter);
+    }
+    disp_multiple_image_map($imagelist);
+}
+
+#
+# New map display allows for a comma-separates list of sets and/or
+# set ranges.
+#
+sub disp_set_map_new {
+    my $setlist = $_[0];
+
+    my $start = "";
+    my $end = "";
+    my $setstart = "";
+
+    my $markers = "";
+    my $images = "";
+    my $count = 0;
+    my @coordinate_list = ();
+    my @image_list = ();
+    my @marker_list = ();
+    my %coord_hash = ();
+
+    while ($setlist ne "") {
+        if ($setlist =~ s/^\s*(\d\d\d\d\d\d\d\d)\s*,//) {
+            $start = "$1-000000";
+            $end = "$1-999999";
+            $setstart = $1;
+        } elsif ($setlist =~ s/^\s*(\d\d\d\d\d\d\d\d)\s*$//) {
+            $start = "$1-000000";
+            $end = "$1-999999";
+            $setstart = $1;
+        } elsif ($setlist =~ s/^\s*(\d\d\d\d\d\d\d\d)-(\d\d\d\d\d\d\d\d)\s*,//) {
+            $start = "$1-000000";
+            $end = "$2-999999";
+            $setstart = $1;
+        } elsif ($setlist =~ s/^\s*(\d\d\d\d\d\d\d\d)-(\d\d\d\d\d\d\d\d)\s*$//) {
+            $start = "$1-000000";
+            $end = "$2-999999";
+            $setstart = $1;
+        } else {
+            disp_error("No images found for '$setlist'");
+            return;
+        }
+
+        my $iter = pdb_iter_new($start, 40);
+        pdb_iter_filter_category($iter, put_types());
+        pdb_iter_filter_min_quality($iter, put_quality());
+        my $imageid = pdb_iter_next($iter);
+
+        while ((pcom_get_set($imageid) ge ($setstart - 1))
+               && (pcom_get_set($imageid) le $end)) {
+            if (pcom_get_set($imageid) ge $setstart) {
+                my $coord = get_coord($imageid);
+                if ($coord ne "") {
+                    my $hash = get_coord_hash($coord);
+                    my $category = pdb_get_category($imageid);
+                    my $marker = "";
+                    if ($category eq $PCOM_PRIVATE) {
+                        $marker = ",red";
+                    } elsif ($category eq $PCOM_EXPERIMENTAL) {
+                        $marker = ",green";
+                    } elsif ($category eq $PCOM_KIDS) {
+                        $marker = ",yellow";
+                    } elsif ($category eq $PCOM_OTHERS) {
+                        $marker = ",blue";
+                    }
+
+                    if (defined($coord_hash{$hash})) {
+                        $image_list[$coord_hash{$hash}] .= ",".$imageid;
+                    } else {
+                        $coord_hash{$hash} = $count;
+                        $coordinate_list[$count] = $coord;
+                        $image_list[$count] = $imageid;
+                        $marker_list[$count] = $marker;
+                        $count++;
+                    }
+                }
+            }
+            $imageid = pdb_iter_next($iter);
+        }
+    }
+
+    my $i;
+    for ($i = 0; $i < $count; $i++) {
+        $markers .= "|" if ($markers ne "");
+        $images .= "|" if ($images ne "");
+        $markers .= $coordinate_list[$i] . $marker_list[$i];
+        $images .= $image_list[$i];
+    }
+
+    if ($count < 1) {
+        disp_error("No image found for set $setstart");
+    } else {
+        disp_map($markers, $images);
+    }
+}
+
+sub disp_set_map {
+    my $setstart = $_[0];
+    my $setend = $_[1];
+    my $start = "$setstart-000000";
+    my $end = "$setend-999999";
+    my $iter = pdb_iter_new($start, 40);
+    pdb_iter_filter_category($iter, put_types());
+    pdb_iter_filter_min_quality($iter, put_quality());
+    my $imageid = pdb_iter_next($iter);
+    my $markers = "";
+    my $images = "";
+    my $count = 0;
+    my @coordinate_list = ();
+    my @image_list = ();
+    my @marker_list = ();
+    my %coord_hash = ();
+
+    while ((pcom_get_set($imageid) ge ($setstart - 1))
+      && (pcom_get_set($imageid) le $end)) {
+        if (pcom_get_set($imageid) ge $setstart) {
+            my $coord = get_coord($imageid);
+            if ($coord ne "") {
+                my $hash = get_coord_hash($coord);
+                my $category = pdb_get_category($imageid);
+                my $marker = "";
+                if ($category eq $PCOM_PRIVATE) {
+                    $marker = ",red";
+                } elsif ($category eq $PCOM_EXPERIMENTAL) {
+                    $marker = ",green";
+                } elsif ($category eq $PCOM_KIDS) {
+                    $marker = ",yellow";
+                } elsif ($category eq $PCOM_OTHERS) {
+                    $marker = ",blue";
+                }
+
+                if (defined($coord_hash{$hash})) {
+                    $image_list[$coord_hash{$hash}] .= ",".$imageid;
+                } else {
+                    $coord_hash{$hash} = $count;
+                    $coordinate_list[$count] = $coord;
+                    $image_list[$count] = $imageid;
+                    $marker_list[$count] = $marker;
+                    $count++;
+                }
+            }
+        }
+        $imageid = pdb_iter_next($iter);
+    }
+
+    my $i;
+    for ($i = 0; $i < $count; $i++) {
+        $markers .= "|" if ($markers ne "");
+        $images .= "|" if ($images ne "");
+        $markers .= $coordinate_list[$i] . $marker_list[$i];
+        $images .= $image_list[$i];
+    }
+
+    if ($count < 1) {
+        disp_error("No image found for set $setstart");
+    } else {
+        disp_map($markers, $images);
+    }
+}
+
+sub disp_error {
+    my $error = $_[0];
+    print "content-type: text/html\n\n$error\n";
+}
+
+sub cal_dimensions {
+    my $coordinates = $_[0];
+    my @coord = split(/\|/, $coordinates);
+    my $lat_min = 999;
+    my $lat_max = -999;
+    my $lon_min = 999;
+    my $lon_max = -999;
+    my $i;
+    for ($i = 0; defined($coord[$i]); $i++) {
+        if ($coord[$i] =~ /^([\-\d\.]+),([\-\d\.]+)/) {
+            my $lat = $1;
+            my $lon = $2;
+            $lat_min = $lat if ($lat < $lat_min);
+            $lon_min = $lon if ($lon < $lon_min);
+            $lat_max = $lat if ($lat > $lat_max);
+            $lon_max = $lon if ($lon > $lon_max);
+        }
+    }
+    my $center = (($lat_min + $lat_max) / 2) . ","
+      . (($lon_min + $lon_max) / 2);
+    my $zoom = 0;
+
+    my $lat_diff = $lat_max - $lat_min;
+    my $lon_diff = $lon_max - $lon_min;
+
+    # zoom level 0 is 360 diff in lon, 90 diff in lat
+    my $zoom_diff = 360;
+    while (($zoom_diff > $lon_diff)
+           && (($zoom_diff / 2) > $lat_diff)
+           && ($zoom < 15)) {
+        $zoom++;
+        $zoom_diff = $zoom_diff / 2;
+    }
+
+    # Check for a zoom adjust argument
+    my $zoom_adjust = parg_get("zoomadjust");
+    if (defined($zoom_adjust) && ($zoom_adjust ne "")) {
+        $zoom += $zoom_adjust;
+    }
+
+    if ($zoom > 15) {
+        $zoom = 15;
+    } elsif ($zoom < 0) {
+        $zoom = 0;
+    }
+
+    return ($center, $zoom);
+}
+
+sub disp_map {
+    my $coordinates = $_[0];
+    my $images = $_[1];
+    my ($center, $zoom) = cal_dimensions($coordinates);
+    my @coord = split(/\|/, $coordinates);
+    my @img = split(/\|/, $images);
+    my $i;
+
+    my $width = parg_get("width");
+    if (!defined($width) || ($width eq "")) {
+        $width = 750;
+    }
+    my $height = parg_get("height");
+    if (!defined($height) || ($height eq "")) {
+        $height = 500;
+    }
+
+    my $protocol = "http:";
+    if (defined($ENV{"HTTPS"})) {
+        $protocol = "https:";
+    }
+print "content-type: text/html\n\n
+<!DOCTYPE html '-//W3C//DTD XHTML 1.0 Strict//EN'
+  'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+  <head>
+    <meta http-equiv='content-type' content='text/html; charset=utf-8'/>
+    <title>Photo Archive Map</title>
+    <script src='$protocol//maps.google.com/maps?file=api&amp;v=2&amp;key=$key&sensor=false'
+            type='text/javascript'></script>
+    <script type='text/javascript'>
+
+    function initialize() {
+      if (GBrowserIsCompatible()) {
+        var blueIcon = new GIcon(G_DEFAULT_ICON);
+        blueIcon.image = \"$protocol//www.google.com/intl/en_us/mapfiles/ms/micons/blue-dot.png\";
+        blueIcon.iconSize = new GSize(32, 32);
+        var greenIcon = new GIcon(G_DEFAULT_ICON);
+        greenIcon.image = \"$protocol//www.google.com/intl/en_us/mapfiles/ms/micons/green-dot.png\";
+        greenIcon.iconSize = new GSize(32, 32);
+        var redIcon = new GIcon(G_DEFAULT_ICON);
+        redIcon.image = \"$protocol//www.google.com/intl/en_us/mapfiles/ms/micons/red-dot.png\";
+        redIcon.iconSize = new GSize(32, 32);
+        var orangeIcon = new GIcon(G_DEFAULT_ICON);
+        orangeIcon.image = \"$protocol//www.google.com/intl/en_us/mapfiles/ms/micons/orange-dot.png\";
+        orangeIcon.iconSize = new GSize(32, 32);
+        var yellowIcon = new GIcon(G_DEFAULT_ICON);
+        yellowIcon.image = \"$protocol//www.google.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png\";
+        yellowIcon.iconSize = new GSize(32, 32);
+
+        var map = new GMap2(document.getElementById('map_canvas'));";
+print "
+        map.setCenter(new GLatLng($center), $zoom);";
+        for ($i = 0; defined($coord[$i]); $i++) {
+            my $coord = $coord[$i];
+            my $color = "yellow";
+            if ($coord =~ s/,([a-z]+)//) {
+                $color = $1;
+            }
+            my @images = split(/,/, $img[$i]);
+            my $imgdisp = "";
+            my $j;
+            for ($j = 0; defined($images[$j]); $j++) {
+                $imgdisp .= "<a href='phdisp?imageid=$images[$j]' target='mainphotowindow'><img src='phimg?thumbnail=$images[$j]' border='none'></a> ";
+            }
+print "
+        markerOptions = { icon:${color}Icon };
+        var marker$i = new GMarker(new GLatLng($coord), markerOptions);
+        GEvent.addListener(marker$i, 'click', function() {
+           var myHtml = \"$imgdisp\";
+           marker$i.openInfoWindow(myHtml);
+        });
+        map.addOverlay(marker$i);";
+      }
+print "
+        map.setUIToDefault();
+      }
+    }
+
+    </script>
+    <style type='text/css'>
+      body { margin: 0; padding: 0; }
+      div#map_canvas {
+        width: ${width}px;
+        height: ${height}px;
+        margin: auto;
+      }
+    </style>
+  </head>
+  <body onload='initialize()' onunload='GUnload()'>
+    <div id='map_canvas'></div>
+  </body>
+</html>
+
+";
+}

@@ -1,0 +1,52 @@
+#!/usr/bin/perl -I .
+
+use inc_all;
+
+pdb_init();
+
+if (pdb_tables_exist()) {
+  print "Tables were already created!\n";
+  exit(0);
+}
+print "This will create the database tables for the photo archive system.\n";
+print "Enter the name and password of the administrator user:\n";
+
+$userId = "";
+while ($userId eq "") {
+  print "        user ID: ";
+  $userId = <STDIN>;
+  $userId =~ s/[\r\n]+//sg;
+}
+
+$userName = "";
+while ($userName eq "") {
+  print "      full name: ";
+  $userName = <STDIN>;
+  $userName =~ s/[\r\n]+//sg;
+}
+
+$password = "";
+$password2 = "";
+
+while ($password eq "" || $password ne $password2) {
+  system("stty -echo");
+  print "       password: ";
+  $password = <STDIN>;
+  $password =~ s/[\r\n]+//sg;
+  print "\n";
+
+  print "repeat password: ";
+  $password2 = <STDIN>;
+  $password2 =~ s/[\r\n]+//sg;
+  print "\n";
+  system("stty echo");
+
+  if ($password ne $password2) {
+    print "Passwords do not match, try again.\n";
+  }
+}
+
+pusr_create_tables($userId, $userName, $password);
+pdb_create_tables();
+pses_create_tables();
+ppers_create_tables();

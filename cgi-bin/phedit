@@ -1,0 +1,530 @@
+#!/usr/bin/perl -w -I .
+
+#
+# Purpose of this tool is to provide a editor front-end to the
+# photos database.
+#
+# Note: add "&do_latlong=1" to image to be able to edit latlong values.
+#
+
+use inc_all;
+
+put_init();
+put_restore_session();
+
+my $return = pses_get("return");
+if ($return eq "") {
+    $return = "phmenu";
+}
+my $imageid = parg_get("imageid");
+my $setid = parg_get("setid");
+my $do_latlong = parg_get("do_latlong");
+if ($do_latlong eq "") {
+    # default to true for digital photos
+    $do_latlong = pcom_is_digital($imageid);
+}
+my $button = parg_get_button();
+if (($button eq "save") || ($button eq "next") || ($button eq "setOK")) {
+    if ($imageid ne "") {
+        if (validate_image_data($imageid, $do_latlong)) {
+            save_image_data($imageid, $do_latlong);
+            if ($button eq "next") {
+                $imageid = put_get_next($imageid);
+                if ($imageid ne "") {
+                    parg_set("imageid", $imageid);
+                    prefill_image_data($imageid, $do_latlong);
+                    validate_image_data($imageid, $do_latlong);
+                    disp_image($imageid, $do_latlong);
+                } else {
+                    pht_redirect($return);
+                }
+            } else {
+                # done editing; display the image we just edited
+                pht_redirect("phdisp?imageid=$imageid");
+            }
+        } else {
+            disp_image($imageid, $do_latlong);
+        }
+    } elsif ($setid ne "") {
+        save_set_data($setid, ($button eq "setOK"));
+        if ($button eq "setOK") {
+            # redisplay
+            parg_set("showImages", "1");
+            prefill_set_images($setid);
+            disp_set($setid);
+        } elsif ($button eq "next") {
+            $setid = put_get_next_set($setid);
+            if ($setid ne "") {
+                parg_set("setid", $setid);
+                prefill_set_data($setid);
+                my $show_images = parg_get("showImages");
+                if (defined($show_images) && ($show_images > 0)) {
+                    prefill_set_images($setid);
+                }
+                disp_set($setid);
+            } else {
+                pht_redirect($return);
+            }
+        } else {
+            pht_redirect($return);
+        }
+    } else {
+        disp_error("No data to save");
+    }
+} elsif ($button eq "cancel") {
+    # done editing; display the image we just edited
+    pht_redirect("phdisp?imageid=$imageid");
+} elsif ($button eq "showImages") {
+    parg_set("showImages", "1");
+    prefill_set_images($setid);
+    disp_set($setid);
+} elsif ($button eq "hideImages") {
+    parg_set("showImages", "0");
+    disp_set($setid);
+} else {
+    # no button; display the initial form
+    if ($imageid ne "") {
+        prefill_image_data($imageid, $do_latlong);
+        validate_image_data($imageid, $do_latlong);
+        disp_image($imageid, $do_latlong);
+    } elsif ($setid ne "") {
+        prefill_set_data($setid);
+        disp_set($setid);
+    } else {
+        disp_error("Inproper use of this tool.");
+    }
+}
+
+sub validate_image_data {
+    my $imageid = $_[0];
+    my $do_latlong = $_[1];
+    my $data_ok = 1;
+
+    my $category = parg_get("category");
+    if ($category eq "") {
+        put_form_error("category", "You must select a category");
+        $data_ok = 0;
+    } elsif ($category eq $PCOM_NEW) {
+        put_form_error("category", "The image is marked 'new'. Please select a proper category.");
+        $data_ok = 0;
+    }
+    return $data_ok;
+}
+
+# Set an array with categories for the category set of radio buttons.
+# Note: set the array to only those categories that the user can edit;
+# it makes no sense to allow the user to change the category to something
+# they do not have access to...
+sub set_categories {
+    my $cat_ref = $_[0];
+    my $count = 0;
+
+    @$cat_ref = ();
+    if (pusr_allowed($PUSR_EDIT_REGULAR)) {
+        $$cat_ref[$count++] = "r:regular";
+    }
+    if (pusr_allowed($PUSR_EDIT_PRIVATE)) {
+        $$cat_ref[$count++] = "p:private";
+    }
+    if (pusr_allowed($PUSR_EDIT_EXPERIMENTAL)) {
+        $$cat_ref[$count++] = "e:special";
+    }
+    if (pusr_allowed($PUSR_EDIT_NICOLINE)) {
+        $$cat_ref[$count++] = "n:Nicoline";
+    }
+    if (pusr_allowed($PUSR_EDIT_KIDS)) {
+        $$cat_ref[$count++] = "k:kids";
+    }
+    if (pusr_allowed($PUSR_EDIT_OTHERS)) {
+        $$cat_ref[$count++] = "o:others";
+    }
+    if (pusr_allowed($PUSR_EDIT_THEO)) {
+        $$cat_ref[$count++] = "t:Theo";
+    }
+    if (pusr_allowed($PUSR_EDIT_PARENTS)) {
+        $$cat_ref[$count++] = "d:parents";
+    }
+}
+
+sub disp_error {
+    my $msg = $_[0];
+    pht_set_pagetype("form error");
+    put_page_start("Error");
+    pht_error_message($msg);
+    put_page_end();
+    exit(0);
+}
+
+sub prefill_image_data {
+    my $imageid = $_[0];
+    my $do_latlong = $_[1];
+
+    my $sortid = pdb_get_sortid($imageid);
+    if ($sortid eq "") {
+	$sortid = pdb_create_sortid($imageid);
+    }
+    parg_set("sortid", $sortid);
+    parg_set("title", pdb_get_title($imageid));
+    parg_set("datetime", pdb_get_datetime($imageid));
+    my $year = pdb_get_year($imageid);
+    if ($year eq "") {
+	$year = pcom_get_year($imageid);
+    }
+    parg_set("year", $year);
+    parg_set("description", pdb_get_description($imageid));
+    parg_set("comment", pdb_get_comment($imageid));
+    parg_set("orientation", pdb_get_orientation($imageid));
+    parg_set("location", pdb_get_location($imageid));
+    parg_set("category", pdb_get_category($imageid));
+    my $quality = pdb_get_quality($imageid);
+    if ($quality eq "") {
+	$quality = $PCOM_QUAL_DEFAULT;
+    }
+    parg_set("quality", $quality);
+    parg_set("rotation", pdb_get_rotation($imageid));
+    parg_set("copyright", pdb_get_copyright($imageid));
+    parg_set("latlong", pdb_get_latlong($imageid)) if ($do_latlong);
+    my $person_ids = ppers_get_persons_in_image($imageid);
+    my $persons = "";
+    while ($person_ids =~ s/^\s*([\w\-]+)//) {
+        my $id = $1;
+        $persons .= "; " if ($persons ne "");
+        $persons .= ppers_get_name($id);
+        $person_ids =~ s/^;\s*//;
+    }
+    parg_set("persons", $persons);
+}
+
+sub prefill_set_data {
+    my $setid = $_[0];
+
+    my $sortid = pdb_get_setsortid($setid);
+    if ($sortid eq "") {
+	$sortid = pdb_create_setsortid($setid);
+    }
+    parg_set("sortid", $sortid);
+    parg_set("datetime", pdb_get_setdatetime($setid));
+    parg_set("title", pdb_get_settitle($setid));
+    parg_set("description", pdb_get_setdescription($setid));
+    parg_set("comment", pdb_get_setcomment($setid));
+    parg_set("category", pdb_get_setcategory($setid));
+    parg_set("year", pdb_get_setyear($setid));
+    parg_set("copyright", pdb_get_setcopyright($setid));
+}
+
+sub prefill_set_images {
+    my $setid = $_[0];
+
+    my $iter = pdb_iter_new($setid, 40);
+    pdb_iter_filter_setid($iter, $setid);
+    pdb_iter_filter_category($iter, put_types());
+    my $imageid = pdb_iter_next($iter);
+    my $count = 0;
+    while (pcom_get_set($imageid) le $setid) {
+        # Note: Because the sort ID uses GMT, it is possible to get images
+        # from the previous day when iterating through the sets. Skip
+        # those.
+        if (pcom_get_set($imageid) lt $setid) {
+            if (pcom_is_digital($imageid)) {
+                $imageid = pdb_iter_next($iter);
+                next;
+            } else {
+                # if not a digital photo, break out of the loop
+                last;
+            }
+        }
+        my $category = pdb_get_category($imageid);
+        if ($category eq $PCOM_NEW) {
+            # For new images, default to the set's category (if the set's
+            # category is also 'new', nothing changes)
+            $category = parg_get("category");
+        }
+        if (pusr_allowed($PUSR_EDIT . $category)) {
+            # Only if the user is allowed to edit this type of image
+            parg_set("imageid-$count", $imageid);
+            parg_set("datetime-$count", pdb_get_datetime($imageid));
+            parg_set("title-$count", pdb_get_title($imageid));
+            parg_set("category-$count", $category);
+            parg_set("quality-$count", pdb_get_quality($imageid));
+            parg_set("description-$count", pdb_get_description($imageid));
+            $count++;
+        }
+        $imageid = pdb_iter_next($iter);
+    }
+    parg_set("nr_images", $count);
+}
+
+sub save_image_data {
+    my $imageid = $_[0];
+    my $do_latlong = $_[1];
+    my $orientation = pdb_get_orientation($imageid);
+    my $rotation = pdb_get_rotation($imageid);
+    pdb_open_image($imageid);
+    if (parg_get("setid") ne "") {
+        pdb_set_setid(parg_get("setid"));
+    }
+    pdb_set_sortid(parg_get("sortid"));
+    pdb_set_title(parg_get("title"));
+    pdb_set_datetime(parg_get("datetime"));
+    pdb_set_year(parg_get("year"));
+    pdb_set_description(parg_get("description"));
+    pdb_set_comment(parg_get("comment"));
+    pdb_set_orientation(parg_get("orientation"));
+    pdb_set_location(parg_get("location"));
+    pdb_set_category(parg_get("category"));
+    pdb_set_quality(parg_get("quality"));
+    pdb_set_rotation(parg_get("rotation"));
+    pdb_set_copyright(parg_get("copyright"));
+    pdb_set_latlong(parg_get("latlong")) if ($do_latlong);
+    pdb_set_persons(parg_get("persons"));
+    pdb_close_image();
+    if (($orientation ne pdb_get_orientation($imageid))
+        || ($rotation ne pdb_get_rotation($imageid))) {
+        # If the orientation or rotation changed, the image will
+        # have to be re-generated
+        pcom_log($PCOM_DEBUG, "Image changed, empty cache for $imageid");
+        pfs_discard_cache($imageid);
+    }
+    ppers_update($imageid, parg_get("persons"));
+}
+
+sub save_set_data {
+    my $setid = $_[0];
+    my $setToOK = $_[1];
+    my $noEditSet = parg_get("noEditSet");
+    if ($noEditSet eq "") {
+	$noEditSet = 0;
+    }
+    if (!($noEditSet > 0)) {
+        # Do not update the set data if the noEditSet flag is set; in
+        # this case, the user was only allowed to edit certain pictures,
+        # not the entire set.
+        pdb_open_set($setid);
+        pdb_set_setsortid(parg_get("sortid"));
+        pdb_set_setdatetime(parg_get("datetime"));
+        pdb_set_settitle(parg_get("title"));
+        pdb_set_setdescription(parg_get("description"));
+        pdb_set_setcomment(parg_get("comment"));
+        pdb_set_setcategory(parg_get("category"));
+        pdb_set_setyear(parg_get("year"));
+        pdb_set_setcopyright(parg_get("copyright"));
+        pdb_close_set();
+    }
+    my $nr_images = parg_get("nr_images");
+    if ($nr_images eq "") {
+	$nr_images = 0;
+    }
+    if (parg_get("showImages") || ($nr_images > 0)) {
+        pcom_log($PCOM_DEBUG, "Got a 'showImages' flag, now processing");
+        pcom_log($PCOM_DEBUG, "Got $nr_images images");
+        my $prev_title = "";
+        my $clear_title = parg_get("clear_title");
+        if (defined($clear_title) && ($clear_title ne "1")) {
+            $clear_title = 0;
+        }
+        for (my $i = 0; $i < $nr_images; $i++) {
+            my $imageid = parg_get("imageid-$i");
+            if ($imageid ne "") {
+                my $delete = parg_get("delete-$i");
+                if ($delete ne "") {
+                    pfs_trash_image($imageid);
+                    pdb_trash_image($imageid);
+                    ppers_delete_image($imageid);
+                    # Clear the delete flag; since the image is now deleted,
+                    # the flag is no longer valid!
+                    parg_set("delete-$i", "");
+                } else {
+                    pdb_open_image($imageid);
+                    # Note: copy the previous title (if any) over
+                    my $title = parg_get("title-$i");
+                    if ($title eq "") {
+                        $title = $prev_title;
+                    } else {
+                        $prev_title = $title;
+                    }
+                    $title = "" if ($clear_title);
+                    pdb_set_title($title);
+                    pdb_set_datetime(parg_get("datetime-$i"));
+                    pdb_set_description(parg_get("description-$i"));
+                    pdb_set_category(parg_get("category-$i"));
+                    my $qual = parg_get("quality-$i");
+                    if ($setToOK && ($qual eq $PCOM_QUAL_DEFAULT)) {
+                        $qual = $PCOM_QUAL_OK;
+                    }
+                    pdb_set_quality($qual);
+                    pdb_close_image();
+                }
+            }
+        }
+    }
+}
+
+sub disp_image {
+    my $imageid = $_[0];
+    my $do_latlong = $_[1];
+
+    if (!pcom_is_valid($imageid)) {
+        disp_error("Invalid image $imageid");
+    }
+
+    my $category = pdb_get_category($imageid);
+    my @category = ("r:regular", "p:private", "e:special", "n:Nicoline",
+                    "k:kids", "t:Theo", "d:parents");
+    my @orientation = ($PCOM_LANDSCAPE, $PCOM_PORTRAIT, $PCOM_FREEFORM, $PCOM_FREEFORM_P, $PCOM_FREEFORM_L);
+    my @rotation = ("0", "90", "180", "270");
+    my @quality = ("0:dud", "1:bad", "2:default", "3:OK", "4:good", "5:great");
+    if (!pusr_allowed($PUSR_EDIT . $category)) {
+        disp_error("Image not found");
+        return;
+    }
+
+    set_categories(\@category);
+
+    my $setid = pdb_get_setid($imageid);
+
+    pht_set_pagetype("form editpage");
+    put_page_start("Image $imageid");
+    put_form_start("phedit");
+
+#    put_form_image($imageid);
+# Instead, display the image to the side
+    pht_output "<tr valign='middle' style='vertical-align: middle'><td colspan='2'></td><td rowspan='15' style='width: 600px; height: 600px; text-align: center;'>";
+    my $editsize = pusr_get_setting($PUSR_EDIT_SIZE);
+    if (!defined($editsize) || ($editsize eq "")) {
+        $editsize = "normal";
+    }
+    pht_output "<img src='phimg?$editsize=$imageid' /></td></tr>\n";
+    put_form_protected("ImageID", "imageid");
+    put_form_hidden("do_latlong");
+    put_form_text("sortid", "sortid", 1);
+    if ($setid eq "") {
+	$setid = pcom_get_set($imageid);
+	parg_set("setid", $setid);
+        put_form_text("setid", "setid", 1);
+    }
+    put_form_textlong("Title", "title");
+    put_form_textlong("Date / time", "datetime");
+    put_form_text("Year", "year");
+    put_form_textlong("Description", "description");
+    put_form_textlong("Comment", "comment");
+    put_form_radio("Orientation" . put_help_link(4), "orientation", @orientation);
+    put_form_textlong("Location", "location");
+    put_form_textlong("Persons/Tags" . put_help_link(13), "persons", 0, "p");
+    put_form_textlong("Lattitude / longtitude", "latlong") if ($do_latlong);
+    put_form_radio("Category" . put_help_link(1), "category", @category);
+    put_form_radio("Quality" . put_help_link(2), "quality", @quality);
+    put_form_radio("Rotation", "rotation", @rotation);
+    put_form_textlong("Copyright", "copyright");
+    put_form_buttons("save", "Save",
+                     "cancel", "Cancel",
+                     "next", "Save and Edit ^Next");
+    put_form_end();
+
+    put_page_end();
+}
+
+sub disp_set {
+    my $setid = $_[0];
+    if (!pcom_is_set_valid($setid)) {
+        disp_error("Invalid set $setid");
+    }
+
+    my $category = pdb_get_setcategory($setid);
+    my @category = ("r:regular", "p:private", "e:special", "n:Nicoline",
+                    "k:kids", "t:Theo", "d:parents");
+    my @quality = ("0:dud", "1:bad", "2:default", "3:OK", "4:good", "5:great");
+    set_categories(\@category);
+
+    pht_set_pagetype("form editpage");
+    put_page_start("Set $setid");
+    put_form_start("phedit");
+
+    my $showImages = 1;;
+    if (pusr_allowed($PUSR_EDIT . $category)) {
+        # User can edit the set
+        put_form_protected("SetID", "setid");
+        put_form_text("sortid", "sortid", 1);
+        put_form_textlong("Title", "title");
+        put_form_textlong("Date / time", "datetime");
+        put_form_text("Year", "year");
+        put_form_textlong("Description", "description");
+        put_form_textlong("Comment", "comment");
+        put_form_radio("Category" . put_help_link(1), "category", @category);
+        put_form_textlong("Copyright", "copyright");
+        put_form_hidden("showImages");
+        $showImages = parg_get("showImages");
+        if ($showImages) {
+            put_form_buttons("hideImages", "Hide Images");
+        } else {
+            put_form_buttons("showImages", "Show Images");
+        }
+    } else {
+        # User cannot edit the set; keep set data as protected
+        # elements and show images that the user CAN edit
+        put_form_hidden("setid");
+        put_form_hidden("sortid");
+        put_form_hidden("title");
+        put_form_hidden("datetime");
+        put_form_hidden("year");
+        put_form_hidden("description");
+        put_form_hidden("comment");
+        put_form_hidden("category");
+        put_form_hidden ("copyright");
+        put_form_hidden("showImages");
+        parg_set("noEditSet", "1");
+        put_form_hidden("noEditSet");
+        prefill_set_images($setid);
+    }
+
+    if ($showImages) {
+        my $nr_images = parg_get("nr_images");
+        put_form_hidden("nr_images");
+        for (my $i = 0; $i < $nr_images; $i++) {
+            my $imageid = parg_get("imageid-$i");
+            my $orientation = pdb_get_orientation($imageid);
+            my $force = "";    # use to force landscape display of freeform
+            if ($orientation eq $PCOM_FREEFORM) {
+                $orientation = $PCOM_LANDSCAPE;
+                $force = "&orientation=landscape";
+            } elsif ($orientation eq $PCOM_FREEFORM_P) {
+                $orientation = $PCOM_PORTRAIT;
+            } elsif ($orientation eq $PCOM_FREEFORM_L) {
+                $orientation = $PCOM_LANDSCAPE;
+            }
+            pht_output "<tr><td colspan='2'></td><td rowspan='7' class='thumbnail$orientation'>";
+            pht_output "<a href='' onclick='doWindow(\"phimg?normal=$imageid\", \"edtimage\", \"width=600,height=500,scrollbars=1,resizable=1\"); return false;'  onXmouseover='doWindow(\"phimg?normal=$imageid\", \"edtimage\", \"width=600,height=500,scrollbars=1,resizable=1\"); return false;'>";
+            pht_output "<img src='phimg?thumbnail=$imageid$force' /></a></td></tr>\n";
+            put_form_protected("Photo nr", "imageid-$i");
+            put_form_textlong("Title", "title-$i");
+            if (pcom_is_digital($imageid)) {
+                put_form_hidden("datetime-$i");
+            } else {
+                put_form_textlong("Date/time", "datetime-$i");
+            }
+            put_form_textlong("Description", "description-$i");
+            put_form_radio("Category" . put_help_link(1), "category-$i", @category);
+            put_form_radio("Quality" . put_help_link(2), "quality-$i", @quality);
+            if (pcom_is_digital($imageid)) {
+                put_form_checkboxes("&nbsp;", "delete-$i", "delete this image");
+            }
+        }
+        if (pusr_allowed($PUSR_EDIT . $category)) {
+            put_form_checkboxes("", "clear_title", "Clear all titles");
+            put_form_buttons("save", "Save",
+                             "cancel", "Cancel",
+                             "next", "Save and Edit ^Next",
+                             "setOK", "Set all quality to OK");
+        } else {
+            put_form_buttons("save", "Save",
+                             "cancel", "Cancel",
+                             "next", "Save and Edit ^Next");
+        }
+    } else {
+        put_form_buttons("save", "Save",
+                         "cancel", "Cancel",
+                         "next", "Save and Edit ^Next");
+    }
+    put_form_end();
+
+    put_page_end();
+}

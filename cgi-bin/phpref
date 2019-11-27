@@ -1,0 +1,280 @@
+#!/usr/bin/perl -w -I .
+
+#
+# Purpose of this tool is to manage user preferences
+#
+
+use inc_all;
+
+my @types = ($PCOM_REGULAR, $PCOM_PRIVATE, $PCOM_EXPERIMENTAL,
+             $PCOM_NICOLINE, $PCOM_KIDS, $PCOM_OTHERS, $PCOM_THEO,
+             $PCOM_PARENTS, $PCOM_NEW);
+my @settings = ($PUSR_VIEW_TYPES, $PUSR_VIEW_QUALITY, $PUSR_IMAGE_SIZE,
+                $PUSR_EDIT_SIZE);
+
+
+put_init();
+put_restore_session();
+
+my $return = pses_get("return");
+if ($return eq "") {
+    $return = "phmenu";
+}
+
+my $user = pusr_get_userid();
+if ($user eq "") {
+    disp_error("You need to be logged in to use this function.");
+    exit(0);
+}
+
+my $gl_error = "";
+my $button = parg_get_button();
+my $is_limited = 0;
+if ($user eq $PUSR_GUEST_ACCOUNT) {
+    $is_limited = 1;
+}
+if (!pusr_allowed($PUSR_MAINTAIN_SELF)
+    && !pusr_allowed($PUSR_MAINTAIN_USERS)
+    && !pusr_allowed($PUSR_MAINTAIN_ALL)) {
+    # User can't maintain anything; can only make limited changes
+    $is_limited = 1;
+}
+
+  if ($button eq "") {
+    prefill_form($user, $is_limited);
+    disp_form($is_limited);
+} elsif ($button eq "save") {
+    if (validate_form($is_limited)) {
+        save_data($is_limited);
+        pht_redirect($return);
+    } else {
+        disp_form($is_limited);
+    }
+} elsif ($button eq "cancel") {
+    pht_redirect($return);
+} else {
+    disp_form($is_limited);
+}
+
+
+exit(0);
+
+sub validate_form {
+    my $is_guest = $_[0];
+
+    if (!$is_guest) {
+        my $userid = parg_get("userid");
+        my $fullname = parg_get("fullname");
+
+        if (($userid eq "") || ($fullname eq "")) {
+            $gl_error = "Please provide a user ID and a full name";
+            return 0;
+        }
+
+        my $password1 = parg_get("password1");
+        my $password2 = parg_get("password2");
+        if ($password1 ne $password2) {
+            $gl_error = "Passwords do not match.";
+            return 0;
+        }
+        if ($userid =~ /\W/) {
+            $gl_error = "The user ID can only contain letters and numbers";
+            return 0;
+        }
+    }
+    return 1;
+}
+
+sub save_data {
+    my $is_guest = $_[0];
+
+    if ($is_guest) {
+        my $quality = parg_get("quality");
+        if ($quality ne "") {
+            pses_set($PUSR_VIEW_QUALITY, $quality);
+        }
+        my $maxquality = parg_get("maxquality");
+        if ($maxquality ne "") {
+            pses_set($PUSR_VIEW_MAX_QUALITY, $maxquality);
+        }
+        my $size = parg_get("imgsize");
+        if ($size ne "") {
+            pses_set($PUSR_IMAGE_SIZE, $size);
+        }
+        my $dispqual = int(parg_get($PUSR_DISPLAY_QUAL));
+        pses_set($PUSR_DISPLAY_QUAL, $dispqual);
+        my $i;
+        my $types = "";
+        for ($i = 0; defined($types[$i]); $i++) {
+            if (parg_get("T".$types[$i]) ne "") {
+                $types .= $types[$i];
+            }
+        }
+        pses_set($PUSR_VIEW_TYPES, $types);
+    } else {
+        my $userid = parg_get("userid");
+        my $fullname = parg_get("fullname");
+        my $password = parg_get("password1");
+        pusr_edit_open($userid);
+        pusr_edit_fullname($fullname);
+        if ($password ne "") {
+            pusr_edit_password($password);
+        }
+        my $i;
+        my $types = "";
+        for ($i = 0; defined($types[$i]); $i++) {
+            if (parg_get("T".$types[$i]) ne "") {
+                $types .= $types[$i];
+            }
+        }
+        pusr_edit_setting($PUSR_VIEW_TYPES, $types);
+        pusr_edit_setting($PUSR_VIEW_QUALITY, parg_get("quality"));
+        pusr_edit_setting($PUSR_VIEW_MAX_QUALITY, parg_get("maxquality"));
+        pusr_edit_setting($PUSR_IMAGE_SIZE, parg_get("imgsize"));
+        pusr_edit_setting($PUSR_EDIT_SIZE, parg_get("editsize"));
+        pusr_edit_setting($PUSR_DISPLAY_QUAL, parg_get($PUSR_DISPLAY_QUAL));
+        pusr_edit_close();
+        my $maxquality = parg_get("maxquality");
+        if ($maxquality ne "") {
+            pses_set($PUSR_VIEW_MAX_QUALITY, $maxquality);
+        }
+    }
+}
+
+sub prefill_form {
+    my $user = $_[0];
+    my $is_guest = $_[1];
+
+    if ($user ne "") {
+        my $i;
+        parg_set("userid", $user);
+        parg_set("fullname", pusr_get_fullname());
+
+        my $type = pusr_get_setting($PUSR_VIEW_TYPES);
+        while ($type =~ s/(\w)//) {
+            parg_set("T$1", "1");
+        }
+        my $imgsize = put_display_size();
+        parg_set("imgsize", $imgsize);
+        my $editsize = pusr_get_setting($PUSR_EDIT_SIZE);
+        parg_set("editsize", $editsize);
+        my $dispqual = put_disp_quality();
+        parg_set($PUSR_DISPLAY_QUAL, $dispqual);
+        my $quality = put_quality();
+        parg_set("quality", $quality);
+        my $maxquality = put_max_quality();
+        parg_set("maxquality", $maxquality);
+    }
+}
+
+sub disp_error {
+    my $msg =$_[0];
+
+    pht_set_pagetype("form error");
+    put_page_start("Preferences");
+    pht_error_message($msg);
+    pht_output "<p>" . put_login_link() . "</p>\n";
+    put_page_end();
+}
+
+sub disp_form {
+    my $is_guest = $_[0];
+
+    pht_set_pagetype("form preferences");
+    put_page_start("Preferences");
+    pht_error_message($gl_error) if ($gl_error ne "");
+
+    parg_set("password1", "");
+    parg_set("password2", "");
+
+    put_form_start("phpref");
+    if (!$is_guest) {
+        put_form_protected("User ID", "userid", 0);
+        put_form_password("Password", "password1", 0);
+        put_form_password("Repeat password", "password2", 0);
+        put_form_text("Full name", "fullname", 1);
+    }
+    my @want = ();
+    my $want_count = 0;
+    if (pusr_allowed($PUSR_SEE_REGULAR)) {
+        $want[$want_count++] = "T" . $PCOM_REGULAR;
+        $want[$want_count++] = "regular";
+    }
+    if (pusr_allowed($PUSR_SEE_PRIVATE)) {
+        $want[$want_count++] = "T" . $PCOM_PRIVATE;
+        $want[$want_count++] = "private";
+    }
+    if (pusr_allowed($PUSR_SEE_EXPERIMENTAL)) {
+        $want[$want_count++] = "T" . $PCOM_EXPERIMENTAL;
+        $want[$want_count++] = "special";
+    }
+    if (pusr_allowed($PUSR_SEE_NICOLINE)) {
+        $want[$want_count++] = "T" . $PCOM_NICOLINE;
+        $want[$want_count++] = "Nicoline";
+    }
+    if (pusr_allowed($PUSR_SEE_KIDS)) {
+        $want[$want_count++] = "T" . $PCOM_KIDS;
+        $want[$want_count++] = "kids";
+    }
+    if (pusr_allowed($PUSR_SEE_OTHERS)) {
+        $want[$want_count++] = "T" . $PCOM_OTHERS;
+        $want[$want_count++] = "others";
+    }
+    if (pusr_allowed($PUSR_SEE_THEO)) {
+        $want[$want_count++] = "T" . $PCOM_THEO;
+        $want[$want_count++] = "Theo";
+    }
+    if (pusr_allowed($PUSR_SEE_PARENTS)) {
+        $want[$want_count++] = "T" . $PCOM_PARENTS;
+        $want[$want_count++] = "parent";
+    }
+    if (pusr_allowed($PUSR_SEE_NEW)) {
+        $want[$want_count++] = "T" . $PCOM_NEW;
+        $want[$want_count++] = "new";
+    }
+    put_form_checkboxes("Wants to see" . put_help_link(1), @want);
+
+    put_form_dropdown("Minimum quality" . put_help_link(2), "quality",
+                      "0", "dud", "1", "bad", "2", "default",
+                      "3", "OK", "4", "good", "5", "great");
+    put_form_dropdown("Maximum quality" . put_help_link(2), "maxquality",
+                      "0", "dud", "1", "bad", "2", "default",
+                      "3", "OK", "4", "good", "5", "great");
+    my @dispqual = ($PUSR_DISPLAY_QUAL, "display quality indicator (zero to five dots) of photo while browsing");
+    put_form_checkboxes("Display quality", @dispqual);
+
+    put_form_dropdown("Display size" . put_help_link(3), "imgsize",
+                      $PCOM_DEFAULT, "Default",
+                      $PCOM_SMALL, "Small (300x200)",
+                      $PCOM_NORMAL, "Normal (580x390)",
+                      $PCOM_GOOGLE, "Google-size (800x533)",
+                      $PCOM_LARGE, "Large (900x600)");
+                      # $PCOM_SUPER, "Super (1200x800)");
+    if (!$is_guest) {
+        if (pusr_allowed($PUSR_EDIT_REGULAR)
+            || pusr_allowed($PUSR_EDIT_PRIVATE)
+            || pusr_allowed($PUSR_EDIT_EXPERIMENTAL)
+            || pusr_allowed($PUSR_EDIT_NICOLINE)
+            || pusr_allowed($PUSR_EDIT_KIDS)
+            || pusr_allowed($PUSR_EDIT_OTHERS)
+            || pusr_allowed($PUSR_EDIT_THEO)
+            || pusr_allowed($PUSR_EDIT_PARENTS)
+            || pusr_allowed($PUSR_EDIT_NEW)) {
+            put_form_dropdown("Edit size" . put_help_link(3), "editsize",
+                              $PCOM_DEFAULT, "Default",
+                              $PCOM_THUMBNAIL, "Thumbnail (150x100)",
+                              $PCOM_SMALL, "Small (300x200)",
+                              $PCOM_NORMAL, "Normal (580x390)",
+                              $PCOM_GOOGLE, "Google-size (800x533)",
+                              $PCOM_LARGE, "Large (900x600)",
+                              $PCOM_SUPER, "Super (1200x800)");
+        }
+    }
+    put_form_buttons("save", "Save",
+                     "cancel", "Cancel");
+    put_form_end();
+    if ($is_guest) {
+        pht_output "<p>Note: preference changes only have effect for the current session.</p>\n";
+    }
+    put_page_end();
+}

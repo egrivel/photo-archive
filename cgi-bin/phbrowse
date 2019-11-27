@@ -1,0 +1,719 @@
+#!/usr/bin/perl -w -I .
+
+#
+# Purpose of this tool is to display a standard image page for an image
+# from the photos database.
+#
+
+use inc_all;
+
+put_init();
+put_restore_session();
+
+#pht_set_systemmessage("Parts of the photo archive are currently unavailable due to a hard drive crash on May 4. The archive is in the process of being restored from a backup. I expect the archive to be completely back by May 9, 2012.<br />Even after the complete restore, please expect delays in the rendering of the photos since the cache has to be re-built. I apologize for the inconvenience &mdash; <em>Eric Grivel</em>");
+#pht_set_systemmessage("The photo archive has been restored as far as possible. You may find that the first time a set or photo is displayed, it takes extra long to display that set or photo because the cache is being re-build. I apologize for the inconvenience &mdash; <em>Eric Grivel</em>");
+
+my $setid = parg_get("setid");
+if ($setid ne "") {
+  my $do_compact = parg_get("compact");
+  if ($do_compact eq "") {
+    pses_set("return", "phbrowse?setid=$setid");
+    disp_set($setid, 0);
+  } else {
+    pses_set("return", "phbrowse?setid=$setid&compact=$do_compact");
+    disp_set($setid, 1);
+  }
+} else {
+  my $month = parg_get("month");
+  if ($month ne "") {
+    my $do_compact = parg_get("compact");
+    if ($do_compact eq "") {
+      pses_set("return", "phbrowse?month=$month");
+      disp_month($month, 0);
+    } else {
+      pses_set("return", "phbrowse?month=$month&compact=$do_compact");
+      disp_month($month, 1);
+    }
+  } else {
+    my $year = parg_get("year");
+    if ($year ne "") {
+      my $do_all = parg_get("all");
+      if ($do_all eq "") {
+        pses_set("return", "phbrowse?year=$year");
+        disp_year($year, 0);
+      } else {
+        pses_set("return", "phbrowse?year=$year&all=$do_all");
+        disp_year($year, 1);
+      }
+    } else {
+      my $type = parg_get("type");
+      if ($type ne "") {
+        pses_set("return", "phbrowse?type=$type");
+        disp_type($type);
+      } else {
+        my $persid = parg_get("persid");
+        if ($persid ne "") {
+          pses_set("return", "phbrowse?persid=$persid");
+          disp_person($persid);
+        } else {
+          pses_set("return", "phbrowse");
+          disp_all();
+        }
+      }
+    }
+  }
+}
+
+sub disp_person {
+  my $persid = $_[0];
+  my $name   = ppers_get_name($persid);
+  my $descr  = ppers_get_descr($persid);
+
+  pht_page_start(0);
+  pht_tabs_start();
+  pht_prev_tab("");
+  pht_next_tab("");
+  pht_tab("Overview", "<a href='phbrowse'>");
+  pht_tab("Edit",     "");
+  if (pusr_get_userid() eq $PUSR_GUEST_ACCOUNT) {
+    pht_tab("Search", "");
+    pht_tab("Login",  "<a href='phlogin'>");
+  } else {
+    pht_tab("Search", "<a href='phsearch'>");
+    pht_tab("Logout", "<a href='phlogin?do.logout=1'>");
+  }
+  pht_tab("Preferences", "<a href='phpref'>");
+  pht_tab("About",       "<a href='phabout'>");
+  pht_tabs_end();
+
+  pht_output "<div id='title'>Photos of $name</div>\n";
+  pht_output "<div class='listdescr'>$descr";
+  if (pusr_allowed($PUSR_MAINTAIN_PERSONS)) {
+    pht_output " [<a href='phperson?persid=$persid'>Edit</a>]";
+  }
+  pht_output "</div>\n";
+
+  my @images = ppers_get_photos($persid);
+
+  #    my @images = ppers_get_multiple_people($persid, 0);
+  my $i;
+  my $nr_displayed = 0;
+  for ($i = 0 ; defined($images[$i]) ; $i++) {
+    my $th = disp_thumbnail($images[$i], 0);
+    if ($th ne "") {
+      pht_output $th;
+      $nr_displayed++;
+    }
+  }
+  if ($nr_displayed <= 0) {
+    pht_output "<p>There are no photos available for $name.</p>\n";
+  }
+  pht_output "<div class='imglistbreak' />";
+
+  if ($nr_displayed > 1) {
+    pht_output "<p>There are $nr_displayed photos for $name.</p>\n";
+  } elsif ($nr_displayed == 1) {
+    pht_output "<p>There is $nr_displayed photo for $name.</p>\n";
+  }
+  put_page_end();
+}
+
+sub disp_set_thumbnails {
+  my $setid      = $_[0];
+  my $do_compact = $_[1];
+
+  my $result = "";
+
+  my $iter = pdb_iter_new($setid, 40);
+  pdb_iter_filter_setid($iter, $setid);
+  pdb_iter_filter_category($iter, put_types());
+  pdb_iter_filter_min_quality($iter, put_quality());
+  my $imageid    = pdb_iter_next($iter);
+  my $imagecount = 0;
+
+  while (pcom_get_set($imageid) le $setid) {
+
+    # Note: Because the sort ID uses GMT, it is possible to get images
+    # from the previous day when iterating through the sets. Skip
+    # those.
+    pcom_log($PCOM_DEBUG, "Got image $imageid");
+    if (pcom_get_set($imageid) lt $setid) {
+      if (pcom_is_digital($imageid)) {
+        $imageid = pdb_iter_next($iter);
+        next;
+      } else {
+
+        # if not a digital photo, break out of the loop
+        last;
+      }
+    }
+    my $th = disp_thumbnail($imageid, $do_compact);
+    if ($th ne "") {
+      $result .= $th;
+      $imagecount++;
+    }
+    $imageid = pdb_iter_next($iter);
+  }
+
+  return $result;
+}
+
+sub disp_set {
+  my $setid      = $_[0];
+  my $do_compact = $_[1];
+
+  my $category = pdb_get_setcategory($setid);
+  if (($category ne "") && !pusr_allowed($category)) {
+    disp_error("Not found");
+    return;
+  }
+
+  my $settitle    = pdb_get_settitle($setid);
+  my $datetime    = pdb_get_setdatetime($setid);
+  my $description = pdb_get_setdescription($setid);
+  my $comment     = pdb_get_setcomment($setid);
+  my $copyright   = pdb_get_setcopyright($setid);
+  my $year        = pdb_get_setyear($setid);
+
+  if ($copyright eq "") {
+    $copyright = put_default_set_copyright($setid);
+  }
+  if ($copyright ne "") {
+    pht_set_copyright("Copyright &copy; $copyright.");
+  }
+
+  my $next = put_get_next_set($setid);
+  my $prev = put_get_prev_set($setid);
+
+  my $nextlink = "";
+  if ($next ne "") {
+    $nextlink = "<a href='phbrowse?setid=$next' accesskey='n'>";
+  }
+  my $prevlink = "";
+  if ($prev ne "") {
+    $prevlink = "<a href='phbrowse?setid=$prev' accesskey='p'>";
+  }
+  my $editlink = "";
+  if (pusr_allowed($PUSR_EDIT . $category)) {
+
+    # The user can edit the set
+    $editlink = "<a href='phedit?setid=$setid'>";
+  } else {
+
+    # Try to see if the user can edit any of the photos in the set
+    if (
+      (
+           pusr_allowed($PUSR_EDIT . $PCOM_REGULAR)
+        && pdb_set_contains_category($setid, $PCOM_REGULAR)
+      )
+      || ( pusr_allowed($PUSR_EDIT . $PCOM_PRIVATE)
+        && pdb_set_contains_category($setid, $PCOM_PRIVATE))
+      || ( pusr_allowed($PUSR_EDIT . $PCOM_EXPERIMENTAL)
+        && pdb_set_contains_category($setid, $PCOM_EXPERIMENTAL))
+      || ( pusr_allowed($PUSR_EDIT . $PCOM_NICOLINE)
+        && pdb_set_contains_category($setid, $PCOM_NICOLINE))
+      || ( pusr_allowed($PUSR_EDIT . $PCOM_KIDS)
+        && pdb_set_contains_category($setid, $PCOM_KIDS))
+      || ( pusr_allowed($PUSR_EDIT . $PCOM_OTHERS)
+        && pdb_set_contains_category($setid, $PCOM_OTHERS))
+      || ( pusr_allowed($PUSR_EDIT . $PCOM_THEO)
+        && pdb_set_contains_category($setid, $PCOM_THEO))
+      || ( pusr_allowed($PUSR_EDIT . $PCOM_PARENTS)
+        && pdb_set_contains_category($setid, $PCOM_PARENTS))
+      || ( pusr_allowed($PUSR_EDIT . $PCOM_NEW)
+        && pdb_set_contains_category($setid, $PCOM_NEW))
+      )
+    {
+      $editlink = "<a href='phedit?setid=$setid'>";
+    }
+  }
+
+  pht_set_pagetype("imagelist");
+  pht_page_start(0);
+  pht_tabs_start();
+  pht_prev_tab($prevlink);
+  pht_next_tab($nextlink);
+  pht_tab("Overview", "<a href='phbrowse?year=$year'>");
+  pht_tab("Edit",     $editlink);
+  if (pusr_get_userid() eq $PUSR_GUEST_ACCOUNT) {
+    pht_tab("Search", "");
+    pht_tab("Login",  "<a href='phlogin'>");
+  } else {
+    pht_tab("Search", "<a href='phsearch'>");
+    pht_tab("Logout", "<a href='phlogin?do.logout=1'>");
+  }
+  if (pdb_set_has_latlong($setid)) {
+    pht_tab("Map", put_mapset_link($setid));
+  }
+  pht_tab("Preferences", "<a href='phpref'>");
+  pht_tab("About",       "<a href='phabout'>");
+  pht_tabs_end();
+
+  pht_output
+    "<div class='listtitle'><strong>$settitle</strong> $datetime</div>\n";
+  pht_output "<div class='listdescr'>$description</div>\n";
+
+  my $set_thumbnails = disp_set_thumbnails($setid, $do_compact);
+  if ($set_thumbnails ne "") {
+    pht_output $set_thumbnails;
+  }
+
+  pht_output "<div class='imglistbreak' />";
+  if ($set_thumbnails eq "") {
+    pht_output "<div class='nophotos'>(no photos available)</div>\n";
+  }
+  pht_page_end();
+}
+
+sub can_show_image {
+  my $imageid = $_[0];
+
+  my $category  = pdb_get_category($imageid);
+  my $quality   = pdb_get_quality($imageid);
+  my $type_mask = put_types();
+  my $result    = 1;
+
+  if (!($type_mask =~ /$category/)) {
+    $result = 0;
+  }
+  my $max_quality = pusr_get_setting($PUSR_VIEW_MAX_QUALITY);
+  if ( !defined($max_quality)
+    || ($max_quality eq "")
+    || ($max_quality == 0))
+  {
+    $max_quality = 5;
+  }
+
+  if ( ($quality < pusr_get_setting($PUSR_VIEW_QUALITY))
+    || ($quality > $max_quality))
+  {
+    $result = 0;
+  }
+  return $result;
+}
+
+sub disp_thumbnail {
+  my $imageid    = $_[0];
+  my $do_compact = $_[1];
+  my $result     = "";
+  my $staticroot = get_static_root();
+
+  if (can_show_image($imageid)) {
+    my $orientation = pdb_get_orientation($imageid);
+    if ($orientation eq $PCOM_FREEFORM) {
+      $orientation = pfs_get_orientation($imageid);
+      if (pfs_get_edited_location($imageid) eq "") {
+
+        # If there is an edited file, rotation is ignored. But if
+        # there is no edited file, check rotation to see if the
+        # file orientation needs to be switched
+        my $rotation = pdb_get_rotation($imageid);
+        if ( ($rotation == 90)
+          || ($rotation == 270)
+          || ($rotation == -90))
+        {
+          if ($orientation eq $PCOM_LANDSCAPE) {
+            $orientation = $PCOM_PORTRAIT;
+          } else {
+            $orientation = $PCOM_LANDSCAPE;
+          }
+        }
+      }
+    } elsif ($orientation eq $PCOM_FREEFORM_P) {
+      $orientation = $PCOM_PORTRAIT;
+    } elsif ($orientation eq $PCOM_FREEFORM_L) {
+      $orientation = $PCOM_LANDSCAPE;
+    }
+    my $category = pdb_get_category($imageid);
+    my $class    = "imagelist image$orientation";
+    my $title    = pdb_get_title($imageid);
+    my $descr    = pht_title_escape(pdb_get_description($imageid));
+    if (pusr_can_see($PCOM_PRIVATE)
+      && ($category eq $PCOM_PRIVATE))
+    {
+      $class = "imagelist private$orientation";
+    } elsif (pusr_can_see($PCOM_EXPERIMENTAL)
+      && ($category eq $PCOM_EXPERIMENTAL))
+    {
+      $class = "imagelist experimental$orientation";
+    } elsif ($category eq $PCOM_KIDS) {
+      $class = "imagelist kids$orientation";
+    } elsif ($category eq $PCOM_OTHERS) {
+      $class = "imagelist others$orientation";
+    } elsif ($category eq $PCOM_NICOLINE) {
+      $class = "imagelist nicoline$orientation";
+    }
+    if ($do_compact) {
+      $result .= "<div class='compact$orientation'>";
+    } else {
+      $result .= "<div class='$class' id='id-$imageid'>";
+    }
+    if (!$do_compact && put_disp_quality()) {
+      my $qual    = pdb_get_quality($imageid);
+      my $hoffset = 104 - int((13 * $qual) / 2);
+      my $voffset = 175;
+      my $break   = "";
+      if ($orientation eq $PCOM_PORTRAIT) {
+        $hoffset = 173;
+        $voffset = 104 - int((13 * $qual) / 2);
+        $break   = "<br />";
+      }
+      $result .=
+"<div style='position: absolute; margin-top: ${voffset}px; margin-left: ${hoffset}px;'>";
+      for (my $i = 0 ; $i < $qual ; $i++) {
+        $result .=
+"<img src='$staticroot/images/green-dot.png' class='qualdot' alt='*' />$break";
+      }
+      $result .= "</div>";
+    }
+    if (!$do_compact && (pdb_get_type($imageid) eq "MOV")) {
+      my $hoffset = 98;
+      my $voffset = 25;
+      if ($orientation eq $PCOM_PORTRAIT) {
+        $hoffset = 23;
+        $voffset = 98;
+      }
+      $result .=
+"<div style='position: absolute; margin-top: ${voffset}px; margin-left: ${hoffset}px;'>";
+      $result .=
+        "<img src='$staticroot/images/red-dot.png' class='qualdot' alt='*' />";
+      $result .= "</div>";
+    }
+    $result .=
+      "<a href='phdisp?imageid=$imageid' class='$class' title='$descr'>";
+    $result .= "<img src='phimg?thumbnail=$imageid' class='$class' ";
+    if ($orientation eq $PCOM_LANDSCAPE) {
+      $result .= "width='150' height='100' ";
+    } else {
+      $result .= "width='100' height='150' ";
+    }
+    $result .= "alt='$descr' /> ";
+    $imageid = pcom_format_imageid($imageid);
+    $result .= "</a>";
+    if (!$do_compact) {
+      $result .= "\n$imageid<br />$title";
+    }
+    $result .= "</div>\n";
+  }
+  return $result;
+}
+
+sub disp_month {
+  disp_error("not implemented");
+}
+
+sub disp_year {
+  my $year   = $_[0];
+  my $do_all = $_[1];
+
+  my $prevlink = "";
+  my $nextlink = "";
+  my $alllink  = "";
+  if ($do_all) {
+    $alllink = "&all=1";
+  }
+  if ($year < 9000) {
+    if ($year > pcom_first_year()) {
+      my $prevyear = $year - 1;
+      $prevlink = "<a href='phbrowse?year=$prevyear$alllink' accesskey='p'>";
+    }
+    if ($year < pcom_last_year()) {
+      my $nextyear = $year + 1;
+      $nextlink = "<a href='phbrowse?year=$nextyear$alllink' accesskey='n'>";
+    }
+  }
+
+  pht_set_pagetype("setlist");
+  pht_page_start(0);
+  pht_tabs_start();
+  pht_prev_tab($prevlink);
+  pht_next_tab($nextlink);
+  pht_tab("Overview", "<a href='phbrowse'>");
+  pht_tab("Edit",     "");
+  if (pusr_get_userid() eq $PUSR_GUEST_ACCOUNT) {
+    pht_tab("Search", "");
+    pht_tab("Login",  "<a href='phlogin'>");
+  } else {
+    pht_tab("Search", "<a href='phsearch'>");
+    pht_tab("Logout", "<a href='phlogin?do.logout=1'>");
+  }
+  pht_tab("Preferences", "<a href='phpref'>");
+  pht_tab("About",       "<a href='phabout'>");
+  pht_tabs_end();
+
+  my $descr = "Photos of $year";
+  if ($year eq "9997") {
+    $descr = "Overview of Theo's photos";
+  } elsif ($year eq "9998") {
+    $descr = "Overview of my parents' photos";
+  } elsif ($year eq "9999") {
+    $descr = "Overview of special photos";
+  } elsif ($year eq "9996") {
+    $descr = "Overview of paper photo album scans";
+  }
+  pht_output "<div class='settitle'>$descr</div>\n";
+
+  my $iter = pdb_iter_set_new();
+  pdb_iter_filter_category($iter, put_types());
+  pdb_iter_filter_year($iter, $year);
+  my $setid = "";
+  if ($do_all) {
+    $setid = pdb_iter_next($iter);
+  } else {
+    $setid = pdb_iter_previous($iter);
+  }
+  my $list       = "";
+  my %months     = ();
+  my $monthcount = 0;
+  while ($setid ne "") {
+    if ($do_all) {
+      $list .= disp_set_thumbnails($setid, 1);
+    } else {
+      my $title = pdb_get_settitle($setid);
+      if ($title eq "") {
+        $title = "Film $setid";
+      }
+      my $datetime = pdb_get_setdatetime($setid);
+      my $descr    = pdb_get_setdescription($setid);
+      my $anchor   = "";
+      if ($setid =~ /^\d\d\d\d(\d\d)\d\d$/) {
+        # Digital set; build month list
+        my $month = $1;
+        if (!defined($months{$month})) {
+          $anchor = " id='month$month'";
+          $monthcount++;
+        }
+        $months{$month}++;
+      }
+      $list .= "<div class='setlist'$anchor>";
+      $list .= "<a href='phbrowse?setid=$setid'>$title</a>";
+      if ($datetime ne "") {
+        $list .= " - $datetime";
+      }
+      if ( pusr_allowed($PCOM_EXPERIMENTAL)
+        && pusr_can_see($PCOM_EXPERIMENTAL)
+        && pdb_set_contains_category($setid, $PCOM_EXPERIMENTAL))
+      {
+        $list .= " <span style='background-color: #aaffaa;'>E</span>";
+      }
+      if ( pusr_allowed($PCOM_PRIVATE)
+        && pusr_can_see($PCOM_PRIVATE)
+        && pdb_set_contains_category($setid, $PCOM_PRIVATE))
+      {
+        $list .= " <span style='background-color: #f0ff00;'>P</span>";
+      }
+      if ($descr ne "") {
+        $list .= "<br />$descr";
+      }
+      $list .= "</div>\n";
+    }
+    if ($do_all) {
+      $setid = pdb_iter_next($iter);
+    } else {
+      $setid = pdb_iter_previous($iter);
+    }
+  }
+  if ($list eq "") {
+    pht_output "<p>There are no photos in the archive for $year.</p>\n";
+  } else {
+    if ($monthcount) {
+      my @monthnames = (
+        "",       "January",   "February", "March",
+        "April",  "May",       "June",     "July",
+        "August", "September", "October",  "November",
+        "December"
+      );
+      pht_output "<div class='setlist'>Jump to month:";
+      foreach $key (sort (keys %months)) {
+        my $link = $monthnames[int($key)];
+        pht_output " | <a href='#month$key'>$link</a>";
+      }
+      pht_output "</div>\n";
+    }
+  }
+  pht_output $list;
+  pht_output "<div class='imglistbreak' />";
+  pht_page_end();
+}
+
+sub out_table {
+  my $cols  = $_[0];
+  my $class = $_[1];
+
+  my $first_year = pcom_first_year();
+  my $last_year  = pcom_last_year();
+
+  my $rows = int(($last_year - $first_year + 1 + ($cols - 1)) / $cols);
+
+  if (($first_year + $rows * ($cols - 1)) > $last_year) {
+    # with so many rows, all years actually fit in one fewer column,
+    # so remove the empty last column
+    $cols--;
+  }
+
+  pht_output "<table class='yearlist yearlist-$class'>";
+  pht_output "<tr><th colspan='$cols' class='years'>Select a Year</th></tr>\n";
+  for (my $cur_row = 0 ; $cur_row < $rows ; $cur_row++) {
+    pht_output "<tr>";
+    for (my $cur_col = 0 ; $cur_col < $cols ; $cur_col++) {
+      pht_output "<td>";
+      my $year = $first_year + ($rows * $cur_col) + $cur_row;
+      if ($year <= $last_year) {
+        if (pcom_has_photos_in_year($year)) {
+          pht_output "<a href='phbrowse?year=$year'>$year</a>";
+        } else {
+          pht_output "$year";
+        }
+      } else {
+        pht_output "---";
+      }
+      pht_output "</td>\n";
+    }
+    pht_output "</tr>";
+  }
+
+  pht_output "</table>\n";
+}
+
+sub disp_all {
+  pht_set_pagetype("yearlist normal");
+  pht_page_start(0);
+
+  pht_tabs_start();
+  pht_prev_tab("");
+  pht_next_tab("");
+  pht_tab("Home", "<a href='/index.php'>");
+  pht_tab("Edit", "");
+  if (pusr_get_userid() eq $PUSR_GUEST_ACCOUNT) {
+    pht_tab("Search", "");
+    pht_tab("Login",  "<a href='phlogin'>");
+  } else {
+    pht_tab("Search", "<a href='phsearch'>");
+    pht_tab("Logout", "<a href='phlogin?do.logout=1'>");
+  }
+  pht_tab("Preferences", "<a href='phpref'>");
+  pht_tab("About",       "<a href='phabout'>");
+  pht_tabs_end();
+
+  pht_output "<div class='yeartitle'>Photo Archive</div>\n";
+  pdb_filter_category(put_types());
+  my $total = pdb_image_count();
+  if ($total < 1) {
+    $total = 0;
+  }
+  $total =~ s/(\d)(\d\d\d)$/$1,$2/;
+
+  pht_output "<p>Welcome to our photo archive! The archive ";
+  pht_output "currently contains $total photos, organized by year:</p>\n";
+
+  my $cols = 12;
+
+  out_table(12, "large");
+
+  pht_output "<p>In this archive, you will find:</p>\n";
+  pht_output "
+<ul>
+<li>Black-and-white photos I have taken (1974-1982).</li>
+<li>Slide photos I have taken (1982-1984).</li>
+<li>Color film photos Nicoline and I have taken (1984-2004).</li>
+<li>Digital photos Nicoline and I have taken (2004-present).</li>
+<li>Film photos Frank and Mark have taken (1998-2005).</li>
+<li>Photos my father and mother have taken (1957-1997).</li>
+<li>Scans of paper photo albums I inherited from my parents.</li>
+</ul>\n";
+  pht_output "<p>Special features:</p>\n";
+  pht_output "<ul>\n";
+  pht_output "<li><a href='phslideshow'>Slide show launcher</a> to see "
+    . "a random or sequential slide-show of photos in the archive.</li>\n";
+
+  if (pusr_allowed($PCOM_PARENTS)) {
+    pht_output
+"<li><a href='phbrowse?type=d'>Photos and slides made by my parents</a>, also including scans of my parents' paper albums.</li>\n";
+  }
+
+  pht_output(
+"<li><a href='/archives/panoramas/'>Panoramas</a> stitched together from multiple photos.</li>\n"
+  );
+
+  if (pusr_allowed($PCOM_REGULAR)) {
+    pht_output
+"<li><a href='phbrowse?year=9999'>Specials</a>, only of interest to myself.</li>\n";
+  }
+
+  pht_output "<li><a href='phperson'>People and tags in the photos</a>.</li>\n";
+
+  pht_output "</ul>\n";
+
+  pht_page_end();
+}
+
+sub disp_error {
+  my $msg = $_[0];
+  put_page_start("Error");
+  pht_error_message($msg);
+  put_page_end();
+}
+
+sub disp_type {
+  my $type = $_[0];
+
+  pht_set_pagetype("setlist");
+  pht_page_start(0);
+  pht_tabs_start();
+  pht_tab("Overview", "<a href='phbrowse'>");
+  pht_tab("Edit",     "");
+  if (pusr_get_userid() eq $PUSR_GUEST_ACCOUNT) {
+    pht_tab("Search", "");
+    pht_tab("Login",  "<a href='phlogin'>");
+  } else {
+    pht_tab("Search", "<a href='phsearch'>");
+    pht_tab("Logout", "<a href='phlogin?do.logout=1'>");
+  }
+  pht_tab("Preferences", "<a href='phpref'>");
+  pht_tab("About",       "<a href='phabout'>");
+  pht_tabs_end();
+
+  my $descr = "Photos";
+  if ($type eq $PCOM_PARENTS) {
+    $descr = "Overview of my parents' photos";
+  }
+  pht_output "<div class='settitle'>$descr</div>\n";
+
+  my $iter = pdb_iter_set_new();
+  pdb_iter_filter_category($iter, $type);
+  my $setid = pdb_iter_previous($iter);
+  my $list  = "";
+  while ($setid ne "") {
+    my $title = pdb_get_settitle($setid);
+    if ($title eq "") {
+      $title = "Film $setid";
+    }
+    my $datetime = pdb_get_setdatetime($setid);
+    my $descr    = pdb_get_setdescription($setid);
+    $list .= "<div class='setlist'><a href='phbrowse?setid=$setid'>$title</a>";
+    if ($datetime ne "") {
+      $list .= " - $datetime";
+    }
+    if ( pusr_allowed($PCOM_EXPERIMENTAL)
+      && pdb_set_contains_category($setid, $PCOM_EXPERIMENTAL))
+    {
+      $list .= " <span style='background-color: #aaffaa;'>E</span>";
+    }
+    if ( pusr_allowed($PCOM_PRIVATE)
+      && pdb_set_contains_category($setid, $PCOM_PRIVATE))
+    {
+      $list .= " <span style='background-color: #f0ff00;'>P</span>";
+    }
+    if ($descr ne "") {
+      $list .= "<br />$descr";
+    }
+    $list .= "</div>\n";
+    $setid = pdb_iter_previous($iter);
+  }
+  if ($list eq "") {
+    pht_output "<p>There are no photos of this type in the archive.</p>\n";
+  }
+  pht_output $list;
+  pht_output "<div class='imglistbreak' />";
+  pht_page_end();
+}

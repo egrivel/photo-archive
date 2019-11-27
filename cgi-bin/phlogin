@@ -1,0 +1,111 @@
+#!/usr/bin/perl -I .
+
+use inc_all;
+
+put_init();
+put_restore_session();
+
+my $gl_error = "";
+my $return = pses_get("return");
+if ($return eq "") {
+    $return = "phbrowse";
+}
+
+my $button = parg_get_button();
+if ($button eq "login") {
+    if (validate_form()) {
+        # Selected login, try to do this.
+        $user = parg_get("user");
+        $pwd = parg_get("pwd");
+        if (!pusr_login($user, $pwd)) {
+            $gl_error .= "Could not log you in";
+            $user = "";
+            $pwd = "";
+            disp_form();
+        } else {
+            # Login succeeded, close login window
+            pses_set($PUSR_IMAGE_SIZE, "");
+            pses_set($PUSR_VIEW_QUALITY, "");
+            pht_redirect($return);
+        }
+    } else {
+        # Validation failed, re-display
+        disp_form();
+    }
+    # Store the current user in the session
+    pses_set("user", pusr_get_userid());
+} elsif ($button eq "logout") {
+    pusr_logout();
+    pses_set("user", pusr_get_userid());
+    pses_set($PUSR_IMAGE_SIZE, "");
+    pses_set($PUSR_VIEW_QUALITY, "");
+    # Logging out -- make sure user will be blanked on form
+    parg_set("user", "");
+    pht_redirect($return);
+} else {
+    disp_form();
+}
+
+
+# Validate the date, return true if the data is OK, false if there
+# are errors
+sub validate_form {
+    my $is_ok;
+    my $user = parg_get("user");
+    my $pwd = parg_get("pwd");
+
+    if (($user eq "") || ($pwd eq "")) {
+        $gl_error .= "Please provide both the user ID and the password";
+        $is_ok = 0;
+    } else {
+        $is_ok = 1;
+    }
+
+    return $is_ok;
+}
+
+sub disp_form {
+    my $user = parg_get("user");
+
+    my $userid = pusr_get_userid();
+    my $name = pusr_get_fullname();
+
+    pht_set_title("Login");
+    pht_set_pagetype("form login");
+    pht_page_start();
+    pht_error_message($gl_error) if ($gl_error ne "");
+
+    if ($name eq "") {
+        if ($userid ne "guest") {
+            $name = $userid;
+        }
+    }
+    if (($name eq "") || ($userid eq "guest")) {
+        pht_output "<p>Not logged in.</p>\n";
+    } else {
+        pht_output "<p>Currently logged in: $name.</p>\n";
+    }
+
+    put_form_start("phlogin");
+    put_form_text("User", "user", 1);
+    put_form_password("Password", "pwd", 1);
+
+    if ($name eq "") {
+        put_form_buttons("login", "Login");
+    } else {
+        put_form_buttons("login", "Login",
+                         "logout", "Logout");
+    }
+    put_form_end();
+    put_form_focus("user");
+
+    $admin_email = get_admin_email();
+    pht_output "<p>Log in to be able to change your preferences. Users that are logged in may be able to edit photo information or leave comments on the photos, if allowed to do so.</p>\n";
+    pht_output "<p>Please contact <a href='mailto:$admin_email'>$admin_email</a> to request a login account. Please indicate the request to a login for the photo system and provide the desired user name in the email.</p>\n";
+
+    pht_page_end();
+}
+
+sub disp_close_window {
+    print "Content-type: text/html\n\n<body onload='window.close();'></body>\n";
+}

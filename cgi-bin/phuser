@@ -1,0 +1,264 @@
+#!/usr/bin/perl -w -I .
+
+#
+# Purpose of this tool is to provide a editor front-end to the
+# photos database.
+#
+
+use inc_all;
+
+my @rights = ($PUSR_SEE_REGULAR, $PUSR_SEE_PRIVATE,
+              $PUSR_SEE_EXPERIMENTAL, $PUSR_SEE_NICOLINE, $PUSR_SEE_KIDS,
+              $PUSR_SEE_OTHERS, $PUSR_SEE_THEO, $PUSR_SEE_PARENTS,
+              $PUSR_SEE_NEW,
+              $PUSR_EDIT_REGULAR, $PUSR_EDIT_PRIVATE,
+              $PUSR_EDIT_EXPERIMENTAL, $PUSR_EDIT_NICOLINE, $PUSR_EDIT_KIDS,
+              $PUSR_EDIT_OTHERS, $PUSR_EDIT_THEO, $PUSR_EDIT_PARENTS,
+              $PUSR_EDIT_NEW,
+              $PUSR_GET_ORIG, $PUSR_GET_RAW, $PUSR_COMMENT, $PUSR_QUICKTAGS,
+              $PUSR_JOOMLA_LINK,
+              $PUSR_MAINTAIN_SELF, $PUSR_MAINTAIN_USERS,
+	      $PUSR_MAINTAIN_PERSONS, $PUSR_MAINTAIN_ALL);
+my @types = ($PCOM_REGULAR, $PCOM_PRIVATE, $PCOM_EXPERIMENTAL,
+             $PCOM_NICOLINE, $PCOM_KIDS, $PCOM_OTHERS, $PCOM_THEO,
+             $PCOM_PARENTS, $PCOM_NEW);
+my @settings = ($PUSR_VIEW_TYPES, $PUSR_VIEW_QUALITY, $PUSR_VIEW_MAX_QUALITY, $PUSR_IMAGE_SIZE, $PUSR_EDIT_SIZE);
+
+
+put_init();
+put_restore_session();
+
+my $user = pusr_get_userid();
+if (($user eq "") || ($user eq $PUSR_GUEST_ACCOUNT)) {
+    disp_error("You need to be logged in to use this function.");
+    exit(0);
+}
+if (!pusr_allowed($PUSR_MAINTAIN_USERS)) {
+    disp_error("You cannot use this function.");
+    exit(0);
+}
+
+my $gl_error = "";
+my $button = parg_get_button();
+if ($button eq "") {
+    disp_select();
+} elsif ($button eq "add") {
+    parg_set("userid", "");
+    disp_form();
+} elsif ($button eq "select") {
+    my $user = parg_get("userid");
+    prefill_form($user);
+    disp_form();
+} elsif ($button eq "save") {
+    if (validate_form()) {
+        save_data();
+        disp_select();
+    } else {
+        disp_form();
+    }
+} else {
+    disp_select();
+}
+
+exit(0);
+
+sub disp_select {
+    my %users = pusr_get_user_list();
+    my @sort = ();
+    my $count = 0;
+    my $key;
+    foreach $key (sort (keys %users)) {
+        $sort[$count++] = $key;
+        $sort[$count++] = $users{$key};
+    }
+
+    parg_set("userid", "");
+    pht_set_pagetype("form user");
+    put_page_start("User Edit");
+    put_form_start("phuser");
+    put_form_dropdown("Select a user", "userid", @sort);
+    put_form_buttons("select", "Edit", "add", "Add");
+    put_form_end();
+    put_page_end();
+}
+
+sub validate_form {
+    my $userid = parg_get("userid");
+    my $fullname = parg_get("fullname");
+
+    if (($userid eq "") || ($fullname eq "")) {
+        $gl_error = "Please provide a user ID and a full name";
+        return 0;
+    }
+
+    my $password1 = parg_get("password1");
+    my $password2 = parg_get("password2");
+    if ($password1 ne $password2) {
+        $gl_error = "Passwords do not match.";
+        return 0;
+    }
+    if ($userid =~ /\W/) {
+        $gl_error = "The user ID can only contain letters and numbers";
+        return 0;
+    }
+    return 1;
+}
+
+sub save_data {
+    my $userid = parg_get("userid");
+    my $fullname = parg_get("fullname");
+    my $password = parg_get("password1");
+    pusr_edit_open($userid);
+    pusr_edit_fullname($fullname);
+    if ($password ne "") {
+        pusr_edit_password($password);
+    }
+    my $i;
+    for ($i = 0; defined($rights[$i]); $i++) {
+        if (parg_get($rights[$i]) ne "") {
+            pusr_edit_right_add($rights[$i]);
+        } else {
+            pusr_edit_right_remove($rights[$i]);
+        }
+    }
+    my $types = "";
+    for ($i = 0; defined($types[$i]); $i++) {
+        if (parg_get("T".$types[$i]) ne "") {
+            # Only add selection when user has a right to see
+            # that type of file in the first place!
+            if (pusr_edit_has_right($PUSR_SEE . $types[$i])) {
+                $types .= $types[$i];
+            }
+        }
+    }
+    pusr_edit_setting($PUSR_VIEW_TYPES, $types);
+    pusr_edit_setting($PUSR_VIEW_QUALITY, parg_get("quality"));
+    pusr_edit_setting($PUSR_VIEW_MAX_QUALITY, parg_get("maxquality"));
+    pusr_edit_setting($PUSR_VIEW_TAGS, parg_get("tags"));
+    pusr_edit_setting($PUSR_IMAGE_SIZE, parg_get("imgsize"));
+    pusr_edit_setting($PUSR_EDIT_SIZE, parg_get("editsize"));
+    pusr_edit_close();
+}
+
+sub prefill_form {
+    my $user = $_[0];
+
+    if ($user ne "") {
+        my $i;
+        pusr_edit_open($user);
+        parg_set("userid", $user);
+        parg_set("fullname", pusr_edit_get_fullname());
+        for ($i = 0; defined($rights[$i]); $i++) {
+            if (pusr_edit_has_right($rights[$i])) {
+                parg_set($rights[$i], "1");
+            }
+        }
+        my $type = pusr_edit_get_setting($PUSR_VIEW_TYPES);
+        while ($type =~ s/(\w)//) {
+            parg_set("T$1", "1");
+        }
+        my $imgsize = pusr_edit_get_setting($PUSR_IMAGE_SIZE);
+        parg_set("imgsize", $imgsize);
+        my $editsize = pusr_edit_get_setting($PUSR_EDIT_SIZE);
+        parg_set("editsize", $editsize);
+        my $quality = pusr_edit_get_setting($PUSR_VIEW_QUALITY);
+        parg_set("quality", $quality);
+        my $maxquality = pusr_edit_get_setting($PUSR_VIEW_MAX_QUALITY);
+        parg_set("maxquality", $maxquality);
+        my $tags = pusr_edit_get_setting($PUSR_VIEW_TAGS);
+        parg_set("tags", $tags);
+        pusr_edit_close();
+    }
+}
+
+sub disp_error {
+    my $msg =$_[0];
+
+    pht_set_pagetype("form error");
+    put_page_start("User Edit");
+    pht_error_message($msg);
+    pht_output "<p>" . put_login_link() . "</p>\n";
+    put_page_end();
+}
+
+sub disp_form {
+    pht_set_pagetype("form user");
+    put_page_start("User Edit");
+    pht_error_message($gl_error) if ($gl_error ne "");
+
+    parg_set("password1", "");
+    parg_set("password2", "");
+
+    put_form_start("phuser");
+    put_form_text("User ID", "userid", 1);
+    put_form_password("Password", "password1", 0);
+    put_form_password("Repeat password", "password2", 0);
+    put_form_text("Full name", "fullname", 1);
+    put_form_checkboxes("Can see",
+                        $PUSR_SEE_REGULAR, "regular",
+                        $PUSR_SEE_PRIVATE, "private",
+                        $PUSR_SEE_EXPERIMENTAL, "special",
+                        $PUSR_SEE_NICOLINE, "Nicoline",
+                        $PUSR_SEE_KIDS, "kids",
+                        $PUSR_SEE_THEO, "Theo",
+                        $PUSR_SEE_PARENTS, "parents",
+                        $PUSR_SEE_OTHERS, "others",
+                        $PUSR_SEE_NEW, "new");
+    put_form_checkboxes("Can edit",
+                        $PUSR_EDIT_REGULAR, "regular",
+                        $PUSR_EDIT_PRIVATE, "private",
+                        $PUSR_EDIT_EXPERIMENTAL, "special",
+                        $PUSR_EDIT_NICOLINE, "Nicoline",
+                        $PUSR_EDIT_KIDS, "kids",
+                        $PUSR_EDIT_THEO, "Theo",
+                        $PUSR_EDIT_PARENTS, "parents",
+                        $PUSR_EDIT_OTHERS, "others",
+                        $PUSR_EDIT_NEW, "new");
+    put_form_checkboxes("Can get",
+                        $PUSR_GET_ORIG, "originals",
+                        $PUSR_GET_RAW, "raw files",
+                        $PUSR_JOOMLA_LINK, "Joomla! link",);
+    put_form_checkboxes("Can leave",
+                        $PUSR_COMMENT, "comments",
+                        $PUSR_QUICKTAGS, "quicktags");
+    put_form_checkboxes("Can maintain",
+                        $PUSR_MAINTAIN_SELF, "self",
+                        $PUSR_MAINTAIN_USERS, "users",
+			$PUSR_MAINTAIN_PERSONS, "persons",
+                        $PUSR_MAINTAIN_ALL, "all");
+    put_form_checkboxes("Wants to see",
+                        "T" . $PCOM_REGULAR, "regular",
+                        "T" . $PCOM_PRIVATE, "private",
+                        "T" . $PCOM_EXPERIMENTAL, "special",
+                        "T" . $PCOM_NICOLINE, "Nicoline",
+                        "T" . $PCOM_KIDS, "kids",
+                        "T" . $PCOM_THEO, "Theo",
+                        "T" . $PCOM_PARENTS, "parents",
+                        "T" . $PCOM_OTHERS, "others",
+                        "T" . $PCOM_NEW, "new");
+    put_form_text("Tags to see", "tags", 0);
+    put_form_dropdown("Minimum quality", "quality",
+                      "0", "no photo", "1", "very bad", "2", "default",
+                      "3", "OK", "4", "good", "5", "great");
+    put_form_dropdown("Maximum quality", "maxquality",
+                      "0", "no photo", "1", "very bad", "2", "default",
+                      "3", "OK", "4", "good", "5", "great");
+    put_form_dropdown("Display size", "imgsize",
+                      $PCOM_DEFAULT, "Default",
+                      $PCOM_SMALL, "Small (300x200)",
+                      $PCOM_NORMAL, "Normal (580x390)",
+                      $PCOM_GOOGLE, "Google-size (800x533)",
+                      $PCOM_LARGE, "Large (900x600)",
+                      $PCOM_SUPER, "Super (1200x800)");
+    put_form_dropdown("Edit size", "editsize",
+                      $PCOM_DEFAULT, "Default",
+                      $PCOM_THUMBNAIL, "Thumbnail (150x100)",
+                      $PCOM_SMALL, "Small (300x200)",
+                      $PCOM_NORMAL, "Normal (580x390)",
+                      $PCOM_LARGE, "Large (900x600)",
+                      $PCOM_SUPER, "Super (1200x800)");
+    put_form_buttons("save", "Save",
+                     "cancel", "Cancel");
+    put_form_end();
+    put_page_end();
+}

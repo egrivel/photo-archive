@@ -1,0 +1,20 @@
+# Configuration file for the photo archive system.
+
+# Directories:
+photosdir = <data directory>
+# The photos2 directory is needed for historical reasons, and should have
+# the same value as the photos directory
+photos2dir = <data directory>
+
+# HTML paths, where the static files (styles, images) are found on
+# the web server
+staticroot = /photos-static
+
+# Database settings
+dbname = <database name>
+dbuser = <database user>
+dbpasswd = <password for the database user>
+
+# Start year of the main display
+startyear = 1991
+adminmail = <email for archive administrator>

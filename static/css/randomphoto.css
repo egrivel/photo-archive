@@ -1,0 +1,52 @@
+body {
+  background-color: #000000;
+  color: #ffffff;
+  margin: 0;
+  font-family: Verdana, Arial, Helvetica, Geneva, sans-serif;
+  font-size: 120%;
+}
+
+div.xgrayback {
+  margin-top: 0px;
+  margin-bottom: 0px;
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+
+span.grayback {
+  padding-left: 5px;
+  padding-right: 5px;
+  background-image: url("../images/bg_gray_transparent.png");
+}
+
+div.toolbar {
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+div.title {
+  font-weight: bold;
+  margin-top: 5px;
+}
+
+div.header {
+  text-align: center;
+}
+
+div.footer {
+  text-align: center;
+  position: absolute;
+  bottom: 1em;
+  width: 100%;
+}
+
+/* relative sizes from plus two to minus five */
+.size2 { font-size: 120%; }
+.size1 { font-size: 110%; }
+.size-1 { font-size: 90%; }
+.size-2 { font-size: 80%; }
+.size-3 { font-size: 70%; }
+.size-4 { font-size: 60%; }
+.size-5 { font-size: 50%; }
+img { border: none; }

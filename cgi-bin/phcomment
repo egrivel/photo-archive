@@ -1,0 +1,82 @@
+#!/usr/bin/perl -w -I .
+
+use inc_all;
+
+put_init();
+put_restore_session;
+
+my $imageid = parg_get("imageid");
+
+my $button = parg_get_button();
+if ($button eq "save") {
+    save_comment($imageid);
+}
+disp_comment_page($imageid);
+
+sub disp_comment_page {
+    my $imageid = $_[0];
+
+    pht_set_pagetype("form");
+    pht_set_title("Leave a Comment");
+    pht_page_start(0);
+    pht_output "<h2>Leave a Comment</h2>\n";
+
+    my $comment = pdb_get_comment($imageid);
+    my %userlist = pusr_get_user_list();
+    pcom_log($PCOM_DEBUG, "Got comment '$comment'");
+    put_form_start("phcomment");
+    put_form_hidden("imageid");
+    put_form_thumbnail($imageid);
+    put_form_textarea("New Comment", "comment0");
+    my $count = 0;
+    while ($comment =~ s/<comment>(.*?)<\/comment>//s) {
+        my $comment_item = $1;
+        $count++;
+        my $name = "";
+        my $fullname = "";
+        my $time = "";
+        my $text = "";
+        if ($comment_item =~ /<name>(.*?)<\/name>/s) {
+            $name = $1;
+            if (defined($userlist{$name})) {
+                $fullname = $userlist{$name};
+            } else {
+                $fullname = $name;
+            }
+        }
+        if ($comment_item =~ /<time>(.*?)<\/time>/s) {
+            $time = localtime($1);
+        }
+        if ($comment_item =~ /<text>(.*?)<\/text>/s) {
+            $text = $1;
+        }
+        pht_output "<tr><td><font size='-1'><b>$fullname</b></font><br /><font size='-1'>$time</font>";
+        if ($name eq pusr_get_userid()) {
+            pht_output "<br />";
+            pht_output "<input type='submit' name='do.edit$count' value='Edit' /> ";
+            pht_output "<input type='submit' name='do.delete$count' value='Delete' />";
+        }
+        pht_output "</td><td>$text</td></tr>\n";
+    }
+    put_form_buttons("save", "Save", "cancel", "Cancel");
+    put_form_end();
+    pht_page_end();
+}
+
+sub save_comment {
+    my $imageid = $_[0];
+    my $new_comment = parg_get("comment0");
+    $new_comment =~ s/^\s+//s;
+    $new_comment =~ s/\s+$//s;
+    if ($new_comment ne "") {
+        my $user = pusr_get_userid();
+        my $now = time();
+        my $record = "<comment><name>$user</name><time>$now</time><text>$new_comment</text></comment>";
+        my $comment = pdb_get_comment($imageid);
+        $comment = $record.$comment;
+        pdb_open_image($imageid);
+        pdb_set_comment($comment);
+        pdb_close_image();
+    }
+    parg_set(comment0, "");
+}

@@ -1,0 +1,109 @@
+#!/usr/bin/perl -w -I .
+
+#
+# Purpose of this tool is to display a EXIF information about an image
+# from the photos database.
+#
+
+use inc_all;
+use Image::ExifTool 'ImageInfo';
+
+put_init();
+put_restore_session();
+
+my $imageid = parg_get("imageid");
+disp_info_page($imageid);
+
+sub disp_info_page {
+    my $imageid = $_[0];
+    my $show_image = 1;
+
+        my @exif_fields = (
+                           "Lens",
+                       "FocalLength35efl:Focal Length",
+                       "Aperture:Aperture",
+                       "ExposureCompensation:Exposure Compensation",
+                       "ExposureProgram:Exposure Program",
+                       "Flash",
+                       "FocusMode:Focus Mode",
+                       "ISO:ISO",
+                       "LightSource:Light Source",
+                       "MeteringMode:Metering Mode",
+                       "ShutterSpeed:Shutter Speed",
+                       "WhiteBalance:White Balance",
+                       "ShutterCount:Shutter Count",
+                       );
+
+    # If the image doesn't exist, give an error
+    if (!pdb_image_info($imageid)) {
+        $show_image = 0;
+    }
+
+    # If no category defined for the image, give an error
+    my $category = pdb_get_category($imageid);
+    if ($category eq "") {
+        $show_image = 0;
+    }
+
+    # If the current user isn't alowed to see the image, give an error
+    if (!pusr_allowed($PUSR_SEE . $category)) {
+        $show_image = 0;
+    }
+
+    pht_set_pagetype("info");
+    pht_page_start(0);
+
+    if ($show_image) {
+        pht_output "<div class='infoimg'><img src='phimg?thumbnail=$imageid' border='1' /></div>\n";
+
+        my $fname = pfs_get_raw_location($imageid);
+        if ($fname eq "") {
+            $fname = pfs_get_orig_location($imageid);
+        }
+        my $mode = parg_get("mode");
+        if ($fname ne "") {
+            my $dataref = ImageInfo($fname);
+            if ($mode eq "all") {
+                foreach (sort (keys %$dataref)) {
+                    next if ($_ eq "SerialNumber");
+                    if ($dataref->{$_} ne "") {
+                        my $label = $_;
+                        my $data = $dataref->{$_};
+                        $label =~ s/(.)([A-Z][a-z])/$1 $2/g;
+                        pht_output "<div class='infoline'>\n";
+                        pht_output "<div class='infolabel'>$label:</div>\n";
+                        pht_output "<div class='infodata'>$data</div>\n";
+                        pht_output "</div>\n";
+                    }
+                }
+                pht_output "<div class='infolink'>";
+                pht_output "<a href='?imageid=$imageid&mode=some'>limited info</a>";
+                pht_output "</div>\n";
+            } else {
+                for (my $i = 0; defined($exif_fields[$i]); $i++) {
+                    my $name = $exif_fields[$i];
+                    my $label = $name;
+                    if ($name =~ /^(.*?):(.*)$/) {
+                        $name = $1;
+                        $label = $2;
+                    }
+                    pht_output "<div class='infoline'>\n";
+                    pht_output "<div class='infolabel'>$label:</div>\n";
+                    pht_output "<div class='infodata'>$dataref->{$name}</div>\n";
+                    pht_output "</div>\n";
+                }
+                pht_output "<div class='infolink'>";
+                pht_output "<a href='?imageid=$imageid&mode=all'>all info</a>";
+                pht_output "</div>\n";
+            }
+        } else {
+            pht_output "<p>No information available.</p>\n";
+        }
+    } else {
+        pht_output "<p>No information available.</p>\n";
+    }
+
+    pht_output "<p><a href='.' onclick='window.close()'>Close this window</a></p>\n";
+
+    pht_page_end(0);
+}

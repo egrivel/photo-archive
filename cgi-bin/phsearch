@@ -1,0 +1,325 @@
+#!/usr/bin/perl -I .
+
+use inc_all;
+
+put_init();
+put_restore_session();
+
+my $title = parg_get("title");
+my $descr = parg_get("descr");
+my $persons = parg_get("persons");
+my $comment = parg_get("comment");
+my $year = parg_get("year");
+my $start_year = "";
+my $end_year = "";
+my $staticroot = get_static_root();
+
+if ($year =~ /^\s*(\d\d\d\d)\s*-\s*(\d\d\d\d)\s*$/) {
+    $start_year = $1;
+    $end_year = $2;
+    $year = "";
+    if (($start_year < 1800)
+        || ($start_year > 9999)
+        || ($end_year < 1800)
+        || ($end_year > 9999)
+        || ($start_year > $end_year)) {
+        $start_year = "";
+        $end_year = "";
+    }
+} elsif ($year =~ /^\s*(\d\d\d\d)\s*$/) {
+    $year = $1;
+    if (($year < 1800)
+        || ($year > 9999)) {
+        $year = "";
+    }
+} else {
+    $year = "";
+}
+
+my $minquality = parg_get("minquality");
+if (($minquality eq "") || ($minquality < $PCOM_QUAL_DUD) || ($minquality > $PCOM_QUAL_GREAT)) {
+    $minquality = "";
+} else {
+    $minquality = parg_get_numeric("minquality");
+}
+my $maxquality = parg_get("maxquality");
+if (($maxquality eq "") || ($maxquality < $PCOM_QUAL_DUD) || ($maxquality > $PCOM_QUAL_GREAT)) {
+    $maxquality = "";
+} else {
+    $maxquality = parg_get_numeric("maxquality");
+}
+my $limit = parg_get_numeric("limit");
+if ($limit eq "0") {
+    $limit = "";
+}
+my $textonly = parg_get("textonly");
+if ($textonly ne "") {
+    $textonly = 1;
+} else {
+    $textonly = 0;
+}
+
+pht_set_pagetype("imagelist");
+pht_page_start(0);
+pht_tabs_start();
+pht_prev_tab("");
+pht_next_tab("");
+pht_tab("Overview", "<a href='phbrowse'>");
+if (pusr_get_userid() eq $PUSR_GUEST_ACCOUNT) {
+    pht_tab("Search", "");
+    pht_tab("Login", "<a href='phlogin'>");
+} else {
+    pht_tab("Search", "<a href='phsearch'>");
+    pht_tab("Logout", "<a href='phlogin?do.logout=1'>");
+}
+pht_tab("Preferences", "<a href='phpref'>");
+pht_tabs_end();
+pht_output "<div class='listtitle'><strong>Search</strong></div>\n";
+$person_filter = "";
+$person_filter_exclude = "";
+$person_list = "";
+if ($persons ne "") {
+    my $ids = ppers_names_to_ids($persons);
+    if ($ids eq "") {
+        # No IDs found, possibly only punctuation in $person, so treat it
+        # as no persons entered
+        $persons = "";
+    } elsif ($ids =~ s/^ERROR: //) {
+        $ids =~ s/; /<\/li>\n<li>/g;
+        pht_output("<p>One or more names not recognized:</p><ul><li>$ids</li></ul>\n");
+        search_form();
+        pht_page_end();
+        exit(0);
+    } else {
+        $person_filter = ppers_get_filter($ids);
+        $person_filter_exclude = ppers_get_filter_exclude($ids);
+        $person_list = ppers_ids_to_names($ids);
+    }
+}
+
+if (($title ne "") || ($descr ne "") || ($persons ne "") || ($comment ne "") || ($year ne "") || ($start_year ne "") || ($minquality ne "") || ($maxquality ne "")) {
+    if ($limit eq "") {
+        $iter = pdb_iter_new("00101", 50);
+    } else {
+        $iter = pdb_iter_new("00101", $limit);
+    }
+    pdb_iter_filter_category($iter, put_types());
+    pdb_filter_category(put_types());
+    if ($persons ne "") {
+        if ($person_filter ne "()") {
+            pdb_iter_filter_persons($iter, $person_filter);
+            pdb_filter_persons($person_filter);
+        }
+    }
+    if ($minquality eq "") {
+        pdb_iter_filter_min_quality($iter, put_quality());
+        pdb_filter_min_quality(put_quality());
+    } else {
+        pdb_iter_filter_min_quality($iter, $minquality);
+        pdb_filter_min_quality($minquality);
+    }
+    if ($maxquality ne "") {
+        pdb_iter_filter_max_quality($iter, $maxquality);
+        pdb_filter_max_quality($maxquality);
+    }
+    if ($descr ne "") {
+        pdb_iter_filter_descr($iter, $descr);
+        pdb_filter_descr($descr);
+    }
+    if ($title ne "") {
+        pdb_iter_filter_title($iter, $title);
+        pdb_filter_title($title);
+    }
+    if ($comment ne "") {
+        pdb_iter_filter_comment($iter, $comment);
+        pdb_filter_comment($comment);
+    }
+    if ($year ne "") {
+        pdb_iter_filter_year($iter, $year);
+        pdb_filter_year($year);
+    }
+    if (($start_year ne "") && ($end_year ne "")) {
+        pdb_iter_filter_year_range($iter, $start_year, $end_year);
+        pdb_filter_year_range($start_year, $end_year);
+    }
+
+    my $count = pdb_image_count();
+
+    my $imageid = pdb_iter_next($iter);
+
+    my $search = "";
+    if ($title ne "") {
+        $search .= " and " if ($search ne "");
+        $search .= "title contains '$title'";
+    }
+    if ($descr ne "") {
+        $search .= " and " if ($search ne "");
+        $search .= "description contains '$descr'";
+    }
+    if ($persons ne "") {
+        $search .= " and " if ($search ne "");
+        $search .= "image includes $person_list";
+    }
+    if ($comment ne "") {
+        $search .= " and " if ($search ne "");
+        $search .= "comment contains '$comment'";
+    }
+    if ($year ne "") {
+        $search .= " and " if ($search ne "");
+        $search .= " year is $year";
+    }
+    if ($start_year ne "") {
+        $search .= " and " if ($search ne "");
+        $search .= " year between $start_year and $end_year";
+    }
+    if ($minquality ne "") {
+        $search .= " and " if ($search ne "");
+        $search .= " quality is at least $minquality";
+    }
+    if ($maxquality ne "") {
+        $search .= " and " if ($search ne "");
+        $search .= " quality is at most $maxquality";
+    }
+
+    my $out = "";
+    $prev = $imageid;
+
+    if ($textonly) {
+        $out .= "<pre>\n";
+    }
+    while (defined($imageid) && ($imageid ne "")) {
+        if ($person_filter_exclude =~ /'$imageid'/) {
+            # Skip all excluded photos
+            $imageid = pdb_iter_next($iter);
+            $count--;
+            next;
+        }
+        if ($textonly) {
+            $out .= "$imageid\n";
+        } else {
+            my $orientation = pdb_get_orientation($imageid);
+            if ($orientation eq $PCOM_FREEFORM) {
+                $orientation = pfs_get_orientation($imageid);
+            } elsif ($orientation eq $PCOM_FREEFORM_P) {
+                $orientation = $PCOM_PORTRAIT;
+            } elsif ($orientation eq $PCOM_FREEFORM_L) {
+                $orientation = $PCOM_LANDSCAPE;
+            }
+            my $category = pdb_get_category($imageid);
+            my $class = "imagelist image$orientation";
+            my $title = pdb_get_title($imageid);
+            my $descr = pht_title_escape(pdb_get_description($imageid));
+            if ($category eq $PCOM_PRIVATE) {
+                $class = "imagelist private$orientation";
+            } elsif ($category eq $PCOM_EXPERIMENTAL) {
+                $class = "imagelist experimental$orientation";
+            } elsif ($category eq $PCOM_OTHERS) {
+                $class = "imagelist others$orientation";
+            }
+            $out .= "<div class='$class'>";
+            if (put_disp_quality()) {
+                my $qual = pdb_get_quality($imageid);
+                my $hoffset = 104 - int((13 * $qual) / 2);
+                my $voffset = 175;
+                my $break = "";
+                if ($orientation eq $PCOM_PORTRAIT) {
+                    $hoffset = 173;
+                    $voffset = 104 - int((13 * $qual) / 2);
+                    $break = "<br />";
+                }
+                $out .= "<div style='position: absolute; margin-top: ${voffset}px; margin-left: ${hoffset}px;'>";
+                for (my $i = 0; $i < $qual; $i++) {
+                    $out .= "<img src='$images/images/green-dot.png' class='qualdot' alt='*' />$break";
+                }
+                $out .= "</div>";
+            }
+            $out .= "<a href='phdisp?imageid=$imageid' class='$class' title='$descr'>";
+            $out .= "<img src='phimg?thumbnail=$imageid' class='$class' ";
+            if ($orientation eq $PCOM_LANDSCAPE) {
+                $out .= "width='150' height='100' ";
+            } else {
+                $out .= "width='100' height='150' ";
+            }
+            $out .= "alt='$descr' /> ";
+            $imageid = pcom_format_imageid($imageid);
+            $out .= "</a>\n$imageid<br />$title</div>\n";
+        }
+        $imageid = pdb_iter_next($iter);
+        $imagecount++;
+        if ($limit ne "") {
+            if ($imagecount >= $limit) {
+                last;
+            }
+        }
+        if ($imageid eq $prev) {
+            # if we are starting to repeat, break off... don't know why
+            # the repetition happens, but this is a quick fix
+            last;
+        }
+        $prev = $imageid;
+    }
+    if ($textonly) {
+        $out .= "</pre>\n";
+    } else {
+        $out .= "<div class='imglistbreak' />";
+    }
+    if (!$imagecount) {
+        $out .= "<div class='nophotos'>(no photos found)</div>\n";
+    } else {
+        $out .= "<div class='nophotos'>Found $imagecount photos</div>\n";
+    }
+
+    pht_output "<div class='listdescr'>Search: $search gives $count results</div>\n";
+    pht_output $out;
+
+    if (($descr ne "") || ($title ne "")) {
+        # If a description or title given, search sets as well
+        $iter = pdb_iter_set_new();
+        if ($descr ne "") {
+            pdb_iter_filter_descr($iter, $descr);
+            pdb_filter_descr($descr);
+        }
+        if ($title ne "") {
+            pdb_iter_filter_title($iter, $title);
+            pdb_filter_title($title);
+        }
+        my $setid = pdb_iter_next($iter);
+        my $setcount = 0;
+        while (defined($setid) && ($setid ne "")) {
+            if ($setcount == 0) {
+                pht_output "<h2>Matching sets:</h2>\n";
+            }
+            my $settitle = pdb_get_settitle($setid);
+            my $setdescr = pdb_get_setdescription($setid);
+            if ($settitle eq "") {
+                $settitle = "(untitled)";
+            }
+            pht_output "<p>";
+            pht_output "<a href='phbrowse?setid=$setid'>$settitle</a> [$setid]";
+            if ($setdescr ne "") {
+                pht_output "<br/>$setdescr";
+            }
+            pht_output "</p>\n";
+            $setid = pdb_iter_next($iter);
+            $setcount++;
+        }
+    }
+} else {
+    search_form();
+}
+pht_page_end();
+
+sub search_form {
+    put_form_start("phsearch");
+    put_form_text("Title" . put_help_link(5), "title", 0);
+    put_form_text("Description" . put_help_link(6), "descr", 0);
+    put_form_text("Persons" . put_help_link(7), "persons", 0);
+    put_form_text("Comment" . put_help_link(8), "comment", 0);
+    put_form_text("Year" . put_help_link(9), "year", 0);
+    put_form_text("Minimum quality" . put_help_link(10), "minquality", 0);
+    put_form_text("Maximum quality" . put_help_link(10), "maxquality", 0);
+    put_form_text("Limit" . put_help_link(11), "limit", 0);
+    put_form_checkboxes("", "textonly", "Display text only" . put_help_link(12));
+    put_form_buttons("Search", "search");
+    put_form_end();
+}

@@ -1,0 +1,263 @@
+#!/usr/bin/perl -w -I .
+
+#
+# Purpose of this tool is to display a standard image page for an image
+# from the photos database.
+#
+
+use inc_all;
+
+put_init();
+put_restore_session();
+
+my $return = pses_get("return");
+if ($return eq "") {
+    $return = "phmenu";
+}
+
+my $persid = parg_get("persid");
+my $button = parg_get_button();
+my $delete = parg_get("delete");
+if ($delete ne "") {
+    $button = "delete";
+    $persid = $delete;
+}
+if ($button eq "save") {
+    if ($persid ne "") {
+        if (validate_person_data($persid)) {
+            save_person_data($persid);
+	    # done editing; display the image we just edited
+	    pht_redirect($return);
+	} else {
+	    disp_page($persid);
+	}
+    } else {
+        disp_error("No data to save");
+    }
+} elsif ($button eq "cancel") {
+    # done editing; display the image we just edited
+    pht_redirect($return);
+} elsif ($button eq "delete") {
+    delete_person($persid);
+    pht_redirect($return);
+} elsif (defined($persid) && ($persid ne "")) {
+    disp_page($persid);
+} else {
+# --- note: getting the count is no longer slow, so always display all
+#    $do_count = parg_get("do_count");
+#    if (defined($do_count) && ($do_count > 0)) {
+    disp_all(1);
+#    } else {
+#        disp_all(0);
+#    }
+}
+
+sub validate_person_data {
+    return 1;
+}
+
+sub save_person_data {
+    my $persid = $_[0];
+    if (ppers_edit_open($persid)) {
+	ppers_edit_name(parg_get("name"));
+	ppers_edit_descr(parg_get("descr"));
+	ppers_edit_close();
+    }
+}
+
+sub init_top_ten {
+    my $i;
+    for ($i = 0; $i < 11; $i++) {
+        $top_count[$i] = 0;
+        $top_name[$i] = "";
+    }
+}
+
+sub add_top_ten {
+    my $name = $_[0];
+    my $count = $_[1];
+
+    if ($count < $top_count[10]) {
+        return;
+    }
+    my $i;
+    for ($i = 10; $i > 0; $i--) {
+        if ($count > $top_count[$i - 1]) {
+            $top_count[$i] = $top_count[$i - 1];
+            $top_name[$i] = $top_name[$i - 1];
+        } else {
+            last;
+        }
+    }
+    $top_count[$i] = $count;
+    $top_name[$i] = $name;
+}
+
+#
+# This returns a hash map (keyed by ID) with a lot of information, all
+# separated by vertical bars:
+#  - person name
+#  - person description
+#  - number of photos of this person in the archive
+#
+sub disp_all {
+    my $do_count = $_[0];
+    my %persons = ppers_get_person_list($do_count);
+    my @sort = ();
+    my $count = 0;
+    my $key;
+    my %sorted = ();
+    foreach $key (sort (keys %persons)) {
+        $sorted{$persons{$key}."|".$key} = $key;
+    }
+
+    init_top_ten();
+
+    pses_set("return", "phperson?do_count=$do_count");
+    pht_page_start(0);
+
+    pht_tabs_start();
+    pht_prev_tab("");
+    pht_next_tab("");
+    pht_tab("Overview", "<a href='phbrowse'>");
+    pht_tab("Edit", "");
+    if (pusr_get_userid() eq $PUSR_GUEST_ACCOUNT) {
+        pht_tab("Search", "");
+        pht_tab("Login", "<a href='phlogin'>");
+    } else {
+        pht_tab("Search", "<a href='phsearch'>");
+        pht_tab("Logout", "<a href='phlogin?do.logout=1'>");
+    }
+    pht_tab("Preferences", "<a href='phpref'>");
+    pht_tab("About", "<a href='phabout'>");
+    pht_tabs_end();
+
+    pht_output "<div class='yeartitle'>Person / Tag List</div>\n";
+
+    my $do_new = parg_get("new");
+    if (defined($do_new) && ($do_new ne "")) {
+        $do_new = 1;
+        pses_set("return", "phperson?new=1");
+    } else {
+        $do_new = 0;
+    }
+    print "<p>This is a list of all the people and other tags who are ";
+    print "associated with photos in this archive. Disclaimer: the ";
+    print "association of people with photos probably contains a number ";
+    print "of mistakes.</p>\n";
+
+#    if ($do_count) {
+#        print "<p>Use <a  href='phperson'>this link</a> to re-display the\n";
+#        print "quick list without the number of photos indicated for each\n";
+#        print "person.</p>\n";
+#    } else {
+#        print "<p>Use <a href='phperson?do_count=1'>this link</a> to show\n";
+#        print "the list with the number of photos the archive has for each\n";
+#        print "person. It will take a while to compile the list, so please\n";
+#        print "be patient.</p>\n";
+#    }
+
+    print "<ul>\n";
+
+    my $nr_people = 0;
+    my $nr_references = 0;
+
+    foreach $key (sort (keys %sorted)) {
+        my $name = $key;
+        my $descr = "";
+        my $persid = "";
+        my $count = 0;
+        if ($name =~ s/\|(.*)\|(.*)\|(.*?)$//) {
+            $descr = $1;
+            $count = $2;
+            $persid = $3;
+        } else {
+            #$persid = $sorted{$key};
+            #$descr = ppers_get_descr($persid);
+            #$count = ppers_get_count($persid);
+        }
+        my $plural = "";
+        if ($count != 1) {
+            $plural = "s";
+        }
+
+        add_top_ten($name, $count);
+        if (!$do_new || ($descr eq "")) {
+            $nr_people++;
+            $nr_references += $count;
+
+            print "<li><strong>$name</strong>:\n";
+            if (pusr_allowed($PUSR_MAINTAIN_PERSONS)) {
+                print "<a href='phperson?persid=$persid'>Edit</a>\n";
+                if ($count < 1) {
+                    print "<a href='phperson?delete=$persid'>Delete</a>";
+                }
+            }
+            if ($do_count) {
+                if ($count > 0) {
+                    print "<a href='phbrowse?persid=$persid'>Show $count Photo$plural</a>";
+                } elsif (!pusr_allowed($PUSR_MAINTAIN_PERSONS)) {
+                    print "(no photo in the archive)";
+                }
+            } else {
+                print "<a href='phbrowse?persid=$persid'>Show Photos</a>";
+            }
+            print "<br/>$descr";
+            print "</li>\n";
+        }
+    }
+    print "</ul>\n";
+
+    print "<p>There are a total of ";
+    if ($do_count) {
+        print "$nr_references links to ";
+    }
+    print "$nr_people people in the archive</p>\n";
+
+    if ($do_count) {
+        print "<p>Top ten people in photos: ";
+        for ($i = 0; $i < 9; $i++) {
+            print $top_name[$i] . " (" . $top_count[$i] . " photos), ";
+        }
+        print $top_name[9] . " (" . $top_count[9] . " photos).";
+        print "</p>\n";
+    }
+    put_page_end();
+
+    return;
+}
+
+sub disp_error {
+    my $msg = $_[0];
+
+    pht_set_pagetype("form error");
+    put_page_start("Preferences");
+    pht_error_message($msg);
+    pht_output "<p>" . put_login_link() . "</p>\n";
+    put_page_end();
+}
+
+sub disp_page {
+    my $persid = $_[0];
+
+    parg_set("name", ppers_get_name($persid));
+    parg_set("descr", ppers_get_descr($persid));
+
+    pht_set_pagetype("form");
+    put_page_start("Tag $persid");
+    put_form_start("phperson");
+    put_form_protected("TagID", "persid");
+    put_form_text("Name", "name", 1);
+    put_form_textlong("Description", "descr", 0);
+
+    put_form_buttons("save", "Save",
+                     "cancel", "Cancel");
+    put_form_end();
+
+    pht_page_end();
+}
+
+sub delete_person {
+    my $persid = $_[0];
+    ppers_delete($persid);
+}

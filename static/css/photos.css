@@ -1,0 +1,773 @@
+html {
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-family: "Lucida Grance", "Lucida Sans Unicode", "Lucida Sans", Verdana, Tahoma, sans-serif;
+  font-size: 10.5pt;
+  line-height: 14pt;
+  margin-left: 1em;
+  margin-right: 1em;
+  padding: 0;
+}
+
+/* body colors for different types of pages */
+body.form {
+  background-color: #ddeeff;
+  color: #000000;
+}
+
+body.photo, body.info, body.yearlist, body.setlist, body.imagelist, body.about {
+  background-color: #feffe7;
+  color: #000000;
+}
+
+body.about {
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+body.about p, body.about ul, body.about h1 {
+  padding-right: 30%;
+  text-align: justify;
+}
+
+body.about div.img {
+  height: 0;
+  margin: 0;
+  overflow: visible;
+}
+body.about div.img, body.about h2 {
+  clear: both;
+}
+body.about div.img+p {
+  margin-top: 0;
+}
+body.about img.right {
+  width: 28%;
+  float: right;
+}
+body.about p, body.about h2 {
+  padding-left: 5px;
+}
+
+body.help {
+  background-color: #ddffdd;
+  color: #000000;
+  font-size: 90%;
+}
+
+body.albumlist {
+  background-color: #330000;
+  color: #ffffff;
+}
+
+body.albumlist a {
+  color: #ddeeff;
+}
+
+
+body.info {
+  margin-left: 0.3em;
+  margin-right: 0.3em;
+}
+
+h1 {
+  text-align: center;
+}
+
+.footer {
+  text-align: center;
+  font-size: 80%;
+}
+
+tr {
+  vertical-align: top;
+}
+
+th.label {
+  text-align: right;
+}
+
+th.label span.helptext {
+  font-weight: normal;
+}
+
+.required:before {
+  color: #ff0000;
+  content: "*";
+}
+
+div.banner {
+  text-align: right;
+  font-size: 90%;
+}
+
+.edit {
+  font-family: Courier New, Courier, fixed;
+  font-size: 90%;
+}
+
+table.form {
+  border-spacing: 0;
+  border-collapse: collapse;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.form td, .form th  {
+  border: solid 1px black;
+  padding: 2px;
+}
+
+.form td .error {
+  color: #ff0000;
+  font-weight: bold;
+  font-size: 90%;
+}
+
+.noborder td, .noborder th {
+  border: none;
+}
+
+/* thumbnails on a set edit page */
+td.thumbnaillandscape {
+  padding-top: 25px;
+  padding-bottom: 25px;
+}
+
+td.thumbnailportrait {
+  padding-left: 25px;
+  padding-right: 25px;
+}
+
+img {
+  border: solid 1px black;
+}
+
+img.help {
+  border: none;
+  width: 17px;
+  height: 17px;
+}
+
+img.largelandscape {
+  width: 900px;
+  height: 600px;
+}
+
+img.largeportrait {
+  width: 600px;
+  height: 900px;
+}
+
+img.normallandscape {
+  width: 580px;
+  height: 390px;
+}
+
+img.normalportrait {
+  width: 390px;
+  height: 580px;
+}
+
+img.smalllandscape {
+  width: 300px;
+  height: 200px;
+}
+
+img.smallportrait {
+  width: 200px;
+  height: 300px;
+}
+
+img.thumbnaillandscape {
+  width: 150px;
+  height: 100px;
+}
+
+img.thumbnailportrait {
+  width: 100px;
+  height: 150px;
+}
+
+img.mov {
+  width: 960px;
+  height: 540px;
+}
+
+img.qualdot {
+  border: none;
+  width: 9px;
+  height: 9px;
+  margin: 2px;
+}
+
+
+div#title {
+  text-align: center;
+  font-size: 130%;
+  font-weight: bold;
+  margin-top: 0.5em;
+}
+div.datetime {
+  text-align: center;
+}
+
+div.img, div.description {
+  text-align: center;
+  padding-top: 0.2em;
+}
+
+div.persons {
+  font-size: 80%;
+  text-align: right;
+  color: #660000;
+}
+
+/* ------------------------------------------------------------ */
+/* Tab display.                                                 */
+/* ------------------------------------------------------------ */
+
+div.tabs {
+  margin: 0;
+  padding: 0;
+  text-align: left;
+  border-bottom: solid 1px black;
+  /* font-size: 80%; */
+/*  x-margin-bottom: 0.3em; */
+  padding-bottom: 2px;
+}
+
+span.tab {
+  margin: 0;
+  padding: 0;
+  margin-left: 1em;
+  margin-top: 0;
+  padding-left: 0.4em;
+  padding-right: 0.4em;
+  padding-top: 0;
+  padding-bottom: 2px;
+  border-left: solid 1px black;
+  border-right: solid 1px black;
+  border-top: solid 1px black;
+  color: #aaaaaa;
+}
+
+span.tab a {
+  text-decoration: none;
+  color: #0000cc;
+}
+
+span#prevlink {
+  float: left;
+  margin-left: 0.5em;
+/*  padding-top: -1px; */
+}
+
+span#nextlink {
+  float: right;
+  margin-right: 0.5em;
+}
+
+/* ---------------------------------- */
+/* Info display (EXIF display window) */
+/* ---------------------------------- */
+
+div.infoimg {
+  text-align: center;
+  margin-bottom: 0.3em;
+}
+
+div.infolabel {
+  clear: both;
+  float: left;
+  font-size: 80%;
+  width: 40%;
+  margin-top: 0.1em;
+  margin-bottom: 0.1em;
+  border-top: 1px solid #bbbbbb;
+}
+div.infodata {
+  float: left;
+  width: 60%;
+  font-size: 80%;
+  font-family: "Courier New", Courier, monospace;
+  margin-top: 0.1em;
+  margin-bottom: 0.1em;
+  border-top: 1px solid #bbbbbb;
+}
+div.infoline {
+}
+
+/* Hides from IE-mac \*/
+* html .infoline {height: 1%;}
+/* End hide from IE-mac */
+
+div.infolink {
+  border-top: 1px solid #bbbbbb;
+  border-bottom: 1px solid #bbbbbb;
+  margin-top: 0.1em;
+  margin-bottom: 0.1em;
+  clear: both;
+  font-size: 90%;
+  text-align: center;
+}
+
+/* -------------------------------- */
+/* Support for the image list pages */
+/* -------------------------------- */
+
+div.yeartitle {
+  font-size: 110%;
+  font-weight: bold;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  text-align: center;
+}
+
+table.yearlist {
+  border: 1px solid black;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+table.yearlist tr th {
+  border-bottom: solid 1px black;
+  /* font-family: Verdana, Arial, Helvetica, Geneva, sans-serif;  */
+  /* font-size: 90%; */
+  color: #008800;
+  text-align: center;
+  font-weight: bold;
+  padding-top: 0.2em;
+  padding-bottom: 0.2em;
+}
+
+table.yearlist tr td {
+  /* font-family: Verdana, Arial, Helvetica, Geneva, sans-serif; */
+  /* font-size: 90%; */
+  text-align: center;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+  padding-top: 0.2em;
+  padding-bottom: 0.2em;
+}
+
+table.yearlist tr td a {
+  font-size: 90%;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+div.settitle {
+  font-size: 110%;
+  font-weight: bold;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+div.setlist {
+  /* font-family: Verdana, Arial, Helvetica, Geneva, sans-serif; */
+  /* font-size: 80%; */
+  font-size: 90%;
+  margin-left: 2em;
+  text-indent: -2em;
+  margin-top: 0.2em;
+  margin-bottom: 0.6em;
+}
+
+div.listtitle, div.listdescr {
+  /* font-family: Verdana, Arial, Helvetica, Geneva, sans-serif; */
+  /* font-size: 90%; */
+  text-align: center;
+}
+
+div.listtitle {
+  padding-top: 0.5em;
+}
+
+div.imagelist {
+  /* font-family: Verdana, Arial, Helvetica, Geneva, sans-serif; */
+  font-size: 8pt;
+  text-align: center;
+  width: 206px;
+  height: 260px;
+  float: left;
+  margin: 7px;
+}
+
+div.compactlandscape, div.compactportrait {
+  width: 150px;
+  height: 150px;
+  text-align: center;
+  float: left;
+  background-color: #333333;
+  border: solid 1px #000000;
+}
+
+.grayback {
+  background-image: url("../images/bg_gray_transparent.png");
+}
+
+img.imagelandscape,
+img.privatelandscape,
+img.kidslandscape,
+img.nicolinelandscape,
+img.experimentallandscape,
+img.otherslandscape {
+  border: none;
+  width: 150px;
+  height: 100px;
+  display: block;
+  margin-top: 25px;
+}
+
+div.imagelist img.imagelandscape,
+div.imagelist img.privatelandscape,
+div.imagelist img.kidslandscape,
+div.imagelist img.nicolinelandscape,
+div.imagelist img.experimentallandscape,
+div.imagelist img.otherslandscape {
+  padding-left: 28px;
+  padding-right: 28px;
+  margin-top: 53px;
+  margin-bottom: 57px;
+}
+
+img.imageportrait,
+img.privateportrait,
+img.kidsportrait,
+img.nicolineportrait,
+img.experimentalportrait,
+img.othersportrait {
+  border: none;
+  width: 100px;
+  height: 150px;
+  display: block;
+  padding-left: 26px;
+}
+
+div.imagelist img.imageportrait,
+div.imagelist img.privateportrait,
+div.imagelist img.kidsportrait,
+div.imagelist img.nicolineportrait,
+div.imagelist img.experimentalportrait,
+div.imagelist img.othersportrait {
+  padding-left: 53px;
+  padding-right: 53px;
+  margin-top: 28px;
+  margin-bottom: 32px;
+}
+
+div.imageportrait {
+  background-image: url("../images/photo_portrait.png");
+  background-repeat: no-repeat;
+}
+
+div.imagelandscape {
+  background-image: url("../images/photo_slide.png");
+  background-repeat: no-repeat;
+}
+
+div.privatelandscape {
+  background-image: url("../images/photo_private.png");
+  background-repeat: no-repeat;
+}
+
+div.privateportrait {
+  background-image: url("../images/photo_private_portrait.png");
+  background-repeat: no-repeat;
+}
+
+div.kidslandscape {
+  background-image: url("../images/photo_kids.png");
+  background-repeat: no-repeat;
+}
+
+div.kidsportrait {
+  background-image: url("../images/photo_kids_portrait.png");
+  background-repeat: no-repeat;
+}
+
+div.nicolinelandscape {
+  background-image: url("../images/photo_nicoline.png");
+  background-repeat: no-repeat;
+}
+
+div.nicolineportrait {
+  background-image: url("../images/photo_nicoline_portrait.png");
+  background-repeat: no-repeat;
+}
+
+div.experimentallandscape {
+  background-image: url("../images/photo_experimental.png");
+  background-repeat: no-repeat;
+}
+
+div.experimentalportrait {
+  background-image: url("../images/photo_experimental_portrait.png");
+  background-repeat: no-repeat;
+}
+
+div.otherslandscape {
+  background-image: url("../images/photo_others.png");
+  background-repeat: no-repeat;
+}
+
+div.othersportrait {
+  background-image: url("../images/photo_others_portrait.png");
+  background-repeat: no-repeat;
+}
+
+div.imglistbreak {
+  clear: both;
+}
+
+div.nophotos {
+  text-align: center;
+  font-size: 70%;
+  padding-top: 100px;
+  padding-bottom: 100px;
+}
+
+/* ------------------------------------------------------------ */
+/* Image Pages                                                  */
+/* ------------------------------------------------------------ */
+
+div.large {
+  width: 902px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+div.normal, div.small, div.thumbnail {
+  width: 582px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+div.movie {
+  width: 962px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ------------------------------------------------------------ */
+/* Help Pages                                                   */
+/* ------------------------------------------------------------ */
+
+body.help p {
+  padding: 0;
+  margin: 0;
+  text-align: justify;
+}
+
+body.help ul {
+  padding-left: 1em;
+  text-align: justify;
+  margin: 0;
+  padding-top: 0;
+}
+
+/* ------------------------------------------------------------ */
+/* Photo Album, which prints on landscape paper                 */
+/* ------------------------------------------------------------ */
+
+div.album {
+  float: left;
+  width: 4.75in;
+  height: 3.7in;
+  overflow: hidden;
+  text-align: center;
+  font-size: 80%;
+}
+
+div.first, div.third {
+  margin-right: 0.3in;
+}
+
+div.second, div.fourth {
+}
+
+div.fourth + div.first {
+  page-break-before: always;
+}
+
+div.album img {
+  width: 4.725in;
+  height: 3.15in;
+}
+
+div.album img.portrait {
+  width: 2.1in;
+  height: 3.15in;
+  display: block;
+  margin-left: 1.312in;
+}
+
+/* ------------------------------------------------------------ */
+/* New photo album                                              */
+/* ------------------------------------------------------------ */
+
+div#albumbody {
+  width: 900px;
+  min-height: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: auto;
+  margin-bottom: auto;
+  vertical-align: middle;
+}
+div#albumbody-normal {
+  width: 880px;
+  height: 600px;
+  margin: 0;
+  padding: 0;
+  vertical-align: middle;
+  overflow: hidden;
+}
+div#albumbody-small {
+  width: 720px;
+  height: 524px;
+  position: absolute;
+  left: 0;
+  top: 30px;
+}
+
+body.albumedit div#albumbody {
+  border: 5px dashed #dddddd;
+  width: 910px;  /* adjust width for the border size */
+  min-height: 610px;
+  margin-top: 0.75em;
+  margin-bottom: 0.75em;
+}
+
+div.prevnext {
+  text-align: center;
+}
+
+div.next {
+  float: right;
+}
+div.prev {
+  float: left;
+}
+
+.photo {
+  background-color: #cccccc;
+}
+
+.album-large {
+  font-size: 135%;
+}
+
+.album-normal {
+  font-size: 100%;
+}
+
+.album-small {
+  font-size: 75%;
+}
+
+div#albumbody div.thumbnail {
+  width: 150px;
+  height: 100px;
+  background-color: #cccccc;
+}
+
+body.album-small div#albumbody div.small {
+  width: 210px;
+  height: 140px;
+}
+
+div#albumbody div.normal {
+  width: 580px;
+  height: 390px;
+  background-color: #cccccc;
+}
+
+body.album-small div#albumbody div.normal {
+  width: 406px;
+  height: 273px;
+  background-color: #cccccc;
+}
+
+div#albumbody div.large {
+  width: 900px;
+  height: 600px;
+  background-color: #cccccc;
+}
+
+body.album-small div#albumbody div.large {
+  width: 630px;
+  height: 210px;
+  background-color: #cccccc;
+}
+
+div#albumbody div.custom {
+  background-color: #cccccc;
+}
+body.album-small div.footer {
+  position: absolute;
+  width: 720px;
+  left: 0;
+  bottom: 1em;
+}
+
+/*
+div#albumbody h1, div#albumbody-small h1, div#albumbody-normal h1, div#albumbody-large h1 {
+  margin-top: 1em;
+}
+*/
+
+.systemmessage {
+  border: solid 1px #cc0000;
+  color: #cc0000;
+  background-color: #fdf4d2;
+  border: solid 1px #e68303;
+  border-radius: 0.5em 0.5em 0.5em 0.5em;
+  padding: 0.5em;
+  margin: 5px;
+  margin-top: 15px;
+  background-image: url("../images/icon-important-25x25.gif");
+  background-repeat:  no-repeat; 
+  background-position: 15px 10px;
+}
+.systemmessage h2 {
+  font-size: 100%;
+  font-weight: normal;
+  padding: 0;
+  margin: 0;
+  min-height: 30px;
+  padding-left: 40px;
+}
+
+div.quicktags {
+    clear: both;
+    margin-top: 1em;
+}
+
+div.quicktags span {
+    border: solid 1px #000;
+    border-radius: 0.3em;
+    padding: 0.2em 0.5em;
+    background: linear-gradient(#eee, #ddd);
+    margin-right: 0.5em;
+    font-weight: bold;
+}
+
+div.quicktags span a {
+    text-decoration: none;
+    color: inherit;
+}
+
+div.quicktags span.quicktag-on {
+    background: linear-gradient(#bef, #bdf);
+}
+
+div.quicktags span.quicktag-on a {
+    color: #03f;
+}
