@@ -7,31 +7,7 @@
 
 use inc_all;
 
-my %googleMapsKey =
-  ("adams"=>"ABQIAAAAO7jxjJs8h3crEh_c-AgSmRRtw2SwtXtXtjJZI1cxV80WOigW-BTt3iH4yv_YzDnObMwZd91dmbGmww",
-  "71.179.0.96:31416", "ABQIAAAAO7jxjJs8h3crEh_c-AgSmRQDHkXvG8Z-2qFrKf63OWhxzMM7dRTgvGnP_pVX5akUehYqxxDazfoPyQ",
-  "96.244.82.188:31416", "ABQIAAAAO7jxjJs8h3crEh_c-AgSmRQKTR6dM-B6GlvY6PpRa6ULk5ndahRZVKfVsepQeyCMRVKj1LacJx5m4Q",
-  "96.244.50.157:31416", "ABQIAAAAO7jxjJs8h3crEh_c-AgSmRQ1WcAJQTUD81eWlrC1uGgr0-HtgxTCwvx1VoFNpTt0zU9PfOB3QG8qIw",
-   "98.117.46.69:31416", "ABQIAAAAO7jxjJs8h3crEh_c-AgSmRQsm1pGBp-JEPYe5ml9WdW96VQOmBTPKQBmj_E1GM5bDJBXACGy8PrjLg",
-   "96.244.82.86:31416", "ABQIAAAAO7jxjJs8h3crEh_c-AgSmRSykWWAWlLXFd8nBKS4IXZTK0bixRTt21OfmOt_fVyL7tAgD4szag73qw",
-   "173.64.82.238:31416", "ABQIAAAAO7jxjJs8h3crEh_c-AgSmRTMsn_aYTGtXouncH8GXCzMO_T1TxRHABYcJ9teW7GmomwDCu_H6leTvw",
-   "96.244.223.108:31416", "ABQIAAAAO7jxjJs8h3crEh_c-AgSmRSuYYnj_V6-oZdI4z_eLi00RS8bexQilxospmeF--HMoJAIBmnur5FUdQ",
-   "72.81.128.54:31416", "ABQIAAAAO7jxjJs8h3crEh_c-AgSmRTr1NPKHqI5YavmVyHgD5IWA8HKDBQmRwB_W9Y_mYkPEqp1ubTO_Sj3pQ",
-   "96.244.223.18:31416", "ABQIAAAAO7jxjJs8h3crEh_c-AgSmRRgoPCC5g2homrQ870inohXBaY8wBR51zO-Tew_2ouV34_xIuqfJ5piAQ",
-   "72.81.128.84:31416", "ABQIAAAAO7jxjJs8h3crEh_c-AgSmRTeTy2vurZ91dW993z8HrbEqPXgfxS5j7wxXrWWWdM-qv9SAdPhQZgEIw",
-   "108.3.147.201:31416", "AIzaSyAW0Ngz6wYn20erD-aS_LqJuuczayizW7A",
-   "108.3.147.131:31416", "AIzaSyCg4SViY6iqpbFKF1IMhjW-2NtAQ0LkAE4",
-  );
-my $host = $ENV{"HTTP_HOST"};
-$host = "adams" if (!defined($host));
-my $key = $googleMapsKey{$host};
-if (!defined($key)) {
-    # This default should now work for all IP addresses...
-    $key = "AIzaSyCg4SViY6iqpbFKF1IMhjW-2NtAQ0LkAE4";
-    #disp_error("No Google Maps key for $host; please contact administrator");
-    #exit(0);
-}
-
+$key = "";
 put_init();
 put_restore_session();
 
@@ -203,11 +179,6 @@ sub disp_set_map_old {
         disp_error("No image found for set $setstart (old)");
     } else {
         disp_map($markers, $images);
-#        my $link = "http://maps.google.com/staticmap?";
-#        $link .= "markers=$markers";
-#        $link .= "&size=400x400&key=$key";
-#        print "content-type: text/html\n\n";
-#        print "<img src='$link' />\n";
     }
 }
 

@@ -40,5 +40,18 @@ $ mysql --user=root -p mysql
 
 The `.ini` file contains the configuration for the database. This file should
 be placed in a `private` directory. The distribution contains a sample
-file called `photos.ini.sample`; rename this to `photos.ini` and replace all
+file called `photos.ini.sample`; copy this to `photos.ini` and replace all
 the names in angular brackets with the correct values:
+
+## Create the photo archive data directory
+
+Create the directory that was named as `photosdir` in the `photos.ini` file,
+and make sure that directory is writable for everyone (the photo archive
+will create sub-folders and files in there, so it must have write permission).
+
+Eventually you may want to make sure that both you, as the adminstrator, and
+the web server, have write access, but noone else. However, that is for later.
+
+## Make the links in your web server directories
+
+Link the 
