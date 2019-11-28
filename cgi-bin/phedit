@@ -172,7 +172,7 @@ sub prefill_image_data {
     }
     parg_set("year", $year);
     parg_set("description", pdb_get_description($imageid));
-    parg_set("comment", pdb_get_comment($imageid));
+    # parg_set("comment", pdb_get_comment($imageid));
     parg_set("orientation", pdb_get_orientation($imageid));
     parg_set("location", pdb_get_location($imageid));
     parg_set("category", pdb_get_category($imageid));
@@ -206,7 +206,7 @@ sub prefill_set_data {
     parg_set("datetime", pdb_get_setdatetime($setid));
     parg_set("title", pdb_get_settitle($setid));
     parg_set("description", pdb_get_setdescription($setid));
-    parg_set("comment", pdb_get_setcomment($setid));
+    # parg_set("comment", pdb_get_setcomment($setid));
     parg_set("category", pdb_get_setcategory($setid));
     parg_set("year", pdb_get_setyear($setid));
     parg_set("copyright", pdb_get_setcopyright($setid));
@@ -268,7 +268,7 @@ sub save_image_data {
     pdb_set_datetime(parg_get("datetime"));
     pdb_set_year(parg_get("year"));
     pdb_set_description(parg_get("description"));
-    pdb_set_comment(parg_get("comment"));
+    # pdb_set_comment(parg_get("comment"));
     pdb_set_orientation(parg_get("orientation"));
     pdb_set_location(parg_get("location"));
     pdb_set_category(parg_get("category"));
@@ -304,7 +304,7 @@ sub save_set_data {
         pdb_set_setdatetime(parg_get("datetime"));
         pdb_set_settitle(parg_get("title"));
         pdb_set_setdescription(parg_get("description"));
-        pdb_set_setcomment(parg_get("comment"));
+        # pdb_set_setcomment(parg_get("comment"));
         pdb_set_setcategory(parg_get("category"));
         pdb_set_setyear(parg_get("year"));
         pdb_set_setcopyright(parg_get("copyright"));
@@ -406,7 +406,7 @@ sub disp_image {
     put_form_textlong("Date / time", "datetime");
     put_form_text("Year", "year");
     put_form_textlong("Description", "description");
-    put_form_textlong("Comment", "comment");
+    # put_form_textlong("Comment", "comment");
     put_form_radio("Orientation" . put_help_link(4), "orientation", @orientation);
     put_form_textlong("Location", "location");
     put_form_textlong("Persons/Tags" . put_help_link(13), "persons", 0, "p");
@@ -448,7 +448,7 @@ sub disp_set {
         put_form_textlong("Date / time", "datetime");
         put_form_text("Year", "year");
         put_form_textlong("Description", "description");
-        put_form_textlong("Comment", "comment");
+        # put_form_textlong("Comment", "comment");
         put_form_radio("Category" . put_help_link(1), "category", @category);
         put_form_textlong("Copyright", "copyright");
         put_form_hidden("showImages");
@@ -467,7 +467,7 @@ sub disp_set {
         put_form_hidden("datetime");
         put_form_hidden("year");
         put_form_hidden("description");
-        put_form_hidden("comment");
+        # put_form_hidden("comment");
         put_form_hidden("category");
         put_form_hidden ("copyright");
         put_form_hidden("showImages");

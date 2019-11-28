@@ -132,7 +132,6 @@ sub disp_set_thumbnails {
   my $imagecount = 0;
 
   while (pcom_get_set($imageid) le $setid) {
-
     # Note: Because the sort ID uses GMT, it is possible to get images
     # from the previous day when iterating through the sets. Skip
     # those.
@@ -142,7 +141,6 @@ sub disp_set_thumbnails {
         $imageid = pdb_iter_next($iter);
         next;
       } else {
-
         # if not a digital photo, break out of the loop
         last;
       }
@@ -195,11 +193,9 @@ sub disp_set {
   }
   my $editlink = "";
   if (pusr_allowed($PUSR_EDIT . $category)) {
-
     # The user can edit the set
     $editlink = "<a href='phedit?setid=$setid'>";
   } else {
-
     # Try to see if the user can edit any of the photos in the set
     if (
       (

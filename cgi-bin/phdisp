@@ -68,210 +68,213 @@ sub remove_tag_from_image {
 }
 
 sub disp_image_page {
-    my $imageid = $_[0];
-    my $show_image = 1;
+  my $imageid = $_[0];
+  my $show_image = 1;
 
-    # If the image doesn't exist, give an error
-    if (!pdb_image_info($imageid)) {
-        $show_image = 0;
-    }
+  # If the image doesn't exist, give an error
+  if (!pdb_image_info($imageid)) {
+    $show_image = 0;
+  }
 
-    # If no category defined for the image, give an error
-    my $category = pdb_get_category($imageid);
-    if ($category eq "") {
-        $show_image = 0;
-    }
+  # If no category defined for the image, give an error
+  my $category = pdb_get_category($imageid);
+  if ($category eq "") {
+    $show_image = 0;
+  }
 
-    # If the current user isn't alowed to see the image, give an error
-    if (!pusr_allowed($PUSR_SEE . $category)) {
-        $show_image = 0;
-    }
+  # If the current user isn't alowed to see the image, give an error
+  if (!pusr_allowed($PUSR_SEE . $category)) {
+    $show_image = 0;
+  }
 
-    my $title = pdb_get_title($imageid);
-    my $datetime = pdb_get_datetime($imageid);
-    my $description = pdb_get_description($imageid);
-    my $orientation = pdb_get_orientation($imageid);
-    my $location = pdb_get_location($imageid);
-    my $comment = format_comment(pdb_get_comment($imageid));
-    my $copyright = pdb_get_copyright($imageid);
-    my $latlong = pdb_get_latlong($imageid);
-    my $persons = pdb_get_persons($imageid);
-    my $person_id_list = ppers_get_persons_in_image($imageid);
+  my $title = pdb_get_title($imageid);
+  my $datetime = pdb_get_datetime($imageid);
+  my $description = pdb_get_description($imageid);
+  my $orientation = pdb_get_orientation($imageid);
+  my $location = pdb_get_location($imageid);
+  my $comment = format_comment(pdb_get_comment($imageid));
+  my $copyright = pdb_get_copyright($imageid);
+  my $latlong = pdb_get_latlong($imageid);
+  my $persons = pdb_get_persons($imageid);
+  my $person_id_list = ppers_get_persons_in_image($imageid);
 
-    if (($orientation eq $PCOM_FREEFORM_P)
-        || ($orientation eq $PCOM_FREEFORM_L)) {
-        # for the purpose here, use freeform
-        $orientation = $PCOM_FREEFORM;
-    }
-    if ($copyright eq "") {
-        $copyright = put_default_copyright($imageid);
-    }
-    my $size = put_display_size();
-    if ($size eq $PCOM_DEFAULT) {
-        if ($orientation eq $PCOM_FREEFORM) {
-            $size = $PCOM_FREEFORM;
-        } else {
-            $size = pfs_get_size($imageid);
-        }
-    }
-    if ($size eq "") {
-        $size = "normal";
-    }
+  if (($orientation eq $PCOM_FREEFORM_P)
+    || ($orientation eq $PCOM_FREEFORM_L)) {
+    # for the purpose here, use freeform
+    $orientation = $PCOM_FREEFORM;
+  }
+  if ($copyright eq "") {
+    $copyright = put_default_copyright($imageid);
+  }
 
-    my $next = put_get_next($imageid);
-    my $prev = put_get_prev($imageid);
-
-    my $nextlink = "";
-    if ($next ne "") {
-        $nextlink = "<a href='phdisp?imageid=$next' accesskey='n'>";
-    }
-    my $prevlink = "";
-    if ($prev ne "") {
-        $prevlink = "<a href='phdisp?imageid=$prev' accesskey='p'>";
-    }
-    my $infolink = "";
-    if (pcom_is_digital($imageid) || ($imageid =~ /^x/)) {
-        $infolink = put_info_link($imageid);
-    }
-    my $editlink = "";
-    if (pusr_allowed($PUSR_EDIT . $category)) {
-        $editlink = "<a href='phedit?imageid=$imageid' accesskey='e'>";
-    }
-
-    pht_set_pagetype("photo $size $orientation");
-    if ($copyright ne "") {
-        pht_set_copyright("Copyright &copy; $copyright.");
-    }
-    pht_page_start(0);
-
-    pht_tabs_start();
-    pht_next_tab($nextlink);
-    pht_prev_tab($prevlink);
-    my $setid = pcom_get_set($imageid);
-    pht_tab("Overview", "<a href='phbrowse?setid=$setid' accesskey='o'>");
-    pht_tab("Edit", $editlink);
-
-    if (pusr_get_userid() eq $PUSR_GUEST_ACCOUNT) {
-        pht_tab("Search", "");
-        pht_tab("Login", "<a href='phlogin'>");
+  my $size = put_display_size();
+  if ($size eq $PCOM_DEFAULT) {
+    if ($orientation eq $PCOM_FREEFORM) {
+      $size = $PCOM_FREEFORM;
     } else {
-        pht_tab("Search", "<a href='phsearch'>");
-        pht_tab("Logout", "<a href='phlogin?do.logout=1'>");
+      $size = pfs_get_size($imageid);
     }
-    pht_tab("Preferences", "<a href='phpref'>");
-    pht_tab("Info", $infolink);
-    if (pusr_allowed($PUSR_GET_ORIG)) {
-        pht_tab("Resize", "<a href='phdisp?do.resize=1&amp;imageid=$imageid'>");
+  }
+  if ($size eq "") {
+    $size = "normal";
+  }
+
+  my $next = put_get_next($imageid);
+  my $prev = put_get_prev($imageid);
+
+  my $nextlink = "";
+  if ($next ne "") {
+    $nextlink = "<a href='phdisp?imageid=$next' accesskey='n'>";
+  }
+  my $prevlink = "";
+  if ($prev ne "") {
+    $prevlink = "<a href='phdisp?imageid=$prev' accesskey='p'>";
+  }
+  my $infolink = "";
+  if (pcom_is_digital($imageid) || ($imageid =~ /^x/)) {
+    $infolink = put_info_link($imageid);
+  }
+  my $editlink = "";
+  if (pusr_allowed($PUSR_EDIT . $category)) {
+    $editlink = "<a href='phedit?imageid=$imageid' accesskey='e'>";
+  }
+
+  pht_set_pagetype("photo $size $orientation");
+  if ($copyright ne "") {
+    pht_set_copyright("Copyright &copy; $copyright.");
+  }
+  pht_page_start(0);
+
+  pht_tabs_start();
+  pht_next_tab($nextlink);
+  pht_prev_tab($prevlink);
+  my $setid = pcom_get_set($imageid);
+  pht_tab("Overview", "<a href='phbrowse?setid=$setid' accesskey='o'>");
+  pht_tab("Edit", $editlink);
+
+  if (pusr_get_userid() eq $PUSR_GUEST_ACCOUNT) {
+    pht_tab("Search", "");
+    pht_tab("Login", "<a href='phlogin'>");
+  } else {
+    pht_tab("Search", "<a href='phsearch'>");
+    pht_tab("Logout", "<a href='phlogin?do.logout=1'>");
+  }
+  pht_tab("Preferences", "<a href='phpref'>");
+  pht_tab("Info", $infolink);
+  if (pusr_allowed($PUSR_GET_ORIG)) {
+    pht_tab("Resize", "<a href='phdisp?do.resize=1&amp;imageid=$imageid'>");
+  } else {
+    pht_tab("Resize", "");
+  }
+
+  if ($latlong ne "") {
+    my $maplink = put_map_link($imageid);
+    pht_tab("Map", $maplink);
+  }
+  pht_tab("About", "<a href='phabout'>");
+  pht_tabs_end();
+
+  if (pusr_allowed($PUSR_QUICKTAGS)) {
+    my $i;
+    pht_output "<div class='quicktags'>";
+    my $temp_list = $person_id_list . ";";
+    my @has_tag = ();
+    while ($temp_list =~ s/^(.*?);//) {
+      my $temp_id = $1;
+      my $temp_name = ppers_get_name($temp_id);
+      for ($i = 0; defined($quicktags[$i]); $i++) {
+        if ($quicktags[$i] eq $temp_name) {
+          $has_tag[$i] = 1;
+        }
+      }
+    }
+
+    for ($i = 0; defined($quicktags[$i]); $i++) {
+      if (defined($has_tag[$i])) {
+        pht_output "<span class='quicktag-on'>";
+        pht_output "<a href='phdisp?imageid=$imageid&untag=";
+        pht_output pht_url_escape($quicktags[$i]) . "'>";
+      } else {
+        pht_output "<span class='quicktag-off'>";
+        pht_output "<a href='phdisp?imageid=$imageid&tag=";
+        pht_output pht_url_escape($quicktags[$i]) . "'>";
+      }
+      pht_output $quicktags[$i];
+      pht_output "</a></span> ";
+    }
+    pht_output "</div>";
+  }
+
+  if ($show_image) {
+    pht_output "<div id='title'>";
+    if ($show_image && ($title ne "")) {
+      pht_output $title;
+    } elsif ($show_image) {
+      pht_output "Photo " . pcom_format_imageid($imageid);
     } else {
-        pht_tab("Resize", "");
+      pht_output "&nbsp;";
+    }
+    pht_output "</div>\n";
+
+    if ($datetime ne "") {
+      pht_output "<div class='datetime'>$datetime</div>\n";
     }
 
-    if ($latlong ne "") {
-        my $maplink = put_map_link($imageid);
-        pht_tab("Map", $maplink);
-    }
-    pht_tab("About", "<a href='phabout'>");
-    pht_tabs_end();
-
-    if (pusr_allowed($PUSR_QUICKTAGS)) {
-        my $i;
-        pht_output "<div class='quicktags'>";
-        my $temp_list = $person_id_list . ";";
-        my @has_tag = ();
-        while ($temp_list =~ s/^(.*?);//) {
-            my $temp_id = $1;
-            my $temp_name = ppers_get_name($temp_id);
-            for ($i = 0; defined($quicktags[$i]); $i++) {
-                if ($quicktags[$i] eq $temp_name) {
-                    $has_tag[$i] = 1;
-                }
-            }
-        }
-
-        for ($i = 0; defined($quicktags[$i]); $i++) {
-            if (defined($has_tag[$i])) {
-                pht_output "<span class='quicktag-on'>";
-                pht_output "<a href='phdisp?imageid=$imageid&untag=";
-                pht_output pht_url_escape($quicktags[$i]) . "'>";
-            } else {
-                pht_output "<span class='quicktag-off'>";
-                pht_output "<a href='phdisp?imageid=$imageid&tag=";
-                pht_output pht_url_escape($quicktags[$i]) . "'>";
-            }
-            pht_output $quicktags[$i];
-            pht_output "</a></span> ";
-        }
-        pht_output "</div>";
-    }
-
-    if ($show_image) {
-        pht_output "<div id='title'>";
-        if ($show_image && ($title ne "")) {
-            pht_output $title;
-        } elsif ($show_image) {
-            pht_output "Photo " . pcom_format_imageid($imageid);
-        } else {
-            pht_output "&nbsp;";
-        }
-        pht_output "</div>\n";
-
-        if ($datetime ne "") {
-            pht_output "<div class='datetime'>$datetime</div>\n";
-        }
-
-        if (pdb_get_type($imageid) eq "MOV") {
-            pht_output "<div class='movie'>";
-            pht_output "<video width='960' height='540' controls ";
-            pht_output "poster='phimg?mov=$imageid'>";
-            pht_output "<source src='phmov?mov=$imageid' type='video/mp4'/>";
-            pht_output "</video>";
-            pht_output "</div>\n";
-        } else {
-            pht_output "<div class='img'>";
-            if (pusr_allowed($PUSR_GET_ORIG)) {
-                pht_output "<a href='?editid=$imageid'>";
-            }
-            pht_output "<img class='$size$orientation' src='phimg?$size=$imageid' ";
-            pht_output "alt='" . pht_title_escape($description) . "' />";
-            if (pusr_allowed($PUSR_GET_ORIG)) {
-                pht_output "</a>";
-            }
-            pht_output "</div>\n";
-        }
-        if ($description ne "") {
-            pht_output "<div class='description $size'>$description</div>\n";
-        }
-        #if ($persons ne "") {
-        #    pht_output "<div class='persons $size'>In this photo: <em>$persons</em>.</div>\n";
-        #}
-        if ($person_id_list ne "") {
-	    $person_id_list .= ";";
-            pht_output "<div class='persons $size'>In this photo: <em>";
-	    while ($person_id_list =~ s/^(.*?);//) {
-		my $persid = $1;
-		my $name = ppers_get_name($persid);
-		my $descr = ppers_get_descr($persid);
-		my $title = "";
-		if ($descr ne "") {
-		    $descr =~ s/\'/&rsquo;/gs;
-		    $title = " title='$descr'";
-		}
-                pht_output "<a href='phbrowse?persid=$persid'$title>$name</a>";
-		pht_output "; " if ($person_id_list ne "");
-	    }
-	    pht_output "</em>.</div>\n";
-        }
-        if ($comment ne "") {
-            pht_output "<div class='comment $size'>$comment</div>\n";
-        }
-        if (pusr_allowed($PUSR_COMMENT)) {
-            pht_output "<p>" . put_comment_link($imageid, "Leave a comment")
-              . "</p>\n";
-        }
+    if (pdb_get_type($imageid) eq "MOV") {
+      pht_output "<div class='movie'>";
+      pht_output "<video width='960' height='540' controls ";
+      pht_output "poster='phimg?mov=$imageid'>";
+      pht_output "<source src='phmov?mov=$imageid' type='video/mp4'/>";
+      pht_output "</video>";
+      pht_output "</div>\n";
     } else {
-        pht_output "<p>Image not available</p>\n";
+      pht_output "<div class='img'>";
+      if (pusr_allowed($PUSR_GET_ORIG)) {
+        pht_output "<a href='?editid=$imageid'>";
+      }
+      pht_output "<img class='$size$orientation' src='phimg?$size=$imageid' ";
+      pht_output "alt='" . pht_title_escape($description) . "' />";
+      if (pusr_allowed($PUSR_GET_ORIG)) {
+        pht_output "</a>";
+      }
+      pht_output "</div>\n";
     }
-    pht_page_end();
+    if ($description ne "") {
+      pht_output "<div class='description $size'>$description</div>\n";
+    }
+
+    #if ($persons ne "") {
+    #    pht_output "<div class='persons $size'>In this photo: <em>$persons</em>.</div>\n";
+    #}
+
+    if ($person_id_list ne "") {
+      $person_id_list .= ";";
+      pht_output "<div class='persons $size'>In this photo: <em>";
+      while ($person_id_list =~ s/^(.*?);//) {
+        my $persid = $1;
+        my $name = ppers_get_name($persid);
+        my $descr = ppers_get_descr($persid);
+        my $title = "";
+        if ($descr ne "") {
+          $descr =~ s/\'/&rsquo;/gs;
+          $title = " title='$descr'";
+        }
+        pht_output "<a href='phbrowse?persid=$persid'$title>$name</a>";
+        pht_output "; " if ($person_id_list ne "");
+      }
+      pht_output "</em>.</div>\n";
+    }
+    # if ($comment ne "") {
+    #   pht_output "<div class='comment $size'>$comment</div>\n";
+    # }
+    # if (pusr_allowed($PUSR_COMMENT)) {
+    #   pht_output "<p>" . put_comment_link($imageid, "Leave a comment")
+    #     . "</p>\n";
+    # }
+  } else {
+    pht_output "<p>Image not available</p>\n";
+  }
+  pht_page_end();
 }
 
 sub disp_edit_page {

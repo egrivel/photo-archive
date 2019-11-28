@@ -17,7 +17,7 @@ if (-f "../private/photos.ini") {
     # Remove comments
     s/\s*\#.*$//;
 
-    if (/^\s*(\w+)\s*=\s*(.*?)\s*$/) {
+    if (/^\s*([\w\-]+)\s*=\s*(.*?)\s*$/) {
       $settings{$1} = $2;
     }
   }
@@ -64,6 +64,6 @@ sub get_static_root {
 }
 
 sub get_admin_email {
-  return setting_get("adminmail");
+  return setting_get("admin-email");
 }
 return 1;

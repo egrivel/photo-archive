@@ -91,7 +91,7 @@ sub pusr_create_tables {
   $cur_edit_data{"fullname"} = "Guest Account";
   $cur_edit_data{"password"} = "";
   $cur_edit_data{"rights"} = "SrStSd";
-  $cur_edit_data{"settings"} = "type_mask=rtd:quality=3:imgsize=default";
+  $cur_edit_data{"settings"} = "type_mask=rtd:quality=2:imgsize=default";
   pusr_edit_close();
 
   # Cause the "test" process user to be created

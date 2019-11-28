@@ -17,4 +17,4 @@ dbpasswd = <password for the database user>
 
 # Start year of the main display
 startyear = 1991
-adminmail = <email for archive administrator>
+admin-email = <email for archive administrator>
