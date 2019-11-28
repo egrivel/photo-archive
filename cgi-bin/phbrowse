@@ -599,46 +599,29 @@ sub disp_all {
   }
   $total =~ s/(\d)(\d\d\d)$/$1,$2/;
 
-  pht_output "<p>Welcome to our photo archive! The archive ";
-  pht_output "currently contains $total photos, organized by year:</p>\n";
+  my $welcome = "../templates/welcome1.tpl";
+  if (-f $welcome) {
+    open(FILE, "<$welcome");
+    while (<FILE>) {
+      s/\$\{nr_photos\}/$total/g;
+      pht_output($_);
+    }
+    close FILE;
+  }
 
   my $cols = 12;
 
   out_table(12, "large");
 
-  pht_output "<p>In this archive, you will find:</p>\n";
-  pht_output "
-<ul>
-<li>Black-and-white photos I have taken (1974-1982).</li>
-<li>Slide photos I have taken (1982-1984).</li>
-<li>Color film photos Nicoline and I have taken (1984-2004).</li>
-<li>Digital photos Nicoline and I have taken (2004-present).</li>
-<li>Film photos Frank and Mark have taken (1998-2005).</li>
-<li>Photos my father and mother have taken (1957-1997).</li>
-<li>Scans of paper photo albums I inherited from my parents.</li>
-</ul>\n";
-  pht_output "<p>Special features:</p>\n";
-  pht_output "<ul>\n";
-  pht_output "<li><a href='phslideshow'>Slide show launcher</a> to see "
-    . "a random or sequential slide-show of photos in the archive.</li>\n";
-
-  if (pusr_allowed($PCOM_PARENTS)) {
-    pht_output
-"<li><a href='phbrowse?type=d'>Photos and slides made by my parents</a>, also including scans of my parents' paper albums.</li>\n";
+  $welcome = "../templates/welcome2.tpl";
+  if (-f $welcome) {
+    open(FILE, "<$welcome");
+    while (<FILE>) {
+      s/\$\{nr_photos\}/$total/g;
+      pht_output($_);
+    }
+    close FILE;
   }
-
-  pht_output(
-"<li><a href='/archives/panoramas/'>Panoramas</a> stitched together from multiple photos.</li>\n"
-  );
-
-  if (pusr_allowed($PCOM_REGULAR)) {
-    pht_output
-"<li><a href='phbrowse?year=9999'>Specials</a>, only of interest to myself.</li>\n";
-  }
-
-  pht_output "<li><a href='phperson'>People and tags in the photos</a>.</li>\n";
-
-  pht_output "</ul>\n";
 
   pht_page_end();
 }
