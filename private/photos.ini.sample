@@ -18,3 +18,6 @@ dbpasswd = <password for the database user>
 # Start year of the main display
 startyear = 1991
 admin-email = <email for archive administrator>
+
+# Key for the Google API (if used)
+# google-map-key = <key from Google>

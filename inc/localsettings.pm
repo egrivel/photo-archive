@@ -66,4 +66,8 @@ sub get_static_root {
 sub get_admin_email {
   return setting_get("admin-email");
 }
+
+sub get_map_key {
+  return setting_get("google-map-key");
+}
 return 1;

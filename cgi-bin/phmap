@@ -7,7 +7,6 @@
 
 use inc_all;
 
-$key = "";
 put_init();
 put_restore_session();
 
@@ -430,6 +429,8 @@ sub disp_map {
     my @coord = split(/\|/, $coordinates);
     my @img = split(/\|/, $images);
     my $i;
+
+    my $key = get_map_key();
 
     my $width = parg_get("width");
     if (!defined($width) || ($width eq "")) {
