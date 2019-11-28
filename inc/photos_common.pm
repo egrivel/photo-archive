@@ -276,9 +276,6 @@ sub pcom_current_year {
 
 sub pcom_has_photos_in_year {
   my $year = $_[0];
-  if ($year >= 1974) {
-    return 1;
-  }
   return pdb_year_exists($year);
 }
 
