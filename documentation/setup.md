@@ -79,3 +79,61 @@ creating the MySQL database.
 The `startyear` should be the first year displayed on the overview page;
 the `admin-email` probably your email (where guests of your photo archive
 can contact you).
+
+## Initializing the database
+
+The first time you need to initialize the database. This initialization
+creates the database tables and the initial user who will be the administrator
+of the archive; the administrator will be able to add more users later.
+
+Go to the `util` directory and run `./phcreatetables`. This will prompt you
+for the initial user name, full name and password.
+
+## Starting the archive
+
+You start the photo archive by going to `phbrowse` in the CGI script location.
+For instance if you linked the archive software to `/cgi-bin/photos` on the
+web server, you start by going to `http://localhost/cgi-bin/photos/phbrowse`.
+
+From here you should be able to logon as the user you created when
+initializing the database.
+
+## Templates
+
+There are a couple of places in the archive where you can insert your own
+text: the welcome page (both above and below the list of years) and the
+about page. This is done through _templates_.
+
+To start using templates, copy the sample ones to the actual template (e.g.
+copy `welcome1.tpl.sample` to `welcome1.tpl`) and then edit the template.
+You should see the result when you refresh the page.
+
+## Adding photos to the archive
+
+Go to the `util` directory and copy the photos you want to add into this
+directory. Then run `./process_digital` which will _move_ all the images
+in the `util` directory into the archive.
+
+Newly added photos are not yet visible to the public until the admistrator
+has had an opportunity to process the photos and weed out any
+inappropriate ones.
+
+After having the photos added to the archive, go into the photo archive
+and log in using the previously created initial account. After logging
+in your should be able to navigate to the year and date of the added
+photos.
+
+When the set is displayed, select the `Edit` link. Most information is
+optional, but the `Category` must be selected. Typically, you want to
+select `regular` as the category for the set.
+
+_After_ selecting the set category, click the `Show Images` button, which
+will show all the images in the set. The set's category is automatically
+copied to the individual images. You can now click the `Save` button at
+the bottom, and both the set and individual images will become visible
+for others.
+
+Before saving, you can also choose to make individual images `private`,
+meaning they will not be visible to visitors. Photos  can also be
+deleted from here, by checking the `delete this image` checkbox before
+using the `Save` button.
