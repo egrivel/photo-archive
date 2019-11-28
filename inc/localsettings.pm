@@ -6,10 +6,16 @@
 # for the other system files to be found.
 # ============================================================
 
+my $script = __FILE__;
+my $localdir = ".";
+if ($script =~ s/\/[^\/]*$//) {
+  $localdir = $script;
+}
+
 my %settings = ();
 
-if (-f "../private/photos.ini") {
-  open(FILE, "<../private/photos.ini");
+if (-f "$localdir/../private/photos.ini") {
+  open(FILE, "<$localdir/../private/photos.ini");
   while (<FILE>) {
     chomp;
     s/\r//;

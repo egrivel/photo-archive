@@ -1,8 +1,13 @@
-#!/usr/bin/perl -I .
+#!/usr/bin/perl
 
-use inc_all;
+my $script = __FILE__;
+my $localdir = ".";
+if ($script =~ s/\/[^\/]*$//) {
+  $localdir = $script;
+}
+push @INC, "$localdir/../cgi-bin";
 
-require photos_util;
+require "inc_all.pm";
 
 put_init();
 

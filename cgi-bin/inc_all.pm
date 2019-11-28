@@ -1,3 +1,8 @@
-push @INC, '../inc';
+my $script = __FILE__;
+my $localdir = ".";
+if ($script =~ s/\/[^\/]*$//) {
+  $localdir = $script;
+}
+push @INC, "$localdir/../inc";
 
-require '../inc/photos_util.pm';
+require 'photos_util.pm';
