@@ -78,11 +78,19 @@ sub get_map_key {
 }
 
 sub get_title {
-  return setting_get("title");
+  $title = setting_get("title");
+  if ($title eq "") {
+    return "Photo Archive";
+  }
+  return $title;
 }
 
 sub get_nr_cols {
-  return setting_get("nr-cols");
+  $nr = setting_get("nr-cols");
+  if ($nr eq "") {
+    return 12;
+  }
+  return $nr;
 }
 
 return 1;
