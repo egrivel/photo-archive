@@ -10,12 +10,6 @@ Make sure the prerequisites are installed:
  - Perl module DBI: database interface
  - Perl module Image::ExifTool to extract EXIF info from the photos
 
-Identify the directory layout
- - you need a directory to place the web server files (called cgi-bin)
- - you need a directory to put the utility files (called util)
- - you need a directory to put the include files (called inc)
- - you need a directory to put the actual photos (called photos)
-
 ## Create the Database
 
 You need to think of:
@@ -31,9 +25,37 @@ create the user, and give the user access to the just created database.
 ```
 $ mysql --user=root -p mysql
 [mysql]> CREATE DATABASE <dbname>;
-[mysql]> CREATE USER '<user>'@'localhost' IDENTIFIED BY '<password>';
-[mysql]> GRANT ALL PRIVILEGES ON <dbname>.* TO '<user>'@'localhost';
+[mysql]> CREATE USER '<dbuser>'@'localhost' IDENTIFIED BY '<dbpassword>';
+[mysql]> GRANT ALL PRIVILEGES ON <dbname>.* TO '<dbuser>'@'localhost';
 [mysql]> quit
+```
+
+## Create the photo archive data directory
+
+The photo archive data directory is where all the actual image files are
+going to be stored. Make sure you identify this location in a place with
+enough free space to keep all the photos in the archive, in all the
+different sizes you will be using.
+
+The photo archive data directory must be writable by both the administrator
+(when you are adding new photos to the archive) and the web server (when
+generating photos in a desired size). A simple (but not very secure) way
+to achieve this is to make the directory writable by "all". Better would
+be to make sure both the web server and the administrator of the database
+are members of a "photos" group.
+
+## Make the links in your web server directories
+
+Link the files into the web server structure. If you have the clone of this
+repository in for instance `/home/john/photo-archive`, and your web server
+has its file structure in `/var/apache/html` and `/var/apache/cgi-bin`,
+then you want to create the following symlinks:
+
+```
+$ cd /var/apache/cgi-bin
+$ ln -s /home/john/photo-archive/cgi-bin photos
+$ cd /var/apache/html
+$ ln -s /home/john/photo-archive/static photos-static
 ```
 
 ## Create the .ini file
@@ -41,17 +63,19 @@ $ mysql --user=root -p mysql
 The `.ini` file contains the configuration for the database. This file should
 be placed in a `private` directory. The distribution contains a sample
 file called `photos.ini.sample`; copy this to `photos.ini` and replace all
-the names in angular brackets with the correct values:
+the values in angular brackets with the correct values.
 
-## Create the photo archive data directory
+The `photosdir` and `photos2dir` values must be the photo archive directory
+that was previously created.
 
-Create the directory that was named as `photosdir` in the `photos.ini` file,
-and make sure that directory is writable for everyone (the photo archive
-will create sub-folders and files in there, so it must have write permission).
+The `staticroot` is the location in the server root where the web server
+will be serving the static files. In the example above, where the static
+files will be in the `photos-static` location in the web server, the value
+would be `/photos-static`.
 
-Eventually you may want to make sure that both you, as the adminstrator, and
-the web server, have write access, but noone else. However, that is for later.
+The `dbname`, `dbuser` and `dbpasswd` values must match what you used when
+creating the MySQL database.
 
-## Make the links in your web server directories
-
-Link the 
+The `startyear` should be the first year displayed on the overview page;
+the `admin-email` probably your email (where guests of your photo archive
+can contact you).
