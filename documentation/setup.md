@@ -58,6 +58,9 @@ $ cd /var/apache/html
 $ ln -s /home/john/photo-archive/static photos-static
 ```
 
+Make sure that in your web server configuration, you have included
+`FollowSymLinks` in the options for these directories.
+
 ## Create the .ini file
 
 The `.ini` file contains the configuration for the database. This file should
