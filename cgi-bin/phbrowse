@@ -591,7 +591,8 @@ sub disp_all {
   pht_tab("About",       "<a href='phabout'>");
   pht_tabs_end();
 
-  pht_output "<div class='yeartitle'>Photo Archive</div>\n";
+  $title = get_title();
+  pht_output "<div class='yeartitle'>$title</div>\n";
   pdb_filter_category(put_types());
   my $total = pdb_image_count();
   if ($total < 1) {
@@ -609,9 +610,8 @@ sub disp_all {
     close FILE;
   }
 
-  my $cols = 12;
-
-  out_table(12, "large");
+  my $cols = get_nr_cols;
+  out_table($cols, "large");
 
   $welcome = "../templates/welcome2.tpl";
   if (-f $welcome) {

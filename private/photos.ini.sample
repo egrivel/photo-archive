@@ -1,5 +1,9 @@
 # Configuration file for the photo archive system.
 
+# Title of the archive
+title = Photo Archive
+nr-cols = 12
+
 # Directories:
 photosdir = <data directory>
 # The photos2 directory is needed for historical reasons, and should have

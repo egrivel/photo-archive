@@ -76,4 +76,13 @@ sub get_admin_email {
 sub get_map_key {
   return setting_get("google-map-key");
 }
+
+sub get_title {
+  return setting_get("title");
+}
+
+sub get_nr_cols {
+  return setting_get("nr-cols");
+}
+
 return 1;
