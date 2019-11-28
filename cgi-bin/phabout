@@ -31,133 +31,14 @@ sub disp_page {
     pht_tab("Preferences", "<a href='phpref'>");
     pht_tab("About", "<a href='phabout'>");
     pht_tabs_end();
-    pht_output "<div class='yeartitle'>About This Photo Archive</div>\n";
-    pht_output("
-<p>This is the personal photo archive of <em>Eric Grivel</em>, including
-the photos that <em>Nicoline</em> and I have taken together. I started
-out collecting and preserving all the photos I have taken, and have
-expanded it to include my parents&rsquo; photos and the film photos
-(pre-digital) taken by our children Frank and Mark.</p>
 
-<h2>1. History of the Archive</h2>
-
-<div class='img'><img src='phimg?small=20051211-172533' class='right' /></div>
-<p>As far as I can remember, I started out with the digital photo archive
-in 1997, using a flatbet scanner to scan the 4x6 inch prints every time
-I had a roll of film developed. Film roll #232 was the first roll of
-film that got incorporated into the digital archive.</p>
-
-<p>In 2001 I purchased a second-hand film scanner and, starting with
-film roll #307, I started scanning the negatives rather than the prints.
-At some point I also started scanning in all the older films (prior
-to 1997), a project that was concluded around 2005.</p>
-
-<div class='img'><img src='$aboutroot/coolscan_v.png' class='right' /></div>
-<p>By that time the archive&rsquo;s organization had grown from just files
-on the file system to a hacked-together set of Perl scripts. Add
-to that the addition of a digital camera (the D70 which I bought
-on Septemer 21, 2004) and it was time to re-structure the entire
-photo archive around an SQL database and a clearly defined set
-of Perl modules and programs.</p>
-
-<p>The last major change in the archive came with the purchase of the
-Nikon Coolscan V film scanner, which has an infrared channel which
-allows for automatic &ldquo;dust and scratch reduction&rdquo; on scans. This
-started a re-scan of all the film photos, a project that is currently
-(May 2017) still on-going.</p>
-
-<p>On January 19, 2019, with the set of photos from the Women&rsquo;s March,
-the archive passed the 100,000 photos mark (reaching 100,007 to be precise).
-At that moment, 8,001 of those photos were not publically visible, so
-those not logged in would be able to see 92,006 photos.</p>
-
-<h2>2. Structure of the Archive</h2>
-
-<div class='img'><img src='$aboutroot/yearlist.png' class='right' /></div>
-<p>The entire photo archive is structured around <em>sets</em>, each of which
-contains individual photos.</p>
-
-<p>For film photos, the sets mostly correspond to rolls of film. Ever
-since my first camera in 1974, I numbered the films I shot sequentially
-and these film photos correspond to the three-digit set numbers
-&ldquo;001&rdquo; through &ldquo;365.&rdquo; Sets numbers 001 through
-031 were rolls of black-and-white negative film, sets numbers 032
-through 046 were rolls of slide film, and sets 047 through 365 were
-rolls of color negative film.</p>
-
-<div class='img'><img src='$aboutroot/screenshot.png' class='right' /></div>
-<p>With the digital camera, there were no rolls of film anymore, and
-I started organizing the photos by date. Each set corresponds to a
-single day, with the 8-digit set number representing the date in
-&ldquo;yyyymmdd&rdquo; format.</p>
-
-<p>Then there are a number of special sets where the set name consists
-of a letter and a two-digit number:</p>
-<ul>
-<li>f01 through f19 are color negative films from Frank.</li>
-<li>m01 through m14 are color negative films from Mark.</li>
-<li>d01 through d93 are color slides from my father.</li>
-<li>p01 through p72 are black-and-white and color negative films from
-   my father and mother.</li>
-<li>a01 through a12 are scans of paper albums from my parents.</li>
-<li>a13 and beyond are scans of documents from my parents.</li>
-</ul>
-
-<div class='img'><img src='$aboutroot/image.png' class='right' /></div>
-<p>With my father&rsquo;s photos, I don&rsquo;t always know exactly
-which photos come from a single roll of film. For the black-and-white
-and color negative films, I have tried to collect the original films together
-(and sort them in chronological order). For the slide photos, the
-individual sets correspond to the containers they came from.</p>
-
-<p>Finally, there are the sets starting with &ldquo;x01&rdquo;
-which are &ldquo;special&rdquo; photos. These can
-be photos I got from other people but
-wanted to include in the photo archive, or other special photos.</p>
-
-<h2>3. Using the Archive</h2>
-<div class='img'><img src='$aboutroot/homepage.png' class='right' /></div>
-<p>Basic access to the archive is chronological. The archive&rsquo;s
-home page has a clickable list of years. Each of the years give access
-to the sets for that year; clicking on a set displays all the photos
-in that set in thumbnail format.</p>
-
-<p>The photo archive includes additional information about the photos:</p>
-<ul>
-<li>The <em>title</em> at the top of the page usually indicates where
-the photo was taken.</li>
-<li>The <em>date</em> (and time, for the digital photos) show when the photo
-was taken. For older photos the date may be a date range, a guess, or may
-be blank altogether.</li>
-<li>The <em>description</em> below the photo gives some additional information,
-e.g. about who or what is in the photo, why and how the photo was taken.</li>
-</ul>
-
-<div class='img'><img src='$aboutroot/map.png' class='right' /></div>
-<p>Digital photos may have their latitude-longtitude information
-(GPS coordinates) recorded in the photo. For those photos (and for sets
-that contain such photos), a <em>map</em> option is shown in the tab
-bar. Clicking on that map option will display a <em>Google</em> zoomable
-map with the location of the photo(s) pinpointed.</p>
-
-<h2>4. Status of the Archive</h2>
-
-<p>This status was last updated on May 29, 2017.</p>
-<ul>
-<li>Eric&rsquo;s black-and-white negatives: high-resolution scan completed.</li>
-<li>Eric&rsquo;s color slides: high-resolution scan completed.</li>
-<li>Eric&rsquo;s color negatives: high-resolution scan in progress.</li>
-<li>Eric&rsquo;s digital photos: fully included.</li>
-<li>Frank&rsquo;s color negatives: high-resolution scan not yet started.</li>
-<li>Mark&rsquo;s color negatives: high-resolution scan not yet started.</li>
-<li>Parents&rsquo; black-and-white negatives: high-resolution scan
-  completed.</li>
-<li>Parents&rsquo; color slides: high-resolution scan completed on
-  July 22, 2012.</li>
-<li>Parents&rsquo; color negatives: high-resolution scan started.</li>
-<li>Parents&rsquo; paper photo albums: creating digital copies has started.</li>
-</ul>
-
-");
+    $about = "../templates/about.tpl";
+    if (-f $about) {
+      open(FILE, "<$about");
+      while (<FILE>) {
+        pht_output($_);
+      }
+      close FILE;
+    }
     pht_page_end();
 }
