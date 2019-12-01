@@ -133,7 +133,9 @@ sub build_image_text {
   my $text = "";
   my $item;
 
-  $text .= "database " . pdb_get_image_data($image) . "\n";
+  $database =pdb_get_image_data($image);
+  utf8::encode($database);
+  $text .= "database " . $database . "\n";
   my $root = local_photos_directory();
 
   $item = "tif/$image.nef";
