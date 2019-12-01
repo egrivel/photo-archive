@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -w
 
 # Tool to build and maintain the hash database needed
 # for synchronizing.
@@ -19,99 +19,339 @@ require "inc_all.pm";
 
 pdb_init();
 
-build_all_hash();
+my $gl_verbose = 0;
 
-sub do_user_hash {
-  my $userid = $_[0];
-  my $resourceid = "u-$userid";
+my $arg = shift;
+while (defined($arg)) {
+  if ($arg eq "-v" || $arg eq "--verbose") {
+    $gl_verbose = 1;
+  } elsif ($arg eq "-h" || $arg eq "--help") {
+    disp_help();
+    exit(0);
+  } else {
+    print "Unknown argument: $arg\n";
+    disp_help();
+    exit(0);
+  }
+  $arg = shift;
+}
+get_update_all_hash();
 
-  $text = pusr_get_data($userid);
+sub disp_help {
+  print "Build the hash database. Options:\n";
+  print " -h  --help     Display this help text\n";
+  print " -v  --verbose  Display progress output\n";
+}
+
+# Get the user hash for the indicated user; update the database if
+# the database is not up-to-date.
+sub get_update_user_hash {
+  my $id = $_[0];
+
+  my $resourceid = "u-$id";
+  my $resourcetype = "user";
+
+  my $current_hash = phash_get_resource($resourceid);
+
+  my $text = pusr_get_data($id);
   my $texthash = sha256_hex($text);
 
-  my %hash = ();
-  $hash{"hash"} = $texthash;
-  $hash{"type"} = "user";
-  phash_set_resource($resourceid, \%hash);
+  if ($texthash ne $current_hash) {
+    my %hash = ();
+    $hash{"hash"} = $texthash;
+    $hash{"type"} = $resourcetype;
+    phash_set_resource($resourceid, \%hash);
+  }
+
   return $texthash;
 }
 
-sub build_users_text {
+# Get the text for all users (updating individual user hashes
+# along the way)
+sub build_all_user_text {
   my %users = pusr_get_user_list();
   my $text = "";
   foreach $user (keys %users) {
-    $userhash = do_user_hash($user);
+    $userhash = get_update_user_hash($user);
     $text .= "$user $userhash\n";
   }
 
   return $text;
 }
 
-sub build_users_hash {
-  my $text = build_users_text();
+# Get the hash for all the users (updating if needed)
+sub get_update_all_user_hash {
+  my $resourceid = "users";
+  my $resourcetype = "group";
 
-  print "Users text:\n$text\n";
+  my $current_hash = phash_get_resource($resourceid);
 
-  my $users_hash = sha256_hex($text);
-  my %hash = ();
-  $hash{"hash"} = $users_hash;
-  $hash{"type"} = "group";
-  phash_set_resource("users", \%hash);
+  my $text = build_all_user_text();
+  print "Users text:\n$text\n" if ($gl_verbose);
+  my $texthash = sha256_hex($text);
 
-  return $users_hash;
+  if ($texthash ne $current_hash) {
+    my %hash = ();
+    $hash{"hash"} = $texthash;
+    $hash{"type"} = $resourcetype;
+    phash_set_resource($resourceid, \%hash);
+  }
+
+  return $texthash;
 }
 
-sub build_year_hash {
-  my $year =  $_[0];
+sub get_update_file_hash {
+  my $resourceid = $_[0];
+  my $fname = $_[1];
+
+  my %hash = phash_get_resource($resourceid);
+  my ($dev, $ino, $mode, $nlink, $uid, $gid, $rdev, $size,
+    $atime, $mtime, $ctime, $blksize, $blocks) = stat($fname);
+
+  if (defined($hash{"timestamp"}) && $hash{"timestamp"} == $mtime) {
+    return $hash{"hash"};
+  }
+
+  my $cmd = "sha256sum \"$fname\"";
+  open(PIPE, "$cmd|") || die "Cannot get hash for '$fname'\n";
+  my $text = <PIPE>;
+  my $filehash = "";
+  close(PIPE);
+  if ($text =~ /^([\w\-]+)/) {
+    $filehash = $1;
+  }
+  $hash{"hash"} = $filehash;
+  $hash{"type"} = "file";
+  $hash{"timestamp"} = $mtime;
+  phash_set_resource($resourceid, \%hash);
+  return $filehash;
 }
 
-sub build_years_text {
+sub build_image_text {
+  my $set = $_[0];
+  my $image = $_[1];
   my $text = "";
+  my $item;
 
-  my $years = pdb_get_years();
-  for (my $i = 0; defined(@$years[$i]); $i++) {
-    my $year = @$years[$i];
-    my $year_hash = build_year_hash($year);
-    $text .= "$year $year_hash\n";
+  $text .= "database " . pdb_get_image_data($image) . "\n";
+  my $root = local_photos_directory();
+
+  $item = "tif/$image.nef";
+  if (-f "$root/$set/$item") {
+    my $hash = get_update_file_hash("f-$item", "$root/$set/$item");
+    $text .= "$item $hash\n";
+  }
+
+  $item = "tif/$image.tif";
+  if (-f "$root/$set/$item") {
+    my $hash = get_update_file_hash("f-$item", "$root/$set/$item");
+    $text .= "$item $hash\n";
+  }
+
+  $item = "tif/$image.jpg";
+  if (-f "$root/$set/$item") {
+    my $hash = get_update_file_hash("f-$item", "$root/$set/$item");
+    $text .= "$item $hash\n";
+  }
+
+  $item = "edited/$image.jpg";
+  if (-f "$root/$set/$item") {
+    my $hash = get_update_file_hash("f-$item", "$root/$set/$item");
+    $text .= "$item $hash\n";
   }
 
   return $text;
 }
 
-sub build_years_hash {
-  my $text = build_years_text();
-  print "Years text:\n$text\n";
+sub get_update_image_hash {
+  my $set = $_[0];
+  my $image = $_[1];
+  my $resourceid = "i-$image";
+  my $resourcetype = "group";
 
-  my $years_hash = sha256_hex($text);
-  my %hash = ();
-  $hash{"hash"} = $years_hash;
-  $hash{"type"} = "group";
-  phash_set_resource("years", \%hash);
+  my $current_hash = phash_get_resource($resourceid);
 
-  return $years_hash;
+  my $text = build_image_text($set, $image);
+  print "Image $image text:\n$text\n" if ($gl_verbose);
+  my $texthash = sha256_hex($text);
+
+  if ($texthash ne $current_hash) {
+    my %hash = ();
+    $hash{"hash"} = $texthash;
+    $hash{"type"} = $resourcetype;
+    phash_set_resource($resourceid, \%hash);
+  }
+
+  return $texthash;
 }
 
-sub build_all_text {
+sub build_set_text {
+  my $set = $_[0];
   my $text = "";
 
-  my $user_hash = build_users_hash();
-  $text .= "users $user_hash\n";
-
-  my $years_hash = build_years_hash();
-  $text .= "years $years_hash\n";
+  $text .= "database " . pdb_get_set_data($set) . "\n";
+  my $items = pdb_get_set_images($set);
+  for (my $i = 0; defined(@$items[$i]); $i++) {
+    my $item = @$items[$i];
+    my $hash = get_update_image_hash($set, $item);
+    $text .= "$item $hash\n";
+  }
 
   return $text;
 }
 
-sub build_all_hash {
+sub get_update_set_hash {
+  my $set = $_[0];
+  my $resourceid = "s-$set";
+  my $resourcetype = "group";
+
+  my $current_hash = phash_get_resource($resourceid);
+
+  my $text = build_set_text($set);
+  print "Set $set text:\n$text\n" if ($gl_verbose);
+  my $texthash = sha256_hex($text);
+
+  if ($texthash ne $current_hash) {
+    my %hash = ();
+    $hash{"hash"} = $texthash;
+    $hash{"type"} = $resourcetype;
+    phash_set_resource($resourceid, \%hash);
+  }
+
+  return $texthash;
+}
+
+sub build_year_text {
+  my $year = $_[0];
+  my $text = "";
+
+  my $items = pdb_get_year_sets($year);
+  for (my $i = 0; defined(@$items[$i]); $i++) {
+    my $item = @$items[$i];
+    my $hash = get_update_set_hash($item);
+    $text .= "$item $hash\n";
+  }
+
+  return $text;
+}
+
+sub get_update_year_hash {
+  my $year = $_[0];
+  my $resourceid = "y-$year";
+  my $resourcetype = "group";
+
+  my $current_hash = phash_get_resource($resourceid);
+
+  my $text = build_year_text($year);
+  print "Year $year text:\n$text\n" if ($gl_verbose);
+  my $texthash = sha256_hex($text);
+
+  if ($texthash ne $current_hash) {
+    my %hash = ();
+    $hash{"hash"} = $texthash;
+    $hash{"type"} = $resourcetype;
+    phash_set_resource($resourceid, \%hash);
+  }
+
+  return $texthash;
+}
+
+sub build_all_years_text {
+  my $text = "";
+
+  my $items = pdb_get_years();
+  for (my $i = 0; defined(@$items[$i]); $i++) {
+    my $item = @$items[$i];
+    my $hash = get_update_year_hash($item);
+    $text .= "$item $hash\n";
+  }
+
+  return $text;
+}
+
+sub get_update_all_years_hash {
+  my $resourceid = "years";
+  my $resourcetype = "group";
+
+  my $current_hash = phash_get_resource($resourceid);
+
+  my $text = build_all_years_text();
+  print "Years text:\n$text\n" if ($gl_verbose);
+  my $texthash = sha256_hex($text);
+
+  if ($texthash ne $current_hash) {
+    my %hash = ();
+    $hash{"hash"} = $texthash;
+    $hash{"type"} = $resourcetype;
+    phash_set_resource($resourceid, \%hash);
+  }
+
+  return $texthash;
+}
+
+sub build_all_persons_text {
+  my $text = "";
+
+  my @persons = ppers_get_list();
+  for ($i = 0; defined($persons[$i]); $i++) {
+    $text .= "$persons[$i]: " . ppers_get_data($persons[$i]) . "\n";
+  }
+
+  return $text;
+}
+
+sub get_update_all_persons_hash {
+  my $resourceid = "persons";
+  my $resourcetype = "group";
+
+  my $current_hash = phash_get_resource($resourceid);
+
+  my $text = build_all_persons_text();
+  print "Persons text:\n$text\n" if ($gl_verbose);
+  my $texthash = sha256_hex($text);
+
+  if ($texthash ne $current_hash) {
+    my %hash = ();
+    $hash{"hash"} = $texthash;
+    $hash{"type"} = $resourcetype;
+    phash_set_resource($resourceid, \%hash);
+  }
+
+  return $texthash;
+}
+
+sub build_all_text {
+  my $text = "";
+  my $hash = "";
+
+  $hash = get_update_all_user_hash();
+  $text .= "users $hash\n";
+
+  $hash = get_update_all_persons_hash();
+  $text .= "persons $hash\n";
+
+  $hash = get_update_all_years_hash();
+  $text .= "years $hash\n";
+
+  return $text;
+}
+
+sub get_update_all_hash {
+  my $resourceid = "all";
+  my $resourcetype = "group";
+
+  my $current_hash = phash_get_resource($resourceid);
+
   my $text = build_all_text();
+  print "All text:\n$text\n" if ($gl_verbose);
+  my $texthash = sha256_hex($text);
 
-  print "All text:\n$text\n";
+  if ($texthash ne $current_hash) {
+    my %hash = ();
+    $hash{"hash"} = $texthash;
+    $hash{"type"} = $resourcetype;
+    phash_set_resource($resourceid, \%hash);
+  }
 
-  my $all_hash = sha256_hex($text);
-  my %hash = ();
-  $hash{"hash"} = $all_hash;
-  $hash{"type"} = "group";
-  phash_set_resource("all", \%hash);
-
-  return $all_hash;
+  return $texthash;
 }

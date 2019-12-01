@@ -78,10 +78,6 @@ sub psys_version {
   return "0.9";
 }
 
-sub psys_dump_table {
-  psql_dump_table("system", 1, \@sys_fields);
-}
-
 sub psys_get_data {
   my $key = $_[0];
   my $value = psys_get_value($key);

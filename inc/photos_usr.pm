@@ -443,28 +443,29 @@ sub pusr_edit_close {
 }
 
 sub pusr_get_user_list {
-    my %users = ();
+  my %users = ();
 
-    my $query = "SELECT userid, fullname FROM users;";
-    if (psql_command($query)) {
-        my $iterator = psql_iterator();
-        my $record = psql_next_record($iterator);
-        while (defined($record)) {
-            my $id = psql_get_field(0, "userid", $record);
-            my $name = psql_get_field(1, "fullname", $record);
-            if (($id ne "") && ($name ne "")) {
-                $users{$id} = $name;
-            }
-            $record = psql_next_record($iterator);
-        }
+  # Note: make sure the list is always returned in the same order
+  my $query = "SELECT userid, fullname FROM users ORDER BY userid;";
+  if (psql_command($query)) {
+    my $iterator = psql_iterator();
+    my $record = psql_next_record($iterator);
+    while (defined($record)) {
+      my $id = psql_get_field(0, "userid", $record);
+      my $name = psql_get_field(1, "fullname", $record);
+      if (($id ne "") && ($name ne "")) {
+        $users{$id} = $name;
+      }
+      $record = psql_next_record($iterator);
     }
-    return %users;
+  }
+  return %users;
 }
 
 sub pusr_dump_table {
-    psql_dump_table("users", 1, \@user_fields);
+  psql_dump_table("users", 1, \@user_fields);
 
-    return "OK";
+  return "OK";
 }
 
 sub pusr_get_data {

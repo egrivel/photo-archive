@@ -1363,7 +1363,7 @@ sub pdb_get_set_data {
 
 # Return all the years in the database
 sub pdb_get_years {
-  my $query = "SELECT DISTINCT year FROM sets";
+  my $query = "SELECT DISTINCT year FROM sets ORDER BY year";
   my @result = ();
   my $count = 0;
 
@@ -1383,7 +1383,7 @@ sub pdb_get_years {
 sub pdb_get_year_sets {
   my $year = $_[0];
   my $query = "SELECT DISTINCT setid FROM sets WHERE year='";
-  $query .= psql_encode($year) . "'";
+  $query .= psql_encode($year) . "' ORDER BY setid";
   my @result = ();
   my $count = 0;
 
@@ -1403,7 +1403,7 @@ sub pdb_get_year_sets {
 sub pdb_get_set_images {
   my $setid = $_[0];
   my $query = "SELECT DISTINCT imageid FROM images WHERE setid='";
-  $query .= psql_encode($setid) . "'";
+  $query .= psql_encode($setid) . "' ORDER BY imageid";
   my @result = ();
   my $count = 0;
 

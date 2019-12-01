@@ -53,6 +53,9 @@ sub phash_set_resource {
   my $type = $$resourceref{"type"};
   my $hash = $$resourceref{"hash"};
   my $timestamp = $$resourceref{"timestamp"};
+  if (!defined($timestamp)) {
+    $timestamp = "";
+  }
 
   my $query = "";
   my %hash = phash_get_resource($resourceid);

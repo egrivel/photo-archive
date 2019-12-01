@@ -262,7 +262,7 @@ sub ppers_get_persons_in_image {
     }
     pcom_log($PCOM_DEBUG, "got result: $result");
     return $result;
-}	
+}
 
 sub ppers_delete {
     my $persid = psql_encode($_[0]);
@@ -412,7 +412,7 @@ sub ppers_get_multiple_people {
     #
     # It is not yet possible to do a combination of AND and OR...
     my $do_any = 0;
-    
+
     $id_list =~ s/\s+//sg;
     $id_list =~ s/;;/;/g;
     $id_list =~ s/^;//;
@@ -463,7 +463,7 @@ sub ppers_get_multiple_people {
             return @result;
         }
     }
-    
+
     # if ($exclude ne "") {
     #     $query .= "AND " if ($include ne "");
     #     $query .= "personid NOT IN ($exclude) ";
@@ -485,6 +485,55 @@ sub ppers_get_multiple_people {
     }
 
     return @result;
+}
+
+sub ppers_get_list {
+  my @persons = ();
+  my $count = 0;
+
+  my $query = "SELECT personid FROM person ORDER BY personid";
+  if (psql_command($query)) {
+    my $iterator = psql_iterator();
+    my $record = psql_next_record($iterator);
+    while (defined($record)) {
+      my $id = psql_get_field(0, "personid", $record);
+      if ($id ne "") {
+        $persons[$count++] = $id;
+      }
+      $record = psql_next_record($iterator);
+    }
+  }
+  return @persons;
+}
+
+sub ppers_get_data {
+  my $personid = $_[0];
+  my $query = "SELECT * FROM person WHERE personid='";
+  $query .= psql_encode($personid) . "'";
+  psql_command($query);
+  my $record = psql_next_record(psql_iterator());
+  my $fullname = psql_get_field(1, "fullname", $record);
+  my $description = psql_get_field(2, "description", $record);
+
+  my $data = "";
+  $data .= "personid='" . psql_encode($personid) . "'";
+  $data .= ",fullname='" . psql_encode($fullname) . "'";
+  $data .= ",description='" . psql_encode($description) . "'";
+
+  $query = "SELECT imageid FROM personref WHERE personid='";
+  $query .= psql_encode($personid) . "'";
+  psql_command($query);
+  my $iterator = psql_iterator();
+  $record = psql_next_record($iterator);
+  my $count = 0;
+  $data .= ",images=";
+  while (defined($record)) {
+    $data .= "," if ($count);
+    $data .= "'" . psql_encode(psql_get_field(0, "imageid", $record)) . "'";
+    $count++;
+    $record = psql_next_record($iterator);
+  }
+  return $data;
 }
 
 return 1;
