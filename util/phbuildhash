@@ -1,0 +1,117 @@
+#!/usr/bin/perl
+
+# Tool to build and maintain the hash database needed
+# for synchronizing.
+#
+# This tool iterates through the archive to build up the hash value
+# of all the
+
+use Digest::SHA qw(sha256_hex sha256_base64);
+
+my $script = __FILE__;
+my $localdir = ".";
+if ($script =~ s/\/[^\/]*$//) {
+  $localdir = $script;
+}
+push @INC, "$localdir/../cgi-bin";
+
+require "inc_all.pm";
+
+pdb_init();
+
+build_all_hash();
+
+sub do_user_hash {
+  my $userid = $_[0];
+  my $resourceid = "u-$userid";
+
+  $text = pusr_get_data($userid);
+  my $texthash = sha256_hex($text);
+
+  my %hash = ();
+  $hash{"hash"} = $texthash;
+  $hash{"type"} = "user";
+  phash_set_resource($resourceid, \%hash);
+  return $texthash;
+}
+
+sub build_users_text {
+  my %users = pusr_get_user_list();
+  my $text = "";
+  foreach $user (keys %users) {
+    $userhash = do_user_hash($user);
+    $text .= "$user $userhash\n";
+  }
+
+  return $text;
+}
+
+sub build_users_hash {
+  my $text = build_users_text();
+
+  print "Users text:\n$text\n";
+
+  my $users_hash = sha256_hex($text);
+  my %hash = ();
+  $hash{"hash"} = $users_hash;
+  $hash{"type"} = "group";
+  phash_set_resource("users", \%hash);
+
+  return $users_hash;
+}
+
+sub build_year_hash {
+  my $year =  $_[0];
+}
+
+sub build_years_text {
+  my $text = "";
+
+  my $years = pdb_get_years();
+  for (my $i = 0; defined(@$years[$i]); $i++) {
+    my $year = @$years[$i];
+    my $year_hash = build_year_hash($year);
+    $text .= "$year $year_hash\n";
+  }
+
+  return $text;
+}
+
+sub build_years_hash {
+  my $text = build_years_text();
+  print "Years text:\n$text\n";
+
+  my $years_hash = sha256_hex($text);
+  my %hash = ();
+  $hash{"hash"} = $years_hash;
+  $hash{"type"} = "group";
+  phash_set_resource("years", \%hash);
+
+  return $years_hash;
+}
+
+sub build_all_text {
+  my $text = "";
+
+  my $user_hash = build_users_hash();
+  $text .= "users $user_hash\n";
+
+  my $years_hash = build_years_hash();
+  $text .= "years $years_hash\n";
+
+  return $text;
+}
+
+sub build_all_hash {
+  my $text = build_all_text();
+
+  print "All text:\n$text\n";
+
+  my $all_hash = sha256_hex($text);
+  my %hash = ();
+  $hash{"hash"} = $all_hash;
+  $hash{"type"} = "group";
+  phash_set_resource("all", \%hash);
+
+  return $all_hash;
+}

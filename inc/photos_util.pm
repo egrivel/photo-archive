@@ -14,6 +14,8 @@ use photos_session;
 use photos_usr;
 use photos_album;
 use photos_person;
+use photos_sys;
+use photos_hash;
 
 my $put_has_required;
 

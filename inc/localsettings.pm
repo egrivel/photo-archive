@@ -93,4 +93,8 @@ sub get_nr_cols {
   return $nr;
 }
 
+sub get_master {
+  return setting_get("master");
+}
+
 return 1;

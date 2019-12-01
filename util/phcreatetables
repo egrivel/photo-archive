@@ -11,10 +11,26 @@ require "inc_all.pm";
 
 pdb_init();
 
-if (pdb_tables_exist()) {
-  print "Tables were already created!\n";
+my $version = "1.0";
+
+$current_version = psys_version();
+if ($current_version eq "1.0") {
+  print "Tables have already been created.\n";
   exit(0);
 }
+
+if ($current_version eq "0.9") {
+  print "Upgrading database from $current_version to $version.\n";
+  psys_create_tables($version);
+  phash_create_tables();
+  exit(0);
+}
+
+if ($current_version ne "0.0") {
+  print "Unknown current version '$current_version', contact the author.\n";
+  exit(0);
+}
+
 print "This will create the database tables for the photo archive system.\n";
 print "Enter the name and password of the administrator user:\n";
 
@@ -57,3 +73,4 @@ pusr_create_tables($userId, $userName, $password);
 pdb_create_tables();
 pses_create_tables();
 ppers_create_tables();
+psys_create_tables($version);

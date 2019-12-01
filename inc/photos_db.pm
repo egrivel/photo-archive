@@ -1331,4 +1331,92 @@ sub pdb_dump_set {
   return "OK";
 }
 
+sub pdb_get_image_data {
+  my $imageid = $_[0];
+  my $result = "";
+
+  if (pdb_image_info($imageid)) {
+    my $i;
+    for ($i = 0; defined($image_fields[$i]); $i++) {
+      $result .= ", " if ($i);
+      my $field = $image_fields[$i];
+      $result .= "$field='" . psql_encode($image_data{$field}) . "'";
+    }
+  }
+  return $result;
+}
+
+sub pdb_get_set_data {
+  my $setid = $_[0];
+  my $result = "";
+
+  if (pdb_set_info($setid)) {
+    my $i;
+    for ($i = 0; defined($set_fields[$i]); $i++) {
+      $result .= ", " if ($i);
+      my $field = $set_fields[$i];
+      $result .= "$field='" . psql_encode($set_data{$field}) . "'";
+    }
+  }
+  return $result;
+}
+
+# Return all the years in the database
+sub pdb_get_years {
+  my $query = "SELECT DISTINCT year FROM sets";
+  my @result = ();
+  my $count = 0;
+
+  psql_command($query);
+  my $iterator = psql_iterator();
+  my $record = psql_next_record($iterator);
+  while (defined($record)) {
+    my $year = psql_get_field(0, "year", $record);
+    $result[$count++] = $year;
+    $record = psql_next_record($iterator);
+  }
+
+  return \@result;
+}
+
+# Return all the sets in a year
+sub pdb_get_year_sets {
+  my $year = $_[0];
+  my $query = "SELECT DISTINCT setid FROM sets WHERE year='";
+  $query .= psql_encode($year) . "'";
+  my @result = ();
+  my $count = 0;
+
+  psql_command($query);
+  my $iterator = psql_iterator();
+  my $record = psql_next_record($iterator);
+  while (defined($record)) {
+    my $setid = psql_get_field(0, "setid", $record);
+    $result[$count++] = $setid;
+    $record = psql_next_record($iterator);
+  }
+
+  return \@result;
+}
+
+# Return all the images in a set
+sub pdb_get_set_images {
+  my $setid = $_[0];
+  my $query = "SELECT DISTINCT imageid FROM images WHERE setid='";
+  $query .= psql_encode($setid) . "'";
+  my @result = ();
+  my $count = 0;
+
+  psql_command($query);
+  my $iterator = psql_iterator();
+  my $record = psql_next_record($iterator);
+  while (defined($record)) {
+    my $imageid = psql_get_field(0, "imageid", $record);
+    $result[$count++] = $imageid;
+    $record = psql_next_record($iterator);
+  }
+
+  return \@result;
+}
+
 return 1;

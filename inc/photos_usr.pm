@@ -467,4 +467,19 @@ sub pusr_dump_table {
     return "OK";
 }
 
+sub pusr_get_data {
+  my $userid = $_[0];
+  my $result = "";
+
+  if (pusr_load($userid)) {
+    my $i;
+    for ($i = 0; defined($user_fields[$i]); $i++) {
+      $result .= ", " if ($i);
+      my $field = $user_fields[$i];
+      $result .= "$field='" . psql_encode($user_data{$field}) . "'";
+    }
+  }
+  return $result;
+}
+
 return 1;

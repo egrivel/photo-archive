@@ -46,7 +46,7 @@ sub psql_command {
   $is_error = 0;
   pcom_assert($was_init, "psql_command but not initialized");
   if ($use_dbi) {
-    if ($query =~ /\s*select/i) {
+    if (($query =~ /^\s*select/i) || ($query =~ /^\s*show/i)) {
       pcom_log($PCOM_DEBUG, "Prepare query '$query'");
       $resulthandle = $mysql->prepare($query);
       $resulthandle->execute();
@@ -94,7 +94,6 @@ sub psql_next_record {
         return undef;
       }
     } else {
-
       # NOTE: THIS GIVES AN ERROR!!!
       return $iterator->each;
     }
@@ -129,6 +128,10 @@ sub psql_decode {
 sub psql_create_table {
   my $table  = $_[0];
   my @fields = @{ $_[1] };
+  my $keysize = $_[2];
+  if (!defined($keysize)) {
+    $keysize = 31;
+  }
 
   psql_init();
 
@@ -139,12 +142,11 @@ sub psql_create_table {
     if ($i) {
       $query .= "TEXT,";
     } else {
-      $query .= "CHAR(31),";
+      $query .= "CHAR($keysize),";
     }
   }
   $query .= "   PRIMARY KEY($fields[0])";
   $query .= ");";
-
   # ignore error if table already exists
   psql_command($query);
 }
@@ -180,6 +182,10 @@ sub psql_dump_table {
   my $dump_data = $_[1];
   my @fields    = @{ $_[2] };
   my $setid     = $_[3];
+  my $keysize = $_[4];
+  if (!defined($keysize)) {
+    $keysize = 31;
+  }
 
   psql_init();
 
@@ -187,8 +193,7 @@ sub psql_dump_table {
   if ($dump_data >= 0) {
     my $query;
     if ($table eq "personref") {
-
-      # Personref table is sepcial, with a special key structure
+      # Personref table is special, with a special key structure
       $query = "CREATE TABLE personref (";
       $query .= "   imageid CHAR(31),";
       $query .= "   personid CHAR(36),";
@@ -203,7 +208,7 @@ sub psql_dump_table {
         } elsif ($i) {
           $query .= "TEXT,";
         } else {
-          $query .= "CHAR(31),";
+          $query .= "CHAR($keysize),";
         }
       }
       $query .= "   PRIMARY KEY($fields[0])";
@@ -275,6 +280,16 @@ sub psql_drop_table {
 
   my $query = "DROP TABLE $table;";
   psql_command($query);
+}
+
+sub psql_table_exists {
+  my $table = $_[0];
+
+  my $query = "SHOW TABLES LIKE '";
+  $query .= psql_encode($table) . "'";
+  psql_command($query);
+  my $record = psql_next_record(psql_iterator());
+  return defined($record);
 }
 
 return 1;
