@@ -97,7 +97,7 @@ if ($arg ne "") {
   exit(0);
 }
 
-$arg = parg_get("file");
+my $file = parg_get("file");
 if ($arg ne "") {
   my $set = parg_get("set");
   if ($set ne "") {
