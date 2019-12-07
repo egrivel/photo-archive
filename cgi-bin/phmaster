@@ -106,6 +106,7 @@ if ($file ne "") {
       binmode $/;
       print "Content-Type: image/jpg\r\n\r\n";
       open(FILE, "<$root/$set/$file");
+      binmode(FILE);
       while (read(FILE, $buffer, 1024)) {
         print $buffer;
       }
