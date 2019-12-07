@@ -103,19 +103,35 @@ if ($file ne "") {
   if ($set ne "") {
     my $root = local_photos_directory();
     if (-f "$root/$set/$file") {
-      binmode $/;
-      print "Content-Type: image/jpg\r\n\r\n";
-      open(FILE, "<$root/$set/$file");
-      binmode(FILE);
-      while (read(FILE, $buffer, 1024)) {
-        print $buffer;
-      }
-      close FILE;
+      return_file("$root/$set/$file");
     }
   }
 }
 
 do_root();
+
+sub get_filesize {
+  my @stat = stat($_[0]);
+  return $stat[7];
+}
+
+sub return_file {
+  my $fname = $_[0];
+  my $dispname = $_[1];
+
+  binmode(stdout);
+  $|=1;
+
+  print "content-type: image/jpeg\n";
+  my $size = get_filesize($fname);
+  if ($size) {
+    print "content-length: $size\n";
+  }
+  print "cache-control: max-age=3600\n";
+  print "\n";
+
+  system("cat $fname");
+}
 
 sub do_root {
   my $hash = phash_get_value("all");
