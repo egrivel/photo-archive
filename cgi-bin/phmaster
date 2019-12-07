@@ -103,7 +103,8 @@ if ($file ne "") {
   if ($set ne "") {
     my $root = local_photos_directory();
     if (-f "$root/$set/$file") {
-      print "Content-Type: image/jpg\n\n";
+      binmode $/;
+      print "Content-Type: image/jpg\r\n\r\n";
       open(FILE, "<$root/$set/$file");
       while (read(FILE, $buffer, 1024)) {
         print $buffer;
