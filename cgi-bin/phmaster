@@ -97,6 +97,22 @@ if ($arg ne "") {
   exit(0);
 }
 
+$arg = parg_get("file");
+if ($arg ne "") {
+  my $set = parg_get("set");
+  if ($set ne "") {
+    my $root = local_photos_directory();
+    if (-f "$root/$set/$file") {
+      print "Content-Type: image/jpg\n\n";
+      open(FILE, "<$root/$set/$file");
+      while (read(FILE, $buffer, 1024)) {
+        print $buffer;
+      }
+      close FILE;
+    }
+  }
+}
+
 do_root();
 
 sub do_root {

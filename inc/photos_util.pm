@@ -16,6 +16,7 @@ use photos_album;
 use photos_person;
 use photos_sys;
 use photos_hash;
+use photos_sync;
 
 my $put_has_required;
 

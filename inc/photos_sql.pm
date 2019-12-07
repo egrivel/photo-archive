@@ -292,4 +292,27 @@ sub psql_table_exists {
   return defined($record);
 }
 
+sub psql_upsert {
+  my $table = $_[0];
+  my $data = $_[1];
+
+  my $update_data = $data;
+  my $insert_names = "";
+  my $insert_values = "";
+
+  while ($data ne "") {
+    if ($data =~ s/^([^=]+)=(\'[^\']*\')(, )?//) {
+      $insert_names .= $1.$3;
+      $insert_values .= $2.$3;
+    } else {
+      $data = "";
+    }
+  }
+
+  my $sql = "INSERT INTO $table ($insert_names) ";
+  $sql .= "VALUES ($insert_values) ";
+  $sql .= "ON DUPLICATE KEY UPDATE $update_data";
+  psql_command($sql);
+}
+
 return 1;

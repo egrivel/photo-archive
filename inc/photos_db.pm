@@ -1572,4 +1572,25 @@ sub pdb_get_years_hash_text {
   return $text;
 }
 
+sub pdb_sync_image {
+  my $set = $_[0];
+  my $id = $_[1];
+
+  my $sync_info = psync_get_image_info($id);
+
+  print "Got info: $sync_info\n";
+  if ($sync_info =~ s/^database: ([^\n]+)\n//) {
+    psql_upsert("images", $1);
+  }
+  while ($sync_info =~ s/^([\w\-\.\/]+): (\w+)\n//) {
+    my $fileid = $1;
+    my $hash = $2;
+    print "File $fileid hash $hash\n";
+    my $current_hash = phash_get_value("f-$fileid");
+    if ($current_hash ne $hash) {
+      print "   need to update\n";
+      psync_retrieve_file($set, $fileid);
+    }
+  }
+}
 return 1;
