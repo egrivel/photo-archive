@@ -98,7 +98,7 @@ if ($arg ne "") {
 }
 
 my $file = parg_get("file");
-if ($arg ne "") {
+if ($file ne "") {
   my $set = parg_get("set");
   if ($set ne "") {
     my $root = local_photos_directory();
