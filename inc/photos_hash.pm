@@ -3,6 +3,8 @@
 # This source is copyright (c) 2019 by Eric Grivel. All Rights Reserved.
 #
 
+use Digest::SHA qw(sha256_hex sha256_base64);
+
 my @hash_fields = (
   "resourceid",
   "type",
@@ -46,6 +48,15 @@ sub phash_get_resource {
   return %resource;
 }
 
+sub phash_get_value {
+  my $name = $_[0];
+  my %hash = phash_get_resource($name);
+  if (defined($hash{"hash"})) {
+    return $hash{"hash"};
+  }
+  return "";
+}
+
 sub phash_set_resource {
   my $resourceid = $_[0];
   my $resourceref = $_[1];
@@ -73,6 +84,24 @@ sub phash_set_resource {
     $query .= psql_encode($timestamp) . "'";
   }
   psql_command($query)
+}
+
+sub phash_set_value {
+  my $resourceid = $_[0];
+  my $resourcetype = $_[1];
+  my $texthash = $_[2];
+
+  my %hash = ();
+  $hash{"hash"} = $texthash;
+  $hash{"type"} = $resourcetype;
+  phash_set_resource($resourceid, \%hash);
+}
+
+sub phash_do_hash {
+  my $text = $_[0];
+  utf8::encode($text);
+  $hash = sha256_hex($text);
+  return $hash;
 }
 
 return 1;

@@ -1,0 +1,123 @@
+#!/usr/bin/perl -w
+
+my $script = __FILE__;
+my $localdir = ".";
+if ($script =~ s/\/[^\/]*$//) {
+  $localdir = $script;
+}
+push @INC, "$localdir/../inc";
+
+require "photos_util.pm";
+
+# ------------------------------------------------------------------------
+# Master server
+# -------------
+#
+# The "master" is responsible for responding to requests from "slaves"
+# for information about updates to the database. The slave will use this
+# information to determine where its copy of the database is out-of-date
+# and will follow-up with requests to get the new information.
+#
+# After authentication, the slave will do a GET request without
+# parameters to the master. The master responds with a single line
+# "all: <hash>" containing the hash for the "all" resource id.
+#
+# If the "all" hash is the same, the slave will still be up-to-date and
+# the interaction stops. However, if the "all" hash is different, the
+# slave will start probing where the difference is.
+#
+# The next request will be a GET request with as parameters "type=all".
+# This will return the text that goes into the "all" hash. This text (and
+# all texts that contain hash values) consists of lines with a hash type,
+# a colon, and a hash value. In this case, the contents of the "all" text
+# will be:
+#    users: <users hash>
+#    persons: <persons hash>
+#    years: <years hash>
+#
+# The response to the GET request with "type=users" will consist of lines
+#    <userid>: <user database spec>
+#
+# The response of the GET request with "type=persons" will consist of
+# lines
+#   <personid>: <person database spec>
+#
+# The response of the GET request with "type=years" will consist of lines
+#   <year>: <year hash>
+#
+# The response of the GET request with "type=year&value=<year>" will consist
+# of lines:
+#   <setid>: <set hash>
+#
+# The response of the GET request with "type=set&value=<setid>" will consist
+# of:
+#   database: <set database spec>
+#   <imageid>: <image hash>
+#
+# The response of the GET request with "type=image&value=<imageid>" will
+# consist of the following lines as appropriate (when the corresponding
+# file exists):
+#   database: <image database spec>
+#   tif/<imageid>.nef: <file hash>
+#   tif/<imageid>.tif: <file hash>
+#   tif/<imageid>.jpg: <file hash>
+#   edited/<imageid>.jpg: <file hash>
+#
+# The response of the GET request with "type=file&value=<fileid>" will
+# be the binary content of the file, with some special HTTP response
+# header indicating the timestamp for the file.
+# ------------------------------------------------------------------------
+
+put_init();
+
+my $text = "";
+my $arg = parg_get("type");
+if ($arg ne "") {
+  my $value = parg_get("value");
+  if ($arg eq "all") {
+    $text = put_get_all_hash();
+  } elsif ($arg eq "users") {
+    $text = pusr_get_hash_text();
+  } elsif ($arg eq "persons") {
+    $text = ppers_get_hash_text();
+  } elsif ($arg eq "years") {
+    $text = pdb_get_years_hash_text();
+  } elsif ($arg eq "year") {
+    $text = pdb_get_year_hash_text($value);
+  } elsif ($arg eq "set") {
+    $text = pdb_get_set_hash_text($value);
+  } elsif ($arg eq "image") {
+    my $set = pcom_get_set($value);
+    $text = pdb_get_image_hash_text($value, $set);
+  }
+
+
+  print "Content-Type: text/plain\n\n";
+  print $text;
+  exit(0);
+}
+
+do_root();
+
+sub do_root {
+  my $hash = phash_get_value("all");
+  print "content-type: text/plain\n\n";
+  print "all: $hash\n";
+}
+
+sub do_year {
+  my $year = $_[0];
+  my $text = "";
+
+  my $items = pdb_get_year_sets($year);
+  for (my $i = 0; defined(@$items[$i]); $i++) {
+    my $item = @$items[$i];
+    my %hash = phash_get_resource("s-$item");
+    my $hash = $hash{"hash"};
+    $text .= "$item $hash\n";
+  }
+
+  print "content-type: text/plain\n\n";
+  print $text;
+  exit(0);
+}

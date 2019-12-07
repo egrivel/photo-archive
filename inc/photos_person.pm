@@ -536,4 +536,14 @@ sub ppers_get_data {
   return $data;
 }
 
+sub ppers_get_hash_text {
+  my %persons = ppers_get_person_list();
+  my $text = "";
+  foreach $person (sort (keys %persons)) {
+    my $persontext = ppers_get_data($person);
+    $text .= "$person: $persontext\n";
+  }
+  return $text;
+}
+
 return 1;

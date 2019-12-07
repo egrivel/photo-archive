@@ -1,11 +1,17 @@
-#!/usr/bin/perl -w -I .
+#!/usr/bin/perl -w
 
 #
 # Purpose of this tool is to display a standard image page for an image
 # from the photos database.
 #
+my $script = __FILE__;
+my $localdir = ".";
+if ($script =~ s/\/[^\/]*$//) {
+  $localdir = $script;
+}
+push @INC, "$localdir/../inc";
 
-use inc_all;
+require "photos_util.pm";
 
 put_init();
 put_restore_session();
@@ -86,12 +92,12 @@ sub disp_person {
   pht_tab("About",       "<a href='phabout'>");
   pht_tabs_end();
 
-  pht_output "<div id='title'>Photos of $name</div>\n";
-  pht_output "<div class='listdescr'>$descr";
+  pht_output("<div id='title'>Photos of $name</div>\n");
+  pht_output("<div class='listdescr'>$descr");
   if (pusr_allowed($PUSR_MAINTAIN_PERSONS)) {
-    pht_output " [<a href='phperson?persid=$persid'>Edit</a>]";
+    pht_output(" [<a href='phperson?persid=$persid'>Edit</a>]");
   }
-  pht_output "</div>\n";
+  pht_output("</div>\n");
 
   my @images = ppers_get_photos($persid);
 
@@ -101,19 +107,19 @@ sub disp_person {
   for ($i = 0 ; defined($images[$i]) ; $i++) {
     my $th = disp_thumbnail($images[$i], 0);
     if ($th ne "") {
-      pht_output $th;
+      pht_output($th);
       $nr_displayed++;
     }
   }
   if ($nr_displayed <= 0) {
-    pht_output "<p>There are no photos available for $name.</p>\n";
+    pht_output("<p>There are no photos available for $name.</p>\n");
   }
-  pht_output "<div class='imglistbreak' />";
+  pht_output("<div class='imglistbreak' />");
 
   if ($nr_displayed > 1) {
-    pht_output "<p>There are $nr_displayed photos for $name.</p>\n";
+    pht_output("<p>There are $nr_displayed photos for $name.</p>\n");
   } elsif ($nr_displayed == 1) {
-    pht_output "<p>There is $nr_displayed photo for $name.</p>\n";
+    pht_output("<p>There is $nr_displayed photo for $name.</p>\n");
   }
   put_page_end();
 }
@@ -245,18 +251,17 @@ sub disp_set {
   pht_tab("About",       "<a href='phabout'>");
   pht_tabs_end();
 
-  pht_output
-    "<div class='listtitle'><strong>$settitle</strong> $datetime</div>\n";
-  pht_output "<div class='listdescr'>$description</div>\n";
+  pht_output("<div class='listtitle'><strong>$settitle</strong> $datetime</div>\n");
+  pht_output("<div class='listdescr'>$description</div>\n");
 
   my $set_thumbnails = disp_set_thumbnails($setid, $do_compact);
   if ($set_thumbnails ne "") {
-    pht_output $set_thumbnails;
+    pht_output($set_thumbnails);
   }
 
-  pht_output "<div class='imglistbreak' />";
+  pht_output("<div class='imglistbreak' />");
   if ($set_thumbnails eq "") {
-    pht_output "<div class='nophotos'>(no photos available)</div>\n";
+    pht_output("<div class='nophotos'>(no photos available)</div>\n");
   }
   pht_page_end();
 }
@@ -447,7 +452,7 @@ sub disp_year {
   } elsif ($year eq "9996") {
     $descr = "Overview of paper photo album scans";
   }
-  pht_output "<div class='settitle'>$descr</div>\n";
+  pht_output("<div class='settitle'>$descr</div>\n");
 
   my $iter = pdb_iter_set_new();
   pdb_iter_filter_category($iter, put_types());
@@ -510,7 +515,7 @@ sub disp_year {
     }
   }
   if ($list eq "") {
-    pht_output "<p>There are no photos in the archive for $year.</p>\n";
+    pht_output("<p>There are no photos in the archive for $year.</p>\n");
   } else {
     if ($monthcount) {
       my @monthnames = (
@@ -519,16 +524,16 @@ sub disp_year {
         "August", "September", "October",  "November",
         "December"
       );
-      pht_output "<div class='setlist'>Jump to month:";
+      pht_output("<div class='setlist'>Jump to month:");
       foreach $key (sort (keys %months)) {
         my $link = $monthnames[int($key)];
-        pht_output " | <a href='#month$key'>$link</a>";
+        pht_output(" | <a href='#month$key'>$link</a>");
       }
-      pht_output "</div>\n";
+      pht_output("</div>\n");
     }
   }
-  pht_output $list;
-  pht_output "<div class='imglistbreak' />";
+  pht_output($list);
+  pht_output("<div class='imglistbreak' />");
   pht_page_end();
 }
 
@@ -547,28 +552,28 @@ sub out_table {
     $cols--;
   }
 
-  pht_output "<table class='yearlist yearlist-$class'>";
-  pht_output "<tr><th colspan='$cols' class='years'>Select a Year</th></tr>\n";
+  pht_output("<table class='yearlist yearlist-$class'>");
+  pht_output("<tr><th colspan='$cols' class='years'>Select a Year</th></tr>\n");
   for (my $cur_row = 0 ; $cur_row < $rows ; $cur_row++) {
-    pht_output "<tr>";
+    pht_output("<tr>");
     for (my $cur_col = 0 ; $cur_col < $cols ; $cur_col++) {
-      pht_output "<td>";
+      pht_output("<td>");
       my $year = $first_year + ($rows * $cur_col) + $cur_row;
       if ($year <= $last_year) {
         if (pcom_has_photos_in_year($year)) {
-          pht_output "<a href='phbrowse?year=$year'>$year</a>";
+          pht_output("<a href='phbrowse?year=$year'>$year</a>");
         } else {
-          pht_output "$year";
+          pht_output("$year");
         }
       } else {
-        pht_output "---";
+        pht_output("---");
       }
-      pht_output "</td>\n";
+      pht_output("</td>\n");
     }
-    pht_output "</tr>";
+    pht_output("</tr>");
   }
 
-  pht_output "</table>\n";
+  pht_output("</table>\n");
 }
 
 sub disp_all {
@@ -592,7 +597,7 @@ sub disp_all {
   pht_tabs_end();
 
   $title = get_title();
-  pht_output "<div class='yeartitle'>$title</div>\n";
+  pht_output("<div class='yeartitle'>$title</div>\n");
   pdb_filter_category(put_types());
   my $total = pdb_image_count();
   if ($total < 1) {
@@ -610,7 +615,7 @@ sub disp_all {
     close FILE;
   }
 
-  my $cols = get_nr_cols;
+  my $cols = get_nr_cols();
   out_table($cols, "large");
 
   $welcome = "../templates/welcome2.tpl";
@@ -656,7 +661,7 @@ sub disp_type {
   if ($type eq $PCOM_PARENTS) {
     $descr = "Overview of my parents' photos";
   }
-  pht_output "<div class='settitle'>$descr</div>\n";
+  pht_output("<div class='settitle'>$descr</div>\n");
 
   my $iter = pdb_iter_set_new();
   pdb_iter_filter_category($iter, $type);
@@ -690,9 +695,9 @@ sub disp_type {
     $setid = pdb_iter_previous($iter);
   }
   if ($list eq "") {
-    pht_output "<p>There are no photos of this type in the archive.</p>\n";
+    pht_output("<p>There are no photos of this type in the archive.</p>\n");
   }
-  pht_output $list;
-  pht_output "<div class='imglistbreak' />";
+  pht_output($list);
+  pht_output("<div class='imglistbreak' />");
   pht_page_end();
 }

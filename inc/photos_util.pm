@@ -678,4 +678,43 @@ sub put_tags {
     return $tags;
 }
 
+sub put_get_all_hash {
+  my $do_update = $_[0];
+  if (!defined($do_update)) {
+    $do_update = 0;
+  }
+
+  my $users_hash = phash_get_value("users");
+  my $persons_hash = phash_get_value("persons");
+  my $years_hash = phash_get_value("years");
+
+  if ($do_update) {
+    # Get new values and update if needed
+    my $users_text = pusr_get_hash_text();
+    my $new_hash = phash_do_hash($users_text);
+    if ($new_hash ne $users_hash) {
+      phash_set_value("users", "users", $new_hash);
+      $users_hash = $new_hash;
+    }
+
+    my $persons_text = ppers_get_hash_text();
+    $new_hash = phash_do_hash($users_text);
+    if ($new_hash ne $persons_hash) {
+      phash_set_value("persons", "persons", $new_hash);
+      $persons_hash = $new_hash;
+    }
+
+    my $years_text = pdb_get_years_hash_text($do_update);
+    $new_hash = phash_do_hash($years_text);
+    if ($new_hash ne $persons_hash) {
+      phash_set_value("years", "years", $new_hash);
+      $years_hash = $new_hash;
+    }
+  }
+
+  my $text = "";
+  $text .= "users: $users_hash\n";
+  $text .= "persons: $persons_hash\n";
+  $text .= "years: $years_hash\n";
+}
 return 1;

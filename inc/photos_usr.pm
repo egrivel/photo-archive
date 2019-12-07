@@ -446,7 +446,7 @@ sub pusr_get_user_list {
   my %users = ();
 
   # Note: make sure the list is always returned in the same order
-  my $query = "SELECT userid, fullname FROM users ORDER BY userid;";
+  my $query = "SELECT userid, fullname FROM users ORDER BY userid";
   if (psql_command($query)) {
     my $iterator = psql_iterator();
     my $record = psql_next_record($iterator);
@@ -481,6 +481,16 @@ sub pusr_get_data {
     }
   }
   return $result;
+}
+
+sub pusr_get_hash_text {
+  my %users = pusr_get_user_list();
+  my $text = "";
+  foreach $user (sort (keys %users)) {
+    my $usertext = pusr_get_data($user);
+    $text .= "$user: $usertext\n";
+  }
+  return $text;
 }
 
 return 1;

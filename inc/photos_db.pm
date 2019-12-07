@@ -1419,4 +1419,147 @@ sub pdb_get_set_images {
   return \@result;
 }
 
+sub pdb_get_file_item_hash {
+  my $item = $_[0];
+  my $fname = $_[1];
+  my $do_update = $_[2];
+  my $resourceid = "f-$item";
+
+  my $file_hash = phash_get_value($resourceid);
+
+  if ($do_update || $file_hash eq "") {
+    my %hash = phash_get_resource($resourceid);
+    my ($dev, $ino, $mode, $nlink, $uid, $gid, $rdev, $size,
+      $atime, $mtime, $ctime, $blksize, $blocks) = stat($fname);
+
+    if (defined($hash{"timestamp"}) && $hash{"timestamp"} == $mtime) {
+      return $file_hash;
+    }
+
+    my $cmd = "sha256sum \"$fname\"";
+    open(PIPE, "$cmd|") || die "Cannot get hash for '$fname'\n";
+    my $text = <PIPE>;
+    $file_hash = "";
+    close(PIPE);
+    if ($text =~ /^([\w\-]+)/) {
+      $file_hash = $1;
+    }
+    $hash{"hash"} = $file_hash;
+    $hash{"type"} = "file";
+    $hash{"timestamp"} = $mtime;
+    phash_set_resource($resourceid, \%hash);
+  }
+
+  return $file_hash;
+}
+
+sub pdb_get_image_hash_text {
+  my $image = $_[0];
+  my $set = $_[1];
+  my $do_update = $_[2];
+  my $text = "";
+
+  $database = pdb_get_image_data($image);
+  $text .= "database: " . $database . "\n";
+  my $root = local_photos_directory();
+
+  $item = "tif/$image.nef";
+  if (-f "$root/$set/$item") {
+    my $hash = pdb_get_file_item_hash($item, "$root/$set/$item", $do_update);
+    $text .= "$item: $hash\n";
+  }
+
+  $item = "tif/$image.tif";
+  if (-f "$root/$set/$item") {
+    my $hash = pdb_get_file_item_hash($item, "$root/$set/$item", $do_update);
+    $text .= "$item: $hash\n";
+  }
+
+  $item = "tif/$image.jpg";
+  if (-f "$root/$set/$item") {
+    my $hash = pdb_get_file_item_hash($item, "$root/$set/$item", $do_update);
+    $text .= "$item: $hash\n";
+  }
+
+  $item = "edited/$image.jpg";
+  if (-f "$root/$set/$item") {
+    my $hash = pdb_get_file_item_hash($item, "$root/$set/$item", $do_update);
+    $text .= "$item: $hash\n";
+  }
+
+  return $text;
+}
+
+sub pdb_get_set_hash_text {
+  my $set = $_[0];
+  my $do_update = $_[1];
+
+  my $text = "";
+  $text .= "database: " . pdb_get_set_data($set) . "\n";
+  my $images = pdb_get_set_images($set);
+  for (my $i = 0; defined(@$images[$i]); $i++) {
+    my $image = @$images[$i];
+    my $image_hash = phash_get_value("i-$image");
+    if ($do_update || $image_hash eq "") {
+      my $image_text = pdb_get_image_hash_text($image, $set, $do_update);
+      my $new_hash = phash_do_hash($image_text);
+      if ($new_hash ne $image_hash) {
+        print "Changing hash for image $image\n  from: $image_hash\n    to: $new_hash\n";
+        phash_set_value("i-$image", "image", $new_hash);
+        $image_hash = $new_hash;
+      }
+    }
+    $text .= "$image: $image_hash\n";
+  }
+
+  return $text;
+}
+
+sub pdb_get_year_hash_text {
+  my $year = $_[0];
+  my $do_update = $_[1];
+
+  my $text = "";
+  my $sets = pdb_get_year_sets($year);
+  for (my $i = 0; defined(@$sets[$i]); $i++) {
+    my $set = @$sets[$i];
+    my $set_hash = phash_get_value("s-$set");
+    if ($do_update || $set_hash eq "") {
+      my $set_text = pdb_get_set_hash_text($set, $do_update);
+      my $new_hash = phash_do_hash($set_text);
+      if ($new_hash ne $set_hash) {
+        print "Changing hash for set $set\n  from: $set_hash\n    to: $new_hash\n";
+        phash_set_value("s-$set", "set", $new_hash);
+        $set_hash = $new_hash;
+      }
+    }
+    $text .= "$set: $set_hash\n";
+  }
+
+  return $text;
+}
+
+sub pdb_get_years_hash_text {
+  my $do_update = $_[0];
+  my $text = "";
+
+  my $years = pdb_get_years();
+  for (my $i = 0; defined(@$years[$i]); $i++) {
+    my $year = @$years[$i];
+    my $year_hash = phash_get_value("y-$year");
+    if ($do_update || $year_hash eq "") {
+      my $year_text = pdb_get_year_hash_text($year, $do_update);
+      my $new_hash = phash_do_hash($year_text);
+      if ($new_hash ne $year_hash) {
+        print "Changing hash for year $year\n  from: $year_hash\n    to: $new_hash\n";
+        phash_set_value("y-$year", "year", $new_hash);
+        $year_hash = $new_hash;
+      }
+    }
+    $text .= "$year: $year_hash\n";
+  }
+
+  return $text;
+}
+
 return 1;
