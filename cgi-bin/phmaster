@@ -75,7 +75,7 @@ my $arg = parg_get("type");
 if ($arg ne "") {
   my $value = parg_get("value");
   if ($arg eq "all") {
-    $text = put_get_all_hash();
+    $text = put_get_all_hash_text();
   } elsif ($arg eq "users") {
     $text = pusr_get_hash_text();
   } elsif ($arg eq "persons") {

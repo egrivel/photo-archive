@@ -1379,11 +1379,14 @@ sub pdb_get_years {
   return \@result;
 }
 
-# Return all the sets in a year
+# Return all the non-private and non-blank sets in a year
 sub pdb_get_year_sets {
   my $year = $_[0];
-  my $query = "SELECT DISTINCT setid FROM sets WHERE year='";
-  $query .= psql_encode($year) . "' ORDER BY setid";
+  my $query = "SELECT DISTINCT setid FROM sets ";
+  $query .= "WHERE year='" . psql_encode($year) . "' ";
+  $query .= "AND category !='" . psql_encode($PCOM_PRIVATE) . "' ";
+  $query .= "AND category !='" . psql_encode($PCOM_NEW) . "' ";
+  $query .= "ORDER BY setid";
   my @result = ();
   my $count = 0;
 
@@ -1402,8 +1405,11 @@ sub pdb_get_year_sets {
 # Return all the images in a set
 sub pdb_get_set_images {
   my $setid = $_[0];
-  my $query = "SELECT DISTINCT imageid FROM images WHERE setid='";
-  $query .= psql_encode($setid) . "' ORDER BY imageid";
+  my $query = "SELECT DISTINCT imageid FROM images ";
+  $query .= "WHERE setid='" . psql_encode($setid) . "' ";
+  $query .= "AND category !='" . psql_encode($PCOM_PRIVATE) . "' ";
+  $query .= "AND category !='" . psql_encode($PCOM_NEW) . "' ";
+  $query .= "ORDER BY imageid";
   my @result = ();
   my $count = 0;
 
@@ -1549,14 +1555,18 @@ sub pdb_get_years_hash_text {
     my $year_hash = phash_get_value("y-$year");
     if ($do_update || $year_hash eq "") {
       my $year_text = pdb_get_year_hash_text($year, $do_update);
-      my $new_hash = phash_do_hash($year_text);
-      if ($new_hash ne $year_hash) {
-        print "Changing hash for year $year\n  from: $year_hash\n    to: $new_hash\n";
-        phash_set_value("y-$year", "year", $new_hash);
-        $year_hash = $new_hash;
+      if ($year_text ne "") {
+        my $new_hash = phash_do_hash($year_text);
+        if ($new_hash ne $year_hash) {
+          print "Changing hash for year $year\n  from: $year_hash\n    to: $new_hash\n";
+          phash_set_value("y-$year", "year", $new_hash);
+          $year_hash = $new_hash;
+        }
       }
     }
-    $text .= "$year: $year_hash\n";
+    if ($year_hash ne "") {
+      $text .= "$year: $year_hash\n";
+    }
   }
 
   return $text;

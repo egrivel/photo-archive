@@ -678,7 +678,7 @@ sub put_tags {
     return $tags;
 }
 
-sub put_get_all_hash {
+sub put_get_all_hash_text {
   my $do_update = $_[0];
   if (!defined($do_update)) {
     $do_update = 0;

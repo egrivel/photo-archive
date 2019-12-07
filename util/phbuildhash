@@ -33,7 +33,11 @@ while (defined($arg)) {
   $arg = shift;
 }
 
-put_get_all_hash(1);
+my $text = put_get_all_hash_text(1);
+if ($text ne "") {
+  my $hash = phash_do_hash($text);
+  phash_set_value("all", "all", $hash);
+}
 exit(0);
 
 sub disp_help {
