@@ -8,9 +8,9 @@ my $localdir = ".";
 if ($script =~ s/\/[^\/]*$//) {
   $localdir = $script;
 }
-push @INC, "$localdir/../cgi-bin";
+push @INC, "$localdir/../inc";
 
-require "inc_all.pm";
+require "photos_util.pm";
 
 put_init();
 my $ua = new LWP::UserAgent;
