@@ -51,5 +51,5 @@ sub get_content {
     die "Error fetching url $url:\n  "
       . $response->status_line . "\n";
   }
-  return $response->content;
+  return $response->decoded_content();
 }

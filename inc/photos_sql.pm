@@ -5,7 +5,6 @@
 
 use DBI;
 
-#use Net::MySQL;
 use photos_common;
 
 my $mysql;
@@ -17,19 +16,14 @@ sub psql_init {
   $dbuser   = setting_get("dbuser");
   $dbpasswd = setting_get("dbpasswd");
   if (!$was_init) {
-    if (-f "/etc/system/washington") {
-      # On 'washington' use DBI with a username 'eric' and a password
-      # Washington database is UTF8. Set the database connection to UTF8.
-      $mysql = DBI->connect("DBI:mysql:$dbname;localhost", $dbuser, $dbpasswd,
-        { mysql_enable_utf8 => 1 });
+    # Database is UTF8. Set the database connection to UTF8.
+    $mysql = DBI->connect("DBI:mysql:$dbname;localhost", $dbuser, $dbpasswd,
+      { mysql_enable_utf8 => 1 });
 
-      # Also, set the output mode to UTF8 to match
-      binmode STDOUT, ":utf8";
-      $use_dbi = 1;
-    } else {
-      $mysql = DBI->connect("DBI:mysql:$dbname;localhost", $dbuser, $dbpasswd);
-      $use_dbi = 1;
-    }
+    # Also, set the output mode to UTF8 to match
+    binmode STDOUT, ":utf8";
+
+    $use_dbi = 1;
     if (defined($mysql)) {
       $was_init++;
     }

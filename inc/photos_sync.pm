@@ -14,7 +14,7 @@ sub psync_get_content {
     die "Error fetching url $url:\n  "
       . $response->status_line . "\n";
   }
-  return $response->content;
+  return $response->decoded_content();
 }
 
 sub psync_get_file {
@@ -56,7 +56,6 @@ sub psync_get_set_info {
 
   my $master = get_master();
   my $url = "$master?type=set&value=$id";
-  print "Use URL $url\n";
   return psync_get_content($url);
 }
 
@@ -65,8 +64,8 @@ sub psync_get_image_info {
 
   my $master = get_master();
   my $url = "$master?type=image&value=$id";
-  print "Use URL $url\n";
-  return psync_get_content($url);
+  $content = psync_get_content($url);
+  return $content;
 }
 
 sub psync_retrieve_file {
