@@ -1573,24 +1573,54 @@ sub pdb_get_years_hash_text {
 }
 
 sub pdb_sync_image {
-  my $set = $_[0];
-  my $id = $_[1];
+  my $setid = $_[0];
+  my $imageid = $_[1];
+  print "Synching image $imageid\n";
 
-  my $sync_info = psync_get_image_info($id);
+  my $sync_info = psync_get_image_info($imageid);
 
-  print "Got info: $sync_info\n";
   if ($sync_info =~ s/^database: ([^\n]+)\n//) {
     psql_upsert("images", $1);
   }
   while ($sync_info =~ s/^([\w\-\.\/]+): (\w+)\n//) {
     my $fileid = $1;
     my $hash = $2;
-    print "File $fileid hash $hash\n";
     my $current_hash = phash_get_value("f-$fileid");
     if ($current_hash ne $hash) {
-      print "   need to update\n";
-      psync_retrieve_file($set, $fileid);
+      psync_retrieve_file($setid, $fileid);
+    }
+    my $root = local_photos_directory();
+    my $fname = "$root/$setid/$fileid";
+    pdb_get_file_item_hash($fileid, $fname, 1);
+  }
+
+  my $text = pdb_get_image_hash_text($imageid, $setid, 1);
+  my $new_hash = phash_do_hash($text);
+  phash_set_value("i-$imageid", "image", $new_hash);
+}
+
+sub pdb_sync_set {
+  my $setid = $_[0];
+  print "Synching set $setid\n";
+
+  my $sync_info = psync_get_set_info($setid);
+
+  if ($sync_info =~ s/^database: ([^\n]+)\n//) {
+    psql_upsert("sets", $1);
+  }
+  while ($sync_info =~ s/^([\w\-\.\/]+): (\w+)\n//) {
+    my $imageid = $1;
+    my $hash = $2;
+    my $current_hash = phash_get_value("i-$imageid");
+    if ($current_hash ne $hash) {
+      print "Image $imageid: $current_hash => $hash\n";
+      pdb_sync_image($setid, $imageid);
     }
   }
+
+  my $text = pdb_get_set_hash_text($set, 0);
+  my $new_hash = phash_do_hash($text);
+  phash_set_value("s-$setid", "set", $new_hash);
 }
+
 return 1;

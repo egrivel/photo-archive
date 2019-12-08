@@ -12,7 +12,7 @@ push @INC, "$localdir/../cgi-bin";
 
 require "inc_all.pm";
 
-pdb_init();
+put_init();
 my $ua = new LWP::UserAgent;
 
 print "============================================================\n";
@@ -41,7 +41,7 @@ if ($all_hash eq $current_hash) {
 
 print "Current hash: $current_hash\n\n";
 
-pdb_sync_image("d02", "d0201");
+pdb_sync_set("d02");
 
 sub get_content {
   my $url = $_[0];

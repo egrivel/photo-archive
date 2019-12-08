@@ -99,7 +99,7 @@ sub phash_set_value {
 
 sub phash_do_hash {
   my $text = $_[0];
-  utf8::encode($text);
+  # utf8::encode($text);
   $hash = sha256_hex($text);
   return $hash;
 }

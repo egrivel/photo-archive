@@ -51,6 +51,15 @@ sub psync_get_file {
   }
 }
 
+sub psync_get_set_info {
+  my $id = $_[0];
+
+  my $master = get_master();
+  my $url = "$master?type=set&value=$id";
+  print "Use URL $url\n";
+  return psync_get_content($url);
+}
+
 sub psync_get_image_info {
   my $id = $_[0];
 
