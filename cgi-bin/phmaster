@@ -92,7 +92,7 @@ if ($arg ne "") {
   }
 
 
-  print "Content-Type: text/plain\n\n";
+  print "Content-Type: text/plain; charset=utf-8\n\n";
   print $text;
   exit(0);
 }
