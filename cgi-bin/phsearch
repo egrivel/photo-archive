@@ -229,7 +229,7 @@ if (($title ne "") || ($descr ne "") || ($persons ne "") || ($comment ne "") || 
                 }
                 $out .= "<div style='position: absolute; margin-top: ${voffset}px; margin-left: ${hoffset}px;'>";
                 for (my $i = 0; $i < $qual; $i++) {
-                    $out .= "<img src='$images/images/green-dot.png' class='qualdot' alt='*' />$break";
+                    $out .= "<img src='$staticroot/images/green-dot.png' class='qualdot' alt='*' />$break";
                 }
                 $out .= "</div>";
             }
