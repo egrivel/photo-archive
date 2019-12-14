@@ -1633,7 +1633,6 @@ sub pdb_sync_year {
 
   print "Synching year $year\n";
   my $sync_info = psync_get_year_info($year);
-  print "Got year info:\n$sync_info\n";
 
   while ($sync_info =~ s/^(\w+): (\w+)\n//) {
     my $setid = $1;
