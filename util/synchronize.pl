@@ -41,7 +41,7 @@ if ($all_hash eq $current_hash) {
 
 print "Current hash: $current_hash\n\n";
 
-pdb_sync_set("d02");
+pdb_sync_year("1960");
 
 sub get_content {
   my $url = $_[0];

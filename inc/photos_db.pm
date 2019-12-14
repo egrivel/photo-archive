@@ -1465,6 +1465,8 @@ sub pdb_get_image_hash_text {
   my $do_update = $_[2];
   my $text = "";
 
+  my $old_hash = phash_get_value("i-$image");
+
   $database = pdb_get_image_data($image);
   $text .= "database: " . $database . "\n";
   my $root = local_photos_directory();
@@ -1493,6 +1495,14 @@ sub pdb_get_image_hash_text {
     $text .= "$item: $hash\n";
   }
 
+  if ($do_update) {
+    my $hash = phash_do_hash($text);
+    if ($hash ne $old_hash) {
+      print "Image $image: $old_hash ==> $hash\n";
+      phash_set_value("i-$image", "image", $hash);
+    }
+  }
+
   return $text;
 }
 
@@ -1500,22 +1510,24 @@ sub pdb_get_set_hash_text {
   my $set = $_[0];
   my $do_update = $_[1];
 
+  my $old_hash = phash_get_value("s-$set");
+
   my $text = "";
   $text .= "database: " . pdb_get_set_data($set) . "\n";
   my $images = pdb_get_set_images($set);
   for (my $i = 0; defined(@$images[$i]); $i++) {
     my $image = @$images[$i];
-    my $image_hash = phash_get_value("i-$image");
-    if ($do_update || $image_hash eq "") {
-      my $image_text = pdb_get_image_hash_text($image, $set, $do_update);
-      my $new_hash = phash_do_hash($image_text);
-      if ($new_hash ne $image_hash) {
-        print "Changing hash for image $image\n  from: $image_hash\n    to: $new_hash\n";
-        phash_set_value("i-$image", "image", $new_hash);
-        $image_hash = $new_hash;
-      }
-    }
+    my $image_text = pdb_get_image_hash_text($image, $set, $do_update);
+    my $image_hash = phash_do_hash($image_text);
     $text .= "$image: $image_hash\n";
+  }
+
+  if ($do_update) {
+    my $hash = phash_do_hash($text);
+    if ($hash ne $old_hash) {
+      print "Set $set: $old_hash ==> $hash\n";
+      phash_set_value("s-$set", "set", $hash);
+    }
   }
 
   return $text;
@@ -1525,21 +1537,23 @@ sub pdb_get_year_hash_text {
   my $year = $_[0];
   my $do_update = $_[1];
 
+  my $old_hash = phash_get_value("y-$year");
+
   my $text = "";
   my $sets = pdb_get_year_sets($year);
   for (my $i = 0; defined(@$sets[$i]); $i++) {
     my $set = @$sets[$i];
-    my $set_hash = phash_get_value("s-$set");
-    if ($do_update || $set_hash eq "") {
-      my $set_text = pdb_get_set_hash_text($set, $do_update);
-      my $new_hash = phash_do_hash($set_text);
-      if ($new_hash ne $set_hash) {
-        print "Changing hash for set $set\n  from: $set_hash\n    to: $new_hash\n";
-        phash_set_value("s-$set", "set", $new_hash);
-        $set_hash = $new_hash;
-      }
-    }
+    my $set_text = pdb_get_set_hash_text($set, $do_update);
+    my $set_hash = phash_do_hash($set_text);
     $text .= "$set: $set_hash\n";
+  }
+
+  if ($do_update) {
+    my $hash = phash_do_hash($text);
+    if ($hash ne $old_hash) {
+      print "Year $year: $old_hash ==> $hash\n";
+      phash_set_value("y-$year", "year", $hash);
+    }
   }
 
   return $text;
@@ -1550,21 +1564,12 @@ sub pdb_get_years_hash_text {
   my $text = "";
 
   my $years = pdb_get_years();
+
   for (my $i = 0; defined(@$years[$i]); $i++) {
     my $year = @$years[$i];
-    my $year_hash = phash_get_value("y-$year");
-    if ($do_update || $year_hash eq "") {
-      my $year_text = pdb_get_year_hash_text($year, $do_update);
-      if ($year_text ne "") {
-        my $new_hash = phash_do_hash($year_text);
-        if ($new_hash ne $year_hash) {
-          print "Changing hash for year $year\n  from: $year_hash\n    to: $new_hash\n";
-          phash_set_value("y-$year", "year", $new_hash);
-          $year_hash = $new_hash;
-        }
-      }
-    }
-    if ($year_hash ne "") {
+    my $year_text = pdb_get_year_hash_text($year, $do_update);
+    if ($year_text ne "") {
+      my $year_hash = phash_do_hash($year_text);
       $text .= "$year: $year_hash\n";
     }
   }
@@ -1594,7 +1599,7 @@ sub pdb_sync_image {
     pdb_get_file_item_hash($fileid, $fname, 1);
   }
 
-  my $text = pdb_get_image_hash_text($imageid, $setid, 1);
+  my $text = pdb_get_image_hash_text($imageid, $setid, 0);
   my $new_hash = phash_do_hash($text);
   phash_set_value("i-$imageid", "image", $new_hash);
 }
@@ -1623,4 +1628,26 @@ sub pdb_sync_set {
   phash_set_value("s-$setid", "set", $new_hash);
 }
 
+sub pdb_sync_year {
+  my $year = $_[0];
+
+  print "Synching year $year\n";
+  my $sync_info = psync_get_year_info($year);
+  print "Got year info:\n$sync_info\n";
+
+  while ($sync_info =~ s/^(\w+): (\w+)\n//) {
+    my $setid = $1;
+    my $hash = $2;
+
+    my $current_hash = phash_get_value("s-$setid");
+    if ($current_hash ne $hash) {
+      print "Set $setid: $current_hash => $hash\n";
+      pdb_sync_set($setid);
+    }
+  }
+
+  my $text = pdb_get_year_hash_text($year, 0);
+  my $new_hash = phash_do_hash($text);
+  phash_set_value("y-$year", "year", $new_hash);
+}
 return 1;

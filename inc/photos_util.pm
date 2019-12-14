@@ -694,6 +694,7 @@ sub put_get_all_hash_text {
     my $users_text = pusr_get_hash_text();
     my $new_hash = phash_do_hash($users_text);
     if ($new_hash ne $users_hash) {
+      print "Update users hash: $users_hash ==> $new_hash\n";
       phash_set_value("users", "users", $new_hash);
       $users_hash = $new_hash;
     }
@@ -701,13 +702,15 @@ sub put_get_all_hash_text {
     my $persons_text = ppers_get_hash_text();
     $new_hash = phash_do_hash($users_text);
     if ($new_hash ne $persons_hash) {
+      print "Update persons hash: $persons_hash ==> $new_hash\n";
       phash_set_value("persons", "persons", $new_hash);
       $persons_hash = $new_hash;
     }
 
     my $years_text = pdb_get_years_hash_text($do_update);
     $new_hash = phash_do_hash($years_text);
-    if ($new_hash ne $persons_hash) {
+    if ($new_hash ne $years_hash) {
+      print "Update years hash: $years_hash ==> $new_hash\n";
       phash_set_value("years", "years", $new_hash);
       $years_hash = $new_hash;
     }

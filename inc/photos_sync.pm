@@ -51,6 +51,14 @@ sub psync_get_file {
   }
 }
 
+sub psync_get_year_info {
+  my $id = $_[0];
+
+  my $master = get_master();
+  my $url = "$master?type=year&value=$id";
+  return psync_get_content($url);
+}
+
 sub psync_get_set_info {
   my $id = $_[0];
 
