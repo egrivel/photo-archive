@@ -1580,7 +1580,7 @@ sub pdb_get_years_hash_text {
 sub pdb_sync_image {
   my $setid = $_[0];
   my $imageid = $_[1];
-  print "Synching image $imageid\n";
+  print "Syncing image $imageid\n";
 
   my $sync_info = psync_get_image_info($imageid);
 
@@ -1606,7 +1606,7 @@ sub pdb_sync_image {
 
 sub pdb_sync_set {
   my $setid = $_[0];
-  print "Synching set $setid\n";
+  print "Syncing set $setid\n";
 
   my $sync_info = psync_get_set_info($setid);
 
@@ -1631,7 +1631,7 @@ sub pdb_sync_set {
 sub pdb_sync_year {
   my $year = $_[0];
 
-  print "Synching year $year\n";
+  print "Syncing year $year\n";
   my $sync_info = psync_get_year_info($year);
 
   while ($sync_info =~ s/^(\w+): (\w+)\n//) {
