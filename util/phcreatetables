@@ -74,3 +74,4 @@ pdb_create_tables();
 pses_create_tables();
 ppers_create_tables();
 psys_create_tables($version);
+phash_create_tables();
