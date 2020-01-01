@@ -1,6 +1,11 @@
 use LWP::UserAgent;
+use Time::HiRes qw(usleep);
 
 my $gl_ua;
+
+# Delays are in miliseconds
+my $gl_file_delay = 5000;
+my $gl_api_delay = 500;
 
 sub psync_get_content {
   my $url = $_[0];
@@ -8,6 +13,9 @@ sub psync_get_content {
   if (!defined($gl_ua)) {
     $gl_ua = new LWP::UserAgent;
   }
+
+  # usleep takes microseconds, so multiply miliseconds by 1000
+  usleep($gl_api_delay * 1000);
 
   my $response = $gl_ua->get($url);
   if (! $response->is_success) {
@@ -43,6 +51,9 @@ sub psync_get_file {
   if (!defined($gl_ua)) {
     $gl_ua = new LWP::UserAgent;
   }
+
+  # usleep takes microseconds, so multiply miliseconds by 1000
+  usleep($gl_file_delay * 1000);
 
   my $response = $gl_ua->get($url, ":content_file"=>$fname);
   if (! $response->is_success) {
