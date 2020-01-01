@@ -4,8 +4,8 @@ use Time::HiRes qw(usleep);
 my $gl_ua;
 
 # Delays are in miliseconds
-my $gl_file_delay = 5000;
-my $gl_api_delay = 500;
+my $gl_file_delay = 500;
+my $gl_api_delay = 100;
 
 sub psync_get_content {
   my $url = $_[0];
