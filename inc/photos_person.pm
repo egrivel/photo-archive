@@ -575,7 +575,7 @@ sub ppers_sync_persons {
 
   my $text = ppers_get_hash_text();
   my $new_hash = phash_do_hash($text);
-  print "New text:\n$text\ngives hash: $new_hash\n";
+  # print "New text:\n$text\ngives hash: $new_hash\n";
   phash_set_value("persons", "persons", $new_hash);
 }
 
