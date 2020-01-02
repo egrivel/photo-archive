@@ -40,7 +40,7 @@ if ($all_info =~ /users: (\w+)/) {
 if ($all_info =~ /persons: (\w+)/) {
   my $server_persons = $1;
   my $persons_hash = phash_get_value("persons");
-  if ($persons_hash ne $persons_users) {
+  if ($persons_hash ne $server_persons) {
     print "Persons need updating\n   $persons_hash\n   => $server_persons\n";
     ppers_sync_persons();
   }
@@ -51,7 +51,7 @@ if ($all_info =~ /years: (\w+)/) {
   my $years_hash = phash_get_value("years");
   if ($years_hash ne $server_years) {
     print "Years need updating\n   $years_hash\n   => $server_years\n";
-    # pusr_sync_all_years();
+    pdb_sync_all_years();
   }
 }
 
