@@ -700,14 +700,14 @@ sub put_get_all_hash_text {
     }
 
     my $persons_text = ppers_get_hash_text();
-    $new_hash = phash_do_hash($users_text);
+    $new_hash = phash_do_hash($persons_text);
     if ($new_hash ne $persons_hash) {
       print "Update persons hash: $persons_hash ==> $new_hash\n";
       phash_set_value("persons", "persons", $new_hash);
       $persons_hash = $new_hash;
     }
 
-    my $years_text = pdb_get_years_hash_text($do_update);
+    my $years_text = pdb_get_all_years_hash_text($do_update);
     $new_hash = phash_do_hash($years_text);
     if ($new_hash ne $years_hash) {
       print "Update years hash: $years_hash ==> $new_hash\n";

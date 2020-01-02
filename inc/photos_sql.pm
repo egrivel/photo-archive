@@ -295,7 +295,7 @@ sub psql_upsert {
   my $insert_values = "";
 
   while ($data ne "") {
-    if ($data =~ s/^([^=]+)=(\'[^\']*\')(, )?//) {
+    if ($data =~ s/^([^=]+)=(\'[^\']*\')(, ?)?//) {
       $insert_names .= $1.$3;
       $insert_values .= $2.$3;
     } else {

@@ -62,6 +62,36 @@ sub psync_get_file {
   }
 }
 
+sub psync_get_root_info {
+  my $master = get_master();
+  my $url = "$master";
+  return psync_get_content($url);
+}
+
+sub psync_get_all_info {
+  my $master = get_master();
+  my $url = "$master?type=all";
+  return psync_get_content($url);
+}
+
+sub psync_get_users_info {
+  my $master = get_master();
+  my $url = "$master?type=users";
+  return psync_get_content($url);
+}
+
+sub psync_get_persons_info {
+  my $master = get_master();
+  my $url = "$master?type=persons";
+  return psync_get_content($url);
+}
+
+sub psync_get_all_years_info {
+  my $master = get_master();
+  my $url = "$master?type=years";
+  return psync_get_content($url);
+}
+
 sub psync_get_year_info {
   my $id = $_[0];
 

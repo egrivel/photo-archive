@@ -81,7 +81,7 @@ if ($arg ne "") {
   } elsif ($arg eq "persons") {
     $text = ppers_get_hash_text();
   } elsif ($arg eq "years") {
-    $text = pdb_get_years_hash_text();
+    $text = pdb_get_all_years_hash_text();
   } elsif ($arg eq "year") {
     $text = pdb_get_year_hash_text($value);
   } elsif ($arg eq "set") {

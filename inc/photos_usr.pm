@@ -493,4 +493,20 @@ sub pusr_get_hash_text {
   return $text;
 }
 
+sub pusr_sync_users {
+  print "Syncing users\n";
+
+  my $sync_info = psync_get_users_info();
+
+  while ($sync_info =~ s/^(\w+): ([^\n]+)\n//) {
+    my $user = $1;
+    my $database = $2;
+    psql_upsert("users", $database);
+  }
+
+  my $text = pusr_get_hash_text(0);
+  my $new_hash = phash_do_hash($text);
+  phash_set_value("users", "users", $new_hash);
+}
+
 return 1;

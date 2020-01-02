@@ -521,7 +521,7 @@ sub ppers_get_data {
   $data .= ",description='" . psql_encode($description) . "'";
 
   $query = "SELECT imageid FROM personref WHERE personid='";
-  $query .= psql_encode($personid) . "'";
+  $query .= psql_encode($personid) . "' ORDER BY imageid";
   psql_command($query);
   my $iterator = psql_iterator();
   $record = psql_next_record($iterator);
@@ -544,6 +544,39 @@ sub ppers_get_hash_text {
     $text .= "$person: $persontext\n";
   }
   return $text;
+}
+
+sub ppers_sync_persons {
+  print "Syncing persons\n";
+
+  my $sync_info = psync_get_persons_info();
+
+  while ($sync_info =~ s/^([\w\-]+): ([^\n]+)\n//) {
+    my $personid = $1;
+    my $database = $2;
+    my @images = ();
+    if ($database =~ s/,images=([\'\w\-,]*)//) {
+      @images = split(/,/, $1);
+    }
+    psql_upsert("person", $database);
+    my $query = "DELETE FROM personref WHERE personid='"
+      . psql_encode($personid) . "'";
+    psql_command($query);
+
+    for ($i = 0; defined($images[$i]); $i++) {
+      my $image = $images[$i];
+      $image =~ s/\'//g;
+      $query = "INSERT INTO personref (personid, imageid) VALUES('"
+        . psql_encode($personid) . "','"
+        . psql_encode($image) . "');";
+      psql_command($query);
+    }
+  }
+
+  my $text = ppers_get_hash_text();
+  my $new_hash = phash_do_hash($text);
+  print "New text:\n$text\ngives hash: $new_hash\n";
+  phash_set_value("persons", "persons", $new_hash);
 }
 
 return 1;

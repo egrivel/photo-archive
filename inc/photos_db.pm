@@ -1559,7 +1559,7 @@ sub pdb_get_year_hash_text {
   return $text;
 }
 
-sub pdb_get_years_hash_text {
+sub pdb_get_all_years_hash_text {
   my $do_update = $_[0];
   my $text = "";
 
@@ -1649,4 +1649,25 @@ sub pdb_sync_year {
   my $new_hash = phash_do_hash($text);
   phash_set_value("y-$year", "year", $new_hash);
 }
+
+sub pdb_sync_all_years {
+  print "Syncing all years\n";
+  my $sync_info = psync_get_all_years_info();
+
+  while ($sync_info =~ s/^(\d\d\d\d): (\w+)\n//) {
+    my $year = $1;
+    my $hash = $2;
+
+    my $current_hash = phash_get_value("y-$year");
+    if ($current_hash ne $hash) {
+      print "Year $year: $current_hash => $hash\n";
+      pdb_sync_year($year);
+    }
+  }
+
+  my $text = pdb_get_all_years_hash_text($year, 0);
+  my $new_hash = phash_do_hash($text);
+  phash_set_value("years", "years", $new_hash);
+}
+
 return 1;
