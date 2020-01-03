@@ -291,9 +291,9 @@ sub process_photo {
   }
 
   if ($setID eq "") {
-    if ($fname =~ /^(\d\d\d\d\d\d\d\d)-(\d\d\d\d\d\d).jpg$/) {
-      $setID      = $1;
-      $targetfile = "$1-$2";
+    if ($fname =~ /^(.*?[^\d])?(\d\d\d\d\d\d\d\d)[\-_](\d\d\d\d\d\d)([^\d].*?)?.jpg$/) {
+      $setID      = $2;
+      $targetfile = "$2-$3";
     }
   }
 
