@@ -261,7 +261,7 @@ sub process_photo {
           # don't rotate
         } else {
           print "Unknown rotation value '$value'\n";
-          die "Stopping for now\n";
+          # die "Stopping for now\n";
         }
       } elsif ($label eq "GPS Position") {
         $latlong = $value;
