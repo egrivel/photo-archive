@@ -18,6 +18,7 @@ pusr_login("tester", "tester");
 my $gl_sourcedir = ".";
 my $gl_verbose   = 1;
 my $gl_testmode  = 0;
+my $gl_recursive = 0;
 
 # time offset: correction for the clock in the camera being off: the offset
 # adjust the time reported by the camera to the actual clock time
@@ -58,6 +59,8 @@ while (defined($arg = shift)) {
     } else {
       die "Time zone offset must be in [+-]hh:mm format\n";
     }
+  } elsif ($arg eq "-R") {
+    $gl_recursive = 1;
   } elsif (-d $arg) {
     $gl_sourcedir = $arg;
     $gl_sourcedir =~ s/\/$//;
@@ -67,55 +70,74 @@ while (defined($arg = shift)) {
   }
 }
 
-opendir(DIR, $gl_sourcedir)
-  || die "Cannot scan source directory '$sourcedir'\n";
-my %dirlist = ();
-my %neflist = ();
-while (defined($fname = readdir(DIR))) {
-  if ($fname =~ /^.+?\.jpg$/i) {
-    $dirlist{$fname}++;
-  }
-  if ($fname =~ /^.+?\.jpeg$/i) {
-    $dirlist{$fname}++;
-  }
-  if ($fname =~ /^(.+?)\.nef$/i) {
-    my $basename = $1;
-    if ( (-f "$gl_sourcedir/$basename.jpg")
-      || (-f "$gl_sourcedir/$basename.JPG")
-      || (-f "$gl_sourcedir/$basename.jpeg")
-      || (-f "$gl_sourcedir/$basename.JPEG"))
-    {
-      # Corresponding JPEG file also exists; add NEF to the %neflist
-      $neflist{ lc($fname) } = $fname;
-    } else {
-      # No corresponding JPEG file, so add NEF to the files to be
-      # processed
+process_directory($gl_sourcedir);
+
+sub process_directory {
+  my $dir = $_[0];
+  opendir(DIR, $dir)
+    || die "Cannot scan source directory '$dir'\n";
+  my %dirlist = ();
+  my %neflist = ();
+  my @subdirs = ();
+  my $subdircount = 0;
+
+  while (defined($fname = readdir(DIR))) {
+    next if ($fname =~ /^\./);
+    if (-d "$dir/$fname") {
+      $subdirs[$subdircount++] = "$dir/$fname";
+      next;
+    }
+    if ($fname =~ /^.+?\.jpg$/i) {
+      $dirlist{$fname}++;
+    }
+    if ($fname =~ /^.+?\.jpeg$/i) {
+      $dirlist{$fname}++;
+    }
+    if ($fname =~ /^(.+?)\.nef$/i) {
+      my $basename = $1;
+      if ( (-f "$dir/$basename.jpg")
+        || (-f "$dir/$basename.JPG")
+        || (-f "$dir/$basename.jpeg")
+        || (-f "$dir/$basename.JPEG"))
+      {
+        # Corresponding JPEG file also exists; add NEF to the %neflist
+        $neflist{ lc($fname) } = $fname;
+      } else {
+        # No corresponding JPEG file, so add NEF to the files to be
+        # processed
+        $dirlist{$fname}++;
+      }
+    }
+    if ($fname =~ /^(.+?)\.cr2$/i) {
+      my $basename = $1;
+      if ( (-f "$dir/$basename.jpg")
+        || (-f "$dir/$basename.JPG")
+        || (-f "$dir/$basename.jpeg")
+        || (-f "$dir/$basename.JPEG"))
+      {
+        # Corresponding JPEG file also exists; add CR2 to the %neflist
+        $neflist{ lc($fname) } = $fname;
+      } else {
+        # No corresponding JPEG file, so add CR2 to the files to be
+        # processed
+        $dirlist{$fname}++;
+      }
+    }
+    if ($fname =~ /^(.+?)\.mov$/i) {
+      # copy over movies (from D750)
       $dirlist{$fname}++;
     }
   }
-  if ($fname =~ /^(.+?)\.cr2$/i) {
-    my $basename = $1;
-    if ( (-f "$gl_sourcedir/$basename.jpg")
-      || (-f "$gl_sourcedir/$basename.JPG")
-      || (-f "$gl_sourcedir/$basename.jpeg")
-      || (-f "$gl_sourcedir/$basename.JPEG"))
-    {
-      # Corresponding JPEG file also exists; add CR2 to the %neflist
-      $neflist{ lc($fname) } = $fname;
-    } else {
-      # No corresponding JPEG file, so add CR2 to the files to be
-      # processed
-      $dirlist{$fname}++;
+  closedir(DIR);
+  foreach $key (sort (keys %dirlist)) {
+    process_photo($dir, $key);
+  }
+  if ($gl_recursive) {
+    my $i;
+    for ($i = 0; $i < $subdircount; $i++) {
+      process_directory($subdirs[$i]);
     }
   }
-  if ($fname =~ /^(.+?)\.mov$/i) {
-    # copy over movies (from D750)
-    $dirlist{$fname}++;
-  }
-}
-closedir(DIR);
-foreach $key (sort (keys %dirlist)) {
-  process_photo($gl_sourcedir, $key);
 }
 
 sub get_shuttercount {
