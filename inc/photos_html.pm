@@ -168,7 +168,8 @@ sub pht_page_end {
         my $copyright = $pht_copyright;
         if ($copyright eq "") {
             my $year = pcom_current_year();
-            $copyright = "Copyright &copy;$year by Eric Grivel. All Rights Reserved.";
+            my $default = setting_get("default-copyright");
+            $copyright = "Copyright &copy;$year by $default. All Rights Reserved.";
         }
 #        print "<hr />\n";
         print "<div class='footer'><hr />$copyright</div>\n";

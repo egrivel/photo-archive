@@ -532,20 +532,22 @@ sub put_default_copyright {
         }
     }
 
-    my $owner = "";
-    if ($imageid =~ /^\d/) {
-        $owner = "Eric Grivel";
-        if ($year >= 1991) {
-            $owner .= " and Nicoline Smits";
-        }
-    } elsif ($imageid =~ /^f/) {
-        $owner = "Frank Grivel";
-    } elsif ($imageid =~ /^m/) {
-        $owner = "Mark Grivel";
-    } elsif ($imageid =~ /^[dpq]/) {
-        $owner = "Albert Grivel";
-    } elsif ($imageid =~ /^t/) {
-        $owner = "Theo Grivel";
+    my $owner = setting_get("default-copyright");
+    if ($owner eq "") {
+      if ($imageid =~ /^\d/) {
+          $owner = "Eric Grivel";
+          if ($year >= 1991) {
+              $owner .= " and Nicoline Smits";
+          }
+      } elsif ($imageid =~ /^f/) {
+          $owner = "Frank Grivel";
+      } elsif ($imageid =~ /^m/) {
+          $owner = "Mark Grivel";
+      } elsif ($imageid =~ /^[dpq]/) {
+          $owner = "Albert Grivel";
+      } elsif ($imageid =~ /^t/) {
+          $owner = "Theo Grivel";
+      }
     }
 
     my $copyright = $year;
@@ -584,20 +586,22 @@ sub put_default_set_copyright {
         }
     }
 
-    my $owner = "";
-    if ($setid =~ /^\d/) {
-        $owner = "Eric Grivel";
-        if ($year >= 1991) {
-            $owner .= " and Nicoline Smits";
-        }
-    } elsif ($setid =~ /^f/) {
-        $owner = "Frank Grivel";
-    } elsif ($setid =~ /^m/) {
-        $owner = "Mark Grivel";
-    } elsif ($setid =~ /^[dpq]/) {
-        $owner = "Albert Grivel";
-    } elsif ($setid =~ /^t/) {
-        $owner = "Theo Grivel";
+    my $owner = setting_get("default-copyright");
+    if ($owner eq "") {
+      if ($setid =~ /^\d/) {
+          $owner = "Eric Grivel";
+          if ($year >= 1991) {
+              $owner .= " and Nicoline Smits";
+          }
+      } elsif ($setid =~ /^f/) {
+          $owner = "Frank Grivel";
+      } elsif ($setid =~ /^m/) {
+          $owner = "Mark Grivel";
+      } elsif ($setid =~ /^[dpq]/) {
+          $owner = "Albert Grivel";
+      } elsif ($setid =~ /^t/) {
+          $owner = "Theo Grivel";
+      }
     }
 
     my $copyright = $year;

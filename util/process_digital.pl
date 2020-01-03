@@ -127,6 +127,10 @@ sub process_directory {
       # copy over movies (from D750)
       $dirlist{$fname}++;
     }
+    if ($fname =~ /^(.+?)\.mp4$/i) {
+      # copy over movies from Mark
+      $dirlist{$fname}++;
+    }
   }
   closedir(DIR);
   foreach $key (sort (keys %dirlist)) {
@@ -203,7 +207,7 @@ sub process_photo {
   my $dst          = "No";
   my $shuttercount = 0;
   my $is_mov       = 0;
-  if ($fname =~ /\.mov$/i) {
+  if (($fname =~ /\.mov$/i) || ($fname =~ /\.mp4$/i)) {
     $is_mov = 1;
   }
   my $is_kids = 0;
@@ -443,28 +447,31 @@ sub process_photo {
         "exiftool -b -JpgFromRaw \"$dir/$fname\" > $set_directory/tif/$imageid.jpg"
       );
       # Add all the EXIF information to the JPG file
-      system(
-"exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0 -overwrite_original $set_directory/tif/$imageid.jpg"
-      );
+      system("exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0 "
+        . "-overwrite_original $set_directory/tif/$imageid.jpg");
       move_file("$dir/$fname", "$set_directory/tif/$imageid.nef");
     } elsif ($fname =~ /\.cr2$/i) {
       # Extract the JPG first
-      system(
-"exiftool -b -PreviewImage \"$dir/$fname\" > $set_directory/tif/$imageid.jpg"
-      );
+      system("exiftool -b -PreviewImage \"$dir/$fname\" > "
+        . "$set_directory/tif/$imageid.jpg");
       # Add all the EXIF information to the JPG file
-      system(
-"exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0 -overwrite_original $set_directory/tif/$imageid.jpg"
-      );
+      system("exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0 "
+        . "-overwrite_original $set_directory/tif/$imageid.jpg");
       move_file("$dir/$fname", "$set_directory/tif/$imageid.cr2");
     } elsif ($fname =~ /\.mov$/i) {
       # Extract a JPG thumbnail
-      system(
-        "ffmpeg -i \"$dir/$fname\" -vframes 1 -ss 1 $set_directory/tif/$imageid.jpg"
-      );
-# Add all the EXIF information to the JPG file
-#system("exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0 -overwrite_original $set_directory/tif/$imageid.jpg");
+      system("ffmpeg -i \"$dir/$fname\" -vframes 1 -ss 1 "
+        . "$set_directory/tif/$imageid.jpg");
+      # Add all the EXIF information to the JPG file
+      #system("exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0 -overwrite_original $set_directory/tif/$imageid.jpg");
       move_file("$dir/$fname", "$set_directory/tif/$imageid.mov");
+    } elsif ($fname =~ /\.mp4$/i) {
+      # Extract a JPG thumbnail
+      system("ffmpeg -i \"$dir/$fname\" -vframes 1 -ss 1 "
+        . "$set_directory/tif/$imageid.jpg");
+      # Add all the EXIF information to the JPG file
+      #system("exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0 -overwrite_original $set_directory/tif/$imageid.jpg");
+      move_file("$dir/$fname", "$set_directory/tif/$imageid.mp4");
     } else {
       print "Don't know what to do with file $fname\n";
     }
