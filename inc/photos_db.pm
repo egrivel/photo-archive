@@ -1576,7 +1576,7 @@ sub pdb_get_all_years_hash_text {
     } else {
       $year_hash = phash_get_value("y-$year");
     }
-    if ($year_hasn ne "") {
+    if ($year_hash ne "") {
       $text .= "$year: $year_hash\n";
     }
   }
