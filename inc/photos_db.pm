@@ -1567,9 +1567,16 @@ sub pdb_get_all_years_hash_text {
 
   for (my $i = 0; defined(@$years[$i]); $i++) {
     my $year = @$years[$i];
-    my $year_text = pdb_get_year_hash_text($year, $do_update);
-    if ($year_text ne "") {
-      my $year_hash = phash_do_hash($year_text);
+    my $year_hash = "";
+    if ($do_update) {
+      my $year_text = pdb_get_year_hash_text($year, $do_update);
+      if ($year_text ne "") {
+        $year_hash = phash_do_hash($year_text);
+      }
+    } else {
+      $year_hash = phash_get_value("y-$year");
+    }
+    if ($year_hasn ne "") {
       $text .= "$year: $year_hash\n";
     }
   }
