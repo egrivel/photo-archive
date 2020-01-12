@@ -11,11 +11,18 @@ require "inc_all.pm";
 
 pdb_init();
 
-my $version = "1.0";
+my $version = "1.1";
 
 $current_version = psys_version();
-if ($current_version eq "1.0") {
+if ($current_version eq $version) {
   print "Tables have already been created.\n";
+  exit(0);
+}
+
+if ($current_version eq "1.0") {
+  print "Upgrading database from $current_version to $version.\n";
+  phash_create_tables();
+  psys_set_value("version", $version);
   exit(0);
 }
 
@@ -23,6 +30,7 @@ if ($current_version eq "0.9") {
   print "Upgrading database from $current_version to $version.\n";
   psys_create_tables($version);
   phash_create_tables();
+  psys_set_value("version", $version);
   exit(0);
 }
 

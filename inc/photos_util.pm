@@ -712,12 +712,7 @@ sub put_get_all_hash_text {
     }
 
     my $years_text = pdb_get_all_years_hash_text($do_update);
-    $new_hash = phash_do_hash($years_text);
-    if ($new_hash ne $years_hash) {
-      print "Update years hash: $years_hash ==> $new_hash\n";
-      phash_set_value("years", "years", $new_hash);
-      $years_hash = $new_hash;
-    }
+    $years_hash = phash_do_hash($years_text);
   }
 
   my $text = "";

@@ -1517,8 +1517,11 @@ sub pdb_get_set_hash_text {
   my $images = pdb_get_set_images($set);
   for (my $i = 0; defined(@$images[$i]); $i++) {
     my $image = @$images[$i];
-    my $image_text = pdb_get_image_hash_text($image, $set, $do_update);
-    my $image_hash = phash_do_hash($image_text);
+    my $image_hash = phash_get_value("i-$image");
+    if ($do_update) {
+      my $image_text = pdb_get_image_hash_text($image, $set, $do_update);
+      $image_hash = phash_do_hash($image_text);
+    }
     $text .= "$image: $image_hash\n";
   }
 
@@ -1543,8 +1546,11 @@ sub pdb_get_year_hash_text {
   my $sets = pdb_get_year_sets($year);
   for (my $i = 0; defined(@$sets[$i]); $i++) {
     my $set = @$sets[$i];
-    my $set_text = pdb_get_set_hash_text($set, $do_update);
-    my $set_hash = phash_do_hash($set_text);
+    my $set_hash = phash_get_value("s-$set");
+    if ($do_update) {
+      my $set_text = pdb_get_set_hash_text($set, $do_update);
+      $set_hash = phash_do_hash($set_text);
+    }
     $text .= "$set: $set_hash\n";
   }
 
@@ -1563,21 +1569,29 @@ sub pdb_get_all_years_hash_text {
   my $do_update = $_[0];
   my $text = "";
 
+  my $old_hash = phash_get_value("years");
+
   my $years = pdb_get_years();
 
   for (my $i = 0; defined(@$years[$i]); $i++) {
     my $year = @$years[$i];
-    my $year_hash = "";
+    my $year_hash = phash_get_value("y-$year");
     if ($do_update) {
       my $year_text = pdb_get_year_hash_text($year, $do_update);
       if ($year_text ne "") {
         $year_hash = phash_do_hash($year_text);
       }
-    } else {
-      $year_hash = phash_get_value("y-$year");
     }
     if ($year_hash ne "") {
       $text .= "$year: $year_hash\n";
+    }
+  }
+
+  if ($do_update) {
+    my $hash = phash_do_hash($text);
+    if ($hash ne $old_hash) {
+      print "Alll years: $old_hash ==> $hash\n";
+      phash_set_value("years", "", $hash);
     }
   }
 
