@@ -558,7 +558,7 @@ sub ppers_get_set_person_text {
 }
 
 sub ppers_get_all_persons_text {
-  my $do_update = $_[1];
+  my $do_update = $_[0];
 
   my $old_hash = phash_get_value("persons");
   my $text = "";
