@@ -162,7 +162,7 @@ sub pdb_set_info {
   print "  database initialized\n";
 
   my $query = "SELECT * FROM sets WHERE setid='$setid';";
-  print "pdb_set_info $set_id: $qyery\n";
+  print "pdb_set_info $setid: $qyery\n";
 
   psql_command($query) || return 0;
   my $record = psql_next_record(psql_iterator());
@@ -1358,6 +1358,7 @@ sub pdb_get_set_data {
   my $setid = $_[0];
   my $result = "";
 
+  print "pdb_get_set_data($setid)\n";
   if (pdb_set_info($setid)) {
     my $i;
     for ($i = 0; defined($set_fields[$i]); $i++) {
@@ -1518,6 +1519,7 @@ sub pdb_get_set_hash_text {
   my $set = $_[0];
   my $do_update = $_[1];
 
+  print "pdb_get_set_hash_text($set)\n";
   my $old_hash = phash_get_value("s-$set");
 
   my $text = "";
@@ -1554,6 +1556,7 @@ sub pdb_get_year_hash_text {
   my $sets = pdb_get_year_sets($year);
   for (my $i = 0; defined(@$sets[$i]); $i++) {
     my $set = @$sets[$i];
+    print "pdb_get_year_hash_text: check set $set\n";
     my $set_hash = phash_get_value("s-$set");
     if ($do_update) {
       my $set_text = pdb_get_set_hash_text($set, $do_update);
