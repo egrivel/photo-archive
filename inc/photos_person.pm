@@ -538,7 +538,7 @@ sub ppers_get_data {
   return $data;
 }
 
-sub ppers_get_set_person_text {
+sub ppers_get_person_text {
   my $person_id = $_[0];
   my $do_update = $_[1];
 
@@ -567,7 +567,7 @@ sub ppers_get_all_persons_text {
   foreach $person (sort (keys %persons)) {
     my $person_hash = phash_get_value("p-$person");
     if (($person_hash eq "") || $do_update) {
-      my $person_text = ppers_get_set_person_text($person, $do_update);
+      my $person_text = ppers_get_person_text($person, $do_update);
       $person_hash = phash_do_hash($person_text);
     }
     $text .= "$person: $person_hash\n";
@@ -592,23 +592,40 @@ sub ppers_sync_person {
   if ($sync_info =~ s/^database: ([^\n]+)\n//) {
     psql_upsert("person", $1);
   }
-
   my %images_still_exist = ();
 
   # Loop through all the images that should be there, and insert them
   # if they don't exist yet
   while ($sync_info =~ s/^([\w\-]+)\n//) {
     my $imageid = $1;
-    $images_still_exist{$imageid}++;
-    my $query = "INSERT IGNORE INTO personref(personid, imageid) "
-      . "VALUES('"
-      . psql_encode($personid) . "','"
-      . psql_encode($image) . "');";
-    psql_command($query);
+    if ($imageid ne "") {
+      $images_still_exist{$imageid}++;
+      my $query = "INSERT IGNORE INTO personref(personid, imageid) "
+        . "VALUES('"
+        . psql_encode($personid) . "','"
+        . psql_encode($imageid) . "');";
+      psql_command($query);
+    }
   }
 
   # Find any images that need to be deleted
   # (still to be done)
+  $query = "SELECT imageid FROM personref WHERE personid='";
+  $query .= psql_encode($personid) . "' ORDER BY imageid";
+  psql_command($query);
+  my $iterator = psql_iterator();
+  $record = psql_next_record($iterator);
+  while (defined($record)) {
+    my $imageid = psql_get_field(0, "imageid", $record);
+    if (!defined($images_still_exist{$imageid})) {
+      print "Imageref for person $personid to $imageid willl be deleted.\n";
+      my $query = "DELETE FROM personref WHERE personid='"
+        . psql_encode($personid) . "' AND imageid='"
+        . psql_encode($imageid) . "'";
+      psql_command($query);
+    }
+    $record = psql_next_record($iterator);
+  }
 
   # Update person hash
   my $text = ppers_get_person_text($personid, 0);
@@ -627,7 +644,7 @@ sub ppers_sync_all_persons {
     my $hash = $2;
 
     my $current_hash = phash_get_value("p-$personid");
-    if ($current_hasn ne $hash) {
+    if ($current_hash ne $hash) {
       print "Person $personid: $current_hash => $hash\n";
       ppers_sync_person($personid);
     }
