@@ -1688,7 +1688,6 @@ sub pdb_sync_all_years {
 
   my $text = pdb_get_all_years_hash_text($year, 0);
   my $new_hash = phash_do_hash($text);
-  print "All years hash: $new_hash\n$text\n\n";
   phash_set_value("years", "years", $new_hash);
 }
 
