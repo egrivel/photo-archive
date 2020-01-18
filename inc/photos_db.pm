@@ -1632,6 +1632,7 @@ sub pdb_sync_set {
   my $sync_info = psync_get_set_info($setid);
 
   if ($sync_info =~ s/^database: ([^\n]+)\n//) {
+    print "Do upsert: $1\n";
     psql_upsert("sets", $1);
   }
   while ($sync_info =~ s/^([\w\-\.\/]+): (\w+)\n//) {
