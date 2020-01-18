@@ -1516,20 +1516,20 @@ sub pdb_get_image_hash_text {
 }
 
 sub pdb_get_set_hash_text {
-  my $set = $_[0];
+  my $setid = $_[0];
   my $do_update = $_[1];
 
-  print "pdb_get_set_hash_text($set)\n";
-  my $old_hash = phash_get_value("s-$set");
+  print "pdb_get_set_hash_text($setid)\n";
+  my $old_hash = phash_get_value("s-$setid");
 
   my $text = "";
-  $text .= "database: " . pdb_get_set_data($set) . "\n";
-  my $images = pdb_get_set_images($set);
+  $text .= "database: " . pdb_get_set_data($setid) . "\n";
+  my $images = pdb_get_set_images($setid);
   for (my $i = 0; defined(@$images[$i]); $i++) {
     my $image = @$images[$i];
     my $image_hash = phash_get_value("i-$image");
     if ($do_update) {
-      my $image_text = pdb_get_image_hash_text($image, $set, $do_update);
+      my $image_text = pdb_get_image_hash_text($image, $setid, $do_update);
       $image_hash = phash_do_hash($image_text);
     }
     $text .= "$image: $image_hash\n";
@@ -1538,8 +1538,8 @@ sub pdb_get_set_hash_text {
   if ($do_update) {
     my $hash = phash_do_hash($text);
     if ($hash ne $old_hash) {
-      print "Set $set: $old_hash ==> $hash\n";
-      phash_set_value("s-$set", "set", $hash);
+      print "Set $setid: $old_hash ==> $hash\n";
+      phash_set_value("s-$setid", "set", $hash);
     }
   }
 
@@ -1555,14 +1555,13 @@ sub pdb_get_year_hash_text {
   my $text = "";
   my $sets = pdb_get_year_sets($year);
   for (my $i = 0; defined(@$sets[$i]); $i++) {
-    my $set = @$sets[$i];
-    print "pdb_get_year_hash_text: check set $set\n";
-    my $set_hash = phash_get_value("s-$set");
+    my $setid = @$sets[$i];
+    my $set_hash = phash_get_value("s-$setid");
     if ($do_update) {
-      my $set_text = pdb_get_set_hash_text($set, $do_update);
+      my $set_text = pdb_get_set_hash_text($setid, $do_update);
       $set_hash = phash_do_hash($set_text);
     }
-    $text .= "$set: $set_hash\n";
+    $text .= "$setid: $set_hash\n";
   }
 
   if ($do_update) {
@@ -1656,7 +1655,7 @@ sub pdb_sync_set {
     }
   }
 
-  my $text = pdb_get_set_hash_text($set, 0);
+  my $text = pdb_get_set_hash_text($setid, 0);
   my $new_hash = phash_do_hash($text);
 
   print "\nSet $setid:\nnew hash: $new_hash\n$text\n\n";
