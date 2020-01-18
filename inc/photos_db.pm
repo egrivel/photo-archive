@@ -1577,7 +1577,10 @@ sub pdb_get_all_years_hash_text {
     my $year_hash = phash_get_value("y-$year");
     if ($do_update) {
       my $year_text = pdb_get_year_hash_text($year, $do_update);
-      if ($year_text ne "") {
+      if ($year_text eq "") {
+        # If there is no year info, there shouldn't be a hash for it
+        $year_hash = "";
+      } else {
         $year_hash = phash_do_hash($year_text);
       }
     }
