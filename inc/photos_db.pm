@@ -153,9 +153,13 @@ sub pdb_image_info {
 sub pdb_set_info {
   my $setid = $_[0];
 
+  print "get set info $setid\n";
   return 0 if (!pcom_is_set_valid($setid));
+  print "  is valid\n";
   return 1 if ($setid eq $cur_set);
+  print "  already there\n";
   return 0 if (!pdb_init());
+  print "  database initialized\n";
 
   my $query = "SELECT * FROM sets WHERE setid='$setid';";
   print "pdb_set_info $set_id: $qyery\n";
