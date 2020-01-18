@@ -42,7 +42,7 @@ if ($all_info =~ /persons: (\w+)/) {
   my $persons_hash = phash_get_value("persons");
   if ($persons_hash ne $server_persons) {
     print "Persons need updating\n   $persons_hash\n   => $server_persons\n";
-    ppers_sync_persons();
+    ppers_sync_all_persons();
   }
 }
 

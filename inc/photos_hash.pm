@@ -11,14 +11,33 @@ my @hash_fields = (
   "hash",
   "timestamp"
 );
-my $keysize = 64;
+my $keysize = 42;
 
 sub phash_init {
   psql_init();
 }
 
 sub phash_create_tables {
-  psql_create_table("hash", \@hash_fields);
+  # Person ID is 36 characters, so the resource ID, which has to allow for
+  # the "p-" prefix, has to be at least 38 characters. Make it 42 to have some
+  # wiggle room.
+  # Note: file elements are at most 29 characters; the longest would look like:
+  #   f-edited/20200101-120000a.jpg
+  # Other resource IDs like user IDs have an at most 31 characters key plus
+  # a two-letter prefix, so they should fit as well.
+  my $query = "CREATE TABLE hash(";
+  $query .= "   resourceid CHAR(42),";
+  $query .= "   type TEXT,";
+  $query .= "   hash TEXT,";
+  $query .= "   timestamp TEXT,";
+  $query .= "   PRIMARY KEY(resourceid))";
+  psql_command($query);
+}
+
+sub phash_increase_keysize {
+  # Increase the keysize from the old 31 to the new 42
+  my $query = "ALTER TABLE hash MODIFY resourceid CHAR(42)";
+  psql_command($query);
 }
 
 sub phash_drop_tables {

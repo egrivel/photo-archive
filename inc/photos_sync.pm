@@ -80,9 +80,16 @@ sub psync_get_users_info {
   return psync_get_content($url);
 }
 
-sub psync_get_persons_info {
+sub psync_get_all_persons_info {
   my $master = get_master();
   my $url = "$master?type=persons";
+  return psync_get_content($url);
+}
+
+sub psync_get_person_info {
+  my $personid = $_[0];
+  my $master = get_master();
+  my $url = "$master?type=person&value=$personid";
   return psync_get_content($url);
 }
 

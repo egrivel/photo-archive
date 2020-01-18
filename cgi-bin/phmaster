@@ -79,7 +79,9 @@ if ($arg ne "") {
   } elsif ($arg eq "users") {
     $text = pusr_get_hash_text(0);
   } elsif ($arg eq "persons") {
-    $text = ppers_get_hash_text(0);
+    $text = ppers_get_all_persons_text(0);
+  } elsif ($arg eq "person") {
+    $text = ppers_get_set_person_text($value, 0);
   } elsif ($arg eq "years") {
     $text = pdb_get_all_years_hash_text(0);
   } elsif ($arg eq "year") {

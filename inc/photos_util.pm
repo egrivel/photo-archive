@@ -703,13 +703,8 @@ sub put_get_all_hash_text {
       $users_hash = $new_hash;
     }
 
-    my $persons_text = ppers_get_hash_text();
-    $new_hash = phash_do_hash($persons_text);
-    if ($new_hash ne $persons_hash) {
-      print "Update persons hash: $persons_hash ==> $new_hash\n";
-      phash_set_value("persons", "persons", $new_hash);
-      $persons_hash = $new_hash;
-    }
+    my $persons_text = ppers_get_all_persons_text($do_update);
+    $persons_hash = phash_do_hash($persons_text);
 
     my $years_text = pdb_get_all_years_hash_text($do_update);
     $years_hash = phash_do_hash($years_text);

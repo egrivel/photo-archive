@@ -253,12 +253,12 @@ sub ppers_get_persons_in_image {
     pcom_log($PCOM_DEBUG, "ppers_get_persons_in_image($image_id)");
     my $query = "SELECT * FROM personref WHERE imageid='$image_id';";
     if (psql_command($query)) {
-	my $record;
-	while (defined($record = psql_next_record(psql_iterator()))) {
-	    my $person_id = psql_get_field(0, $person_fields[0], $record);
-	    $result .= ";" if ($result ne "");
-	    $result .= $person_id;
-	}
+      my $record;
+      while (defined($record = psql_next_record(psql_iterator()))) {
+          my $person_id = psql_get_field(0, $person_fields[0], $record);
+          $result .= ";" if ($result ne "");
+          $result .= $person_id;
+      }
     }
     pcom_log($PCOM_DEBUG, "got result: $result");
     return $result;
@@ -508,6 +508,8 @@ sub ppers_get_list {
 
 sub ppers_get_data {
   my $personid = $_[0];
+  my $data = "";
+
   my $query = "SELECT * FROM person WHERE personid='";
   $query .= psql_encode($personid) . "'";
   psql_command($query);
@@ -515,7 +517,7 @@ sub ppers_get_data {
   my $fullname = psql_get_field(1, "fullname", $record);
   my $description = psql_get_field(2, "description", $record);
 
-  my $data = "";
+  $data .= "database: ";
   $data .= "personid='" . psql_encode($personid) . "'";
   $data .= ",fullname='" . psql_encode($fullname) . "'";
   $data .= ",description='" . psql_encode($description) . "'";
@@ -526,56 +528,114 @@ sub ppers_get_data {
   my $iterator = psql_iterator();
   $record = psql_next_record($iterator);
   my $count = 0;
-  $data .= ",images=";
   while (defined($record)) {
-    $data .= "," if ($count);
-    $data .= "'" . psql_encode(psql_get_field(0, "imageid", $record)) . "'";
+    $data .= "\n";
+    $data .= psql_encode(psql_get_field(0, "imageid", $record));
     $count++;
     $record = psql_next_record($iterator);
   }
+
   return $data;
 }
 
-sub ppers_get_hash_text {
-  my %persons = ppers_get_person_list();
-  my $text = "";
-  foreach $person (sort (keys %persons)) {
-    my $persontext = ppers_get_data($person);
-    $text .= "$person: $persontext\n";
+sub ppers_get_set_person_text {
+  my $person_id = $_[0];
+  my $do_update = $_[1];
+
+  my $old_hash = phash_get_value("p-$person_id");
+
+  my $text = ppers_get_data($person_id);
+
+  if ($do_update) {
+    my $hash = phash_do_hash($text);
+    if ($hash ne $old_hash) {
+      print "Person $person_id: $old_hash ==> $hash\n";
+      phash_set_value("p-$person_id", "person", $hash);
+    }
   }
+
   return $text;
 }
 
-sub ppers_sync_persons {
-  print "Syncing persons\n";
+sub ppers_get_all_persons_text {
+  my $do_update = $_[1];
 
-  my $sync_info = psync_get_persons_info();
+  my $old_hash = phash_get_value("persons");
+  my $text = "";
 
-  while ($sync_info =~ s/^([\w\-]+): ([^\n]+)\n//) {
-    my $personid = $1;
-    my $database = $2;
-    my @images = ();
-    if ($database =~ s/,images=([\'\w\-,]*)//) {
-      @images = split(/,/, $1);
+  my %persons = ppers_get_person_list();
+  foreach $person (sort (keys %persons)) {
+    my $person_hash = phash_get_value("p-$person");
+    if (($person_hash eq "") || $do_update) {
+      my $person_text = ppers_get_set_person_text($person, $do_update);
+      $person_hash = phash_do_hash($person_text);
     }
-    psql_upsert("person", $database);
-    my $query = "DELETE FROM personref WHERE personid='"
-      . psql_encode($personid) . "'";
-    psql_command($query);
+    $text .= "$person: $person_hash\n";
+  }
 
-    for ($i = 0; defined($images[$i]); $i++) {
-      my $image = $images[$i];
-      $image =~ s/\'//g;
-      $query = "INSERT INTO personref (personid, imageid) VALUES('"
-        . psql_encode($personid) . "','"
-        . psql_encode($image) . "');";
-      psql_command($query);
+  if ($do_update) {
+    my $hash = phash_do_hash($text);
+    if ($hash ne $old_hash) {
+      print "Persons: $old_hash ==> $hash\n";
+      phash_set_value("persons", "persons", $hash);
     }
   }
 
-  my $text = ppers_get_hash_text();
+  return $text;
+}
+
+sub ppers_sync_person {
+  my $personid = $_[0];
+  print "Syncing person $personid\n";
+
+  my $sync_info = psync_get_person_info($personid);
+  if ($sync_info =~ s/^database: ([^\n]+)\n//) {
+    psql_upsert("person", $1);
+  }
+
+  my %images_still_exist = ();
+
+  # Loop through all the images that should be there, and insert them
+  # if they don't exist yet
+  while ($sync_info =~ s/^([\w\-]+)\n//) {
+    my $imageid = $1;
+    $images_still_exist{$imageid}++;
+    my $query = "INSERT IGNORE INTO personref(personid, imageid) "
+      . "VALUES('"
+      . psql_encode($personid) . "','"
+      . psql_encode($image) . "');";
+    psql_command($query);
+  }
+
+  # Find any images that need to be deleted
+  # (still to be done)
+
+  # Update person hash
+  my $text = ppers_get_person_text($personid, 0);
   my $new_hash = phash_do_hash($text);
-  # print "New text:\n$text\ngives hash: $new_hash\n";
+
+  phash_set_value("p-$personid", "person", $new_hash);
+}
+
+sub ppers_sync_all_persons {
+  print "Syncing persons\n";
+
+  my $sync_info = psync_get_all_persons_info();
+
+  while ($sync_info =~ s/^([\w\-]+): ([^\n]+)\n//) {
+    my $personid = $1;
+    my $hash = $2;
+
+    my $current_hash = phash_get_value("p-$personid");
+    if ($current_hasn ne $hash) {
+      print "Person $personid: $current_hash => $hash\n";
+      ppers_sync_person($personid);
+    }
+  }
+
+  my $text = ppers_get_all_persons_text(0);
+  my $new_hash = phash_do_hash($text);
+
   phash_set_value("persons", "persons", $new_hash);
 }
 
