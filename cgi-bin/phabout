@@ -32,6 +32,8 @@ sub disp_page {
     pht_tab("About", "<a href='phabout'>");
     pht_tabs_end();
 
+    $version = psys_version();
+    print "<p>Database version: $version</p>\n";
     $about = "../templates/about.tpl";
     if (-f $about) {
       open(FILE, "<$about");
