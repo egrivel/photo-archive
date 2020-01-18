@@ -67,7 +67,6 @@ sub pdb_tables_exist {
     return 0;
   }
   my $value = psql_get_field(0, 'count(*)', $record);
-  print "Got value '$value'\n";
   return $value;
 }
 
@@ -153,16 +152,11 @@ sub pdb_image_info {
 sub pdb_set_info {
   my $setid = $_[0];
 
-  print "get set info $setid\n";
   return 0 if (!pcom_is_set_valid($setid));
-  print "  is valid\n";
   return 1 if ($setid eq $cur_set);
-  print "  already there\n";
   return 0 if (!pdb_init());
-  print "  database initialized\n";
 
   my $query = "SELECT * FROM sets WHERE setid='$setid';";
-  print "pdb_set_info $setid: $qyery\n";
 
   psql_command($query) || return 0;
   my $record = psql_next_record(psql_iterator());
@@ -170,14 +164,12 @@ sub pdb_set_info {
   %set_data = ();
   my $set_exists = 1;
   if (!defined($record)) {
-    print "  set does not exist\n";
     $set_exists = 0;
   }
   for ($i = 0 ; defined($set_fields[$i]) ; $i++) {
     my $field = $set_fields[$i];
     my $value = psql_get_field($i, $field, $record);
     $set_data{$field} = $value;
-    print "   set field $i $field is $value\n";
   }
 
   $cur_set = $setid;
@@ -492,7 +484,6 @@ sub pdb_rename_image {
   $query .= "imageid='$value';";
 
   psql_command($query);
-  print "$query\n";
 }
 
 sub pdb_open_set {
@@ -1358,7 +1349,6 @@ sub pdb_get_set_data {
   my $setid = $_[0];
   my $result = "";
 
-  print "pdb_get_set_data($setid)\n";
   if (pdb_set_info($setid)) {
     my $i;
     for ($i = 0; defined($set_fields[$i]); $i++) {
@@ -1519,7 +1509,6 @@ sub pdb_get_set_hash_text {
   my $setid = $_[0];
   my $do_update = $_[1];
 
-  print "pdb_get_set_hash_text($setid)\n";
   my $old_hash = phash_get_value("s-$setid");
 
   my $text = "";
@@ -1600,7 +1589,7 @@ sub pdb_get_all_years_hash_text {
   if ($do_update) {
     my $hash = phash_do_hash($text);
     if ($hash ne $old_hash) {
-      print "Alll years: $old_hash ==> $hash\n";
+      print "All years: $old_hash ==> $hash\n";
       phash_set_value("years", "", $hash);
     }
   }
@@ -1642,7 +1631,6 @@ sub pdb_sync_set {
   my $sync_info = psync_get_set_info($setid);
 
   if ($sync_info =~ s/^database: ([^\n]+)\n//) {
-    print "Do upsert: $1\n";
     psql_upsert("sets", $1);
   }
   while ($sync_info =~ s/^([\w\-\.\/]+): (\w+)\n//) {
@@ -1658,7 +1646,6 @@ sub pdb_sync_set {
   my $text = pdb_get_set_hash_text($setid, 0);
   my $new_hash = phash_do_hash($text);
 
-  print "\nSet $setid:\nnew hash: $new_hash\n$text\n\n";
   phash_set_value("s-$setid", "set", $new_hash);
 }
 
@@ -1701,6 +1688,7 @@ sub pdb_sync_all_years {
 
   my $text = pdb_get_all_years_hash_text($year, 0);
   my $new_hash = phash_do_hash($text);
+  print "All years hash: $new_hash\n$text\n\n";
   phash_set_value("years", "years", $new_hash);
 }
 
