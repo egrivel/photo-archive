@@ -1646,6 +1646,8 @@ sub pdb_sync_set {
 
   my $text = pdb_get_set_hash_text($set, 0);
   my $new_hash = phash_do_hash($text);
+
+  print "\nSet $setid:\nnew hash: $new_hash\n$text\n\n";
   phash_set_value("s-$setid", "set", $new_hash);
 }
 
