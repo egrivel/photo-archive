@@ -158,18 +158,22 @@ sub pdb_set_info {
   return 0 if (!pdb_init());
 
   my $query = "SELECT * FROM sets WHERE setid='$setid';";
+  print "pdb_set_info $set_id: $qyery\n";
+
   psql_command($query) || return 0;
   my $record = psql_next_record(psql_iterator());
   my $i;
   %set_data = ();
   my $set_exists = 1;
   if (!defined($record)) {
+    print "  set does not exist\n";
     $set_exists = 0;
   }
   for ($i = 0 ; defined($set_fields[$i]) ; $i++) {
     my $field = $set_fields[$i];
     my $value = psql_get_field($i, $field, $record);
     $set_data{$field} = $value;
+    print "   set field $i $field is $value\n";
   }
 
   $cur_set = $setid;
