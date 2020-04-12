@@ -20,8 +20,10 @@ if (-f "$localdir/../private/photos.ini") {
     chomp;
     s/\r//;
 
-    # Remove comments
+    # Remove comments (but allow for escaped hashes)
+    s/\\\#/&hash;/g;
     s/\s*\#.*$//;
+    s/&hash;/\#/g;
 
     if (/^\s*([\w\-]+)\s*=\s*(.*?)\s*$/) {
       $settings{$1} = $2;
