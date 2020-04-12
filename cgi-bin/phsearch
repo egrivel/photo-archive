@@ -52,6 +52,43 @@ my $limit = parg_get_numeric("limit");
 if ($limit eq "0") {
     $limit = "";
 }
+
+my $types_text = "";
+if (parg_get("T" . $PCOM_REGULAR)) {
+  $types_text .= $PCOM_REGULAR;
+}
+if (parg_get("T" . $PCOM_PRIVATE)) {
+  $types_text .= $PCOM_PRIVATE;
+}
+if (parg_get("T" . $PCOM_EXPERIMENTAL)) {
+  $types_text .= $PCOM_EXPERIMENTAL;
+}
+if (parg_get("T" . $PCOM_NICOLINE)) {
+  $types_text .= $PCOM_NICOLINE;
+}
+if (parg_get("T" . $PCOM_KIDS)) {
+  $types_text .= $PCOM_KIDS;
+}
+if (parg_get("T" . $PCOM_OTHERS)) {
+  $types_text .= $PCOM_OTHERS;
+}
+if (parg_get("T" . $PCOM_THEO)) {
+  $types_text .= $PCOM_THEO;
+}
+if (parg_get("T" . $PCOM_PARENTS)) {
+  $types_text .= $PCOM_PARENTS;
+}
+if (parg_get("T" . $PCOM_NEW)) {
+  $types_text .= $PCOM_NEW;
+}
+if ($types_text eq "") {
+  # Default is to see 'regular' and 'parents'
+  $types_text .= $PCOM_REGULAR;
+  if (pusr_allowed($PUSR_SEE_PARENTS)) {
+    $types_text .= $PCOM_PARENTS;
+  }
+}
+
 my $textonly = parg_get("textonly");
 if ($textonly ne "") {
     $textonly = 1;
@@ -103,8 +140,8 @@ if (($title ne "") || ($descr ne "") || ($persons ne "") || ($comment ne "") || 
     } else {
         $iter = pdb_iter_new("00101", $limit);
     }
-    pdb_iter_filter_category($iter, put_types());
-    pdb_filter_category(put_types());
+    pdb_iter_filter_category($iter, $types_text);
+    pdb_filter_category($types_text);
     if ($persons ne "") {
         if ($person_filter ne "()") {
             pdb_iter_filter_persons($iter, $person_filter);
@@ -319,6 +356,45 @@ sub search_form {
     put_form_text("Minimum quality" . put_help_link(10), "minquality", 0);
     put_form_text("Maximum quality" . put_help_link(10), "maxquality", 0);
     put_form_text("Limit" . put_help_link(11), "limit", 0);
+    my @want = ();
+    my $want_count = 0;
+    if (pusr_allowed($PUSR_SEE_REGULAR)) {
+        $want[$want_count++] = "T" . $PCOM_REGULAR;
+        $want[$want_count++] = "regular";
+    }
+    if (pusr_allowed($PUSR_SEE_PRIVATE)) {
+        $want[$want_count++] = "T" . $PCOM_PRIVATE;
+        $want[$want_count++] = "private";
+    }
+    if (pusr_allowed($PUSR_SEE_EXPERIMENTAL)) {
+        $want[$want_count++] = "T" . $PCOM_EXPERIMENTAL;
+        $want[$want_count++] = "special";
+    }
+    if (pusr_allowed($PUSR_SEE_NICOLINE)) {
+        $want[$want_count++] = "T" . $PCOM_NICOLINE;
+        $want[$want_count++] = "Nicoline";
+    }
+    if (pusr_allowed($PUSR_SEE_KIDS)) {
+        $want[$want_count++] = "T" . $PCOM_KIDS;
+        $want[$want_count++] = "kids";
+    }
+    if (pusr_allowed($PUSR_SEE_OTHERS)) {
+        $want[$want_count++] = "T" . $PCOM_OTHERS;
+        $want[$want_count++] = "others";
+    }
+    if (pusr_allowed($PUSR_SEE_THEO)) {
+        $want[$want_count++] = "T" . $PCOM_THEO;
+        $want[$want_count++] = "Theo";
+    }
+    if (pusr_allowed($PUSR_SEE_PARENTS)) {
+        $want[$want_count++] = "T" . $PCOM_PARENTS;
+        $want[$want_count++] = "parent";
+    }
+    if (pusr_allowed($PUSR_SEE_NEW)) {
+        $want[$want_count++] = "T" . $PCOM_NEW;
+        $want[$want_count++] = "new";
+    }
+    put_form_checkboxes("Types", @want);
     put_form_checkboxes("", "textonly", "Display text only" . put_help_link(12));
     put_form_buttons("Search", "search");
     put_form_end();
