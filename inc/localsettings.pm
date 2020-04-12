@@ -69,6 +69,10 @@ sub get_static_root {
   return setting_get("staticroot");
 }
 
+sub get_quicktags {
+  return setting_get("quicktags");
+}
+
 sub get_admin_email {
   return setting_get("admin-email");
 }

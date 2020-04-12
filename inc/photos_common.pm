@@ -68,6 +68,10 @@ $PCOM_M5_WIDTH  = 1920;
 $PCOM_M5_HEIGHT = 1080;
 
 @quicktags = ();
+my $quicktags_txt = get_quicktags();
+while ($quicktags_txt =~ s/^\s*([^, ]+)[, ]*//) {
+  push(@quicktags, $1);
+}
 
 my $log_level = $PCOM_DEBUG;
 my $log_file  = pcom_photo_root() . "/photos_log.txt";
