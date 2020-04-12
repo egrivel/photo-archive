@@ -33,7 +33,8 @@ sub disp_page {
     pht_tabs_end();
 
     $version = psys_version();
-    print "<p>Database version: $version</p>\n";
+    $db_version = psys_db_version();
+    print "<p>Version $version (database $db_version).</p>\n";
     $about = "../templates/about.tpl";
     if (-f $about) {
       open(FILE, "<$about");

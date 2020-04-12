@@ -12,6 +12,10 @@ my @sys_fields = (
   "sysvalue"
 );
 
+# System version. Has to be updated manually for now, have to remember to
+# update this every time a new version is pushed
+my $VERSION = "2.0.1";
+
 sub psys_init {
   psql_init();
 }
@@ -67,6 +71,10 @@ sub psys_set_value {
 }
 
 sub psys_version {
+  return $VERSION;
+}
+
+sub psys_db_version {
   if (!psql_table_exists("users")) {
     # No tables have been created yet
     return "0.0";
