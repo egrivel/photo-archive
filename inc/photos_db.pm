@@ -549,6 +549,10 @@ sub pdb_close_set {
     for ($i = 0 ; defined($set_fields[$i]) ; $i++) {
       $query .= "," if ($i);
       my $value = psql_encode($save_set_data{ $set_fields[$i] });
+      if (!defined($value)) {
+          print "Query $query, field $i, no defined value\n";
+          $value = '';
+      }
       $query .= " $set_fields[$i]='$value' ";
     }
     $query .= "$end;";
