@@ -1,0 +1,33 @@
+#!/usr/bin/perl -w -I .
+
+my $script = __FILE__;
+my $localdir = ".";
+if ($script =~ s/\/[^\/]*$//) {
+  $localdir = $script;
+}
+push @INC, "$localdir/../inc";
+# use localsettings;
+
+require photos_util;
+
+put_init();
+
+my $arg = shift;
+
+if (defined($arg)) {
+    if (! ($arg =~ /^\d\d\d\d\d\d\d\d$/)) {
+	die "Must give argument in yyyymmdd format\n";
+    }
+}
+
+if (defined($arg)) {
+    # Only dump single (digital) set
+    pdb_dump_tables($arg);
+} else  {
+    # default behavior - dump everything
+    pusr_dump_table();
+    pdb_dump_tables();
+# No need to archive the session information...!
+# pses_dump_table();
+    ppers_dump_tables();
+}
