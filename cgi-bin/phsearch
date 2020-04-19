@@ -397,5 +397,6 @@ sub search_form {
     put_form_checkboxes("Types", @want);
     put_form_checkboxes("", "textonly", "Display text only" . put_help_link(12));
     put_form_buttons("Search", "search");
+    put_form_comment("<center>POTD year ranges:</center><ul><li>1957-2006</li><li>2007</li><li>2008-2011</li><li>2012-2014</li><li>2015-9999</li></ul>");
     put_form_end();
 }

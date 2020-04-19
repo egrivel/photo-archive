@@ -14,7 +14,7 @@ my @sys_fields = (
 
 # System version. Has to be updated manually for now, have to remember to
 # update this every time a new version is pushed
-my $VERSION = "2.0.1";
+my $VERSION = "2.0.2";
 
 sub psys_init {
   psql_init();

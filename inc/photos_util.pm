@@ -378,6 +378,13 @@ sub put_form_thumbnail {
     pht_output "<a href='single.pl?page=$imageid' target='imagewindow'><img src='phimg?$size=$imageid' /></a></td></tr>\n";
 }
 
+sub put_form_comment {
+  my $text = $_[0];
+  pht_output("<tr><td colspan='2'>");
+  pht_output($text);
+  pht_output("</td></tr>");
+}
+
 sub put_form_end {
     if ($put_has_required) {
         pht_output "<tr class='noborder'><td colspan='2'><span class='required'>denotes a required field</span></td></tr>\n";
