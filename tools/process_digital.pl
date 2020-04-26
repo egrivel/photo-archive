@@ -101,8 +101,8 @@ while (defined($fname = readdir(DIR))) {
             $dirlist{$fname}++;
         }
     }
-    if ($fname =~ /^(.+?)\.mov$/i) {
-        # copy over movies (from D750)
+    if (($fname =~ /^(.+?)\.mov$/i) || ($fname =~ /^(.+?)\.mp4$/i)) {
+        # copy over movies (from D750 or android device)
         $dirlist{$fname}++;
     }
 }
@@ -176,7 +176,7 @@ sub process_photo
     my $shuttercount = 0;
     my $phoneportrait = 0;
     my $is_mov = 0;
-    if ($fname =~ /\.mov$/i) {
+    if ($fname =~ /\.mov$/i || $fname =~ /\.mp4$/i) {
         $is_mov = 1;
     }
     my $is_kids = 0;
@@ -229,6 +229,10 @@ sub process_photo
                     $do_portrait = 1;
                 } elsif ($value eq "Horizontal (normal)") {
                     # don't rotate
+                } elsif ($value eq "Rotate 180") {
+                    # rotate 180, doesn't change width or height
+                    $rotate = " | pnmrotate 180 ";
+                    $newrotate = "-rotate -180";
                 } else {
                     print "Unknown rotation value '$value'\n";
                     die "Stopping for now\n";
@@ -433,12 +437,16 @@ sub process_photo
             # Add all the EXIF information to the JPG file
             system("exiftool -TagsFromFile $dir/$fname -q -q -SerialNumber=0 -overwrite_original $set_directory/tif/$imageid.jpg");
             move_file("$dir/$fname", "$set_directory/tif/$imageid.cr2");
-        } elsif ($fname =~ /\.mov$/i) {
+        } elsif ($fname =~ /\.mov$/i || $fname =~ /\.mp4$/i) {
             # Extract a JPG thumbnail
             system("ffmpeg -i $dir/$fname -vframes 1 -ss 1 $set_directory/tif/$imageid.jpg");
             # Add all the EXIF information to the JPG file
             #system("exiftool -TagsFromFile $dir/$fname -q -q -SerialNumber=0 -overwrite_original $set_directory/tif/$imageid.jpg");
-            move_file("$dir/$fname", "$set_directory/tif/$imageid.mov");
+            if ($fname =~ /\.mov$/i) {
+                move_file("$dir/$fname", "$set_directory/tif/$imageid.mov");
+            } else {
+                move_file("$dir/$fname", "$set_directory/tif/$imageid.mp4");
+            }
         } else {
             print "Don't know what to do with file $fname\n";
         }

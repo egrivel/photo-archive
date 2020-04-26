@@ -246,6 +246,9 @@ sub pfs_get_raw_location {
         if (-f "$setdir/tif/$imageID.mov") {
             return "$setdir/tif/$imageID.mov";
         }
+        if (-f "$setdir/tif/$imageID.mp4") {
+            return "$setdir/tif/$imageID.mp4";
+        }
     }
 
     return "";
