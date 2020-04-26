@@ -128,7 +128,7 @@ sub process_directory {
       $dirlist{$fname}++;
     }
     if ($fname =~ /^(.+?)\.mp4$/i) {
-      # copy over movies from Mark
+      # copy over movies from Android device
       $dirlist{$fname}++;
     }
   }
