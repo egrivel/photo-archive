@@ -463,6 +463,7 @@ sub disp_set {
     put_form_textlong("Copyright", "copyright");
     put_form_hidden("showImages");
     $showImages = parg_get("showImages");
+    put_form_default_button("save");
     if ($showImages) {
       put_form_buttons("hideImages", "Hide Images");
     } else {
