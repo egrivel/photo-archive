@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-my $script = __FILE__;
+my $script   = __FILE__;
 my $localdir = ".";
 if ($script =~ s/\/[^\/]*$//) {
   $localdir = $script;
@@ -76,9 +76,9 @@ sub process_directory {
   my $dir = $_[0];
   opendir(DIR, $dir)
     || die "Cannot scan source directory '$dir'\n";
-  my %dirlist = ();
-  my %neflist = ();
-  my @subdirs = ();
+  my %dirlist     = ();
+  my %neflist     = ();
+  my @subdirs     = ();
   my $subdircount = 0;
 
   while (defined($fname = readdir(DIR))) {
@@ -138,7 +138,7 @@ sub process_directory {
   }
   if ($gl_recursive) {
     my $i;
-    for ($i = 0; $i < $subdircount; $i++) {
+    for ($i = 0 ; $i < $subdircount ; $i++) {
       process_directory($subdirs[$i]);
     }
   }
@@ -216,7 +216,8 @@ sub process_photo {
   }
 
   print "Process $dir/$fname\n" if ($gl_verbose);
-  open(FILE, "exiftool \"$dir/$fname\"|") || die "Cannot process '$dir/$fname'\n";
+  open(FILE, "exiftool \"$dir/$fname\"|")
+    || die "Cannot process '$dir/$fname'\n";
   while (<FILE>) {
     chomp();
     if (/^(.*?)\s*:\s*(.*?)\s*$/s) {
@@ -295,7 +296,9 @@ sub process_photo {
   }
 
   if ($setID eq "") {
-    if ($fname =~ /^(.*?[^\d])?(\d\d\d\d\d\d\d\d)[\-_](\d\d\d\d\d\d)([^\d].*?)?.jpg$/) {
+    if ($fname =~
+      /^(.*?[^\d])?(\d\d\d\d\d\d\d\d)[\-_](\d\d\d\d\d\d)([^\d].*?)?.jpg$/)
+    {
       $setID      = $2;
       $targetfile = "$2-$3";
     }
@@ -444,33 +447,36 @@ sub process_photo {
     } elsif ($fname =~ /\.nef$/i) {
       # Extract the JPG first
       system(
-        "exiftool -b -JpgFromRaw \"$dir/$fname\" > $set_directory/tif/$imageid.jpg"
+        "exiftool -b -JpgFromRaw \"$dir/$fname\" > "
+        . "$set_directory/tif/$imageid.jpg"
       );
       # Add all the EXIF information to the JPG file
       system("exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0 "
-        . "-overwrite_original $set_directory/tif/$imageid.jpg");
+          . "-overwrite_original $set_directory/tif/$imageid.jpg");
       move_file("$dir/$fname", "$set_directory/tif/$imageid.nef");
     } elsif ($fname =~ /\.cr2$/i) {
       # Extract the JPG first
       system("exiftool -b -PreviewImage \"$dir/$fname\" > "
-        . "$set_directory/tif/$imageid.jpg");
+          . "$set_directory/tif/$imageid.jpg");
       # Add all the EXIF information to the JPG file
       system("exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0 "
-        . "-overwrite_original $set_directory/tif/$imageid.jpg");
+          . "-overwrite_original $set_directory/tif/$imageid.jpg");
       move_file("$dir/$fname", "$set_directory/tif/$imageid.cr2");
     } elsif ($fname =~ /\.mov$/i) {
       # Extract a JPG thumbnail
       system("ffmpeg -i \"$dir/$fname\" -vframes 1 -ss 1 "
-        . "$set_directory/tif/$imageid.jpg");
+          . "$set_directory/tif/$imageid.jpg");
       # Add all the EXIF information to the JPG file
-      #system("exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0 -overwrite_original $set_directory/tif/$imageid.jpg");
+      #system("exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0
+      #  -overwrite_original $set_directory/tif/$imageid.jpg");
       move_file("$dir/$fname", "$set_directory/tif/$imageid.mov");
     } elsif ($fname =~ /\.mp4$/i) {
       # Extract a JPG thumbnail
       system("ffmpeg -i \"$dir/$fname\" -vframes 1 -ss 1 "
-        . "$set_directory/tif/$imageid.jpg");
+          . "$set_directory/tif/$imageid.jpg");
       # Add all the EXIF information to the JPG file
-      #system("exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0 -overwrite_original $set_directory/tif/$imageid.jpg");
+      #system("exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0
+      #  -overwrite_original $set_directory/tif/$imageid.jpg");
       move_file("$dir/$fname", "$set_directory/tif/$imageid.mp4");
     } else {
       print "Don't know what to do with file $fname\n";

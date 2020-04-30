@@ -330,6 +330,20 @@ sub put_form_radio {
     pht_output "</td></tr>\n";
 }
 
+sub put_form_default_button {
+  my $buttonName = $_[0];
+
+  # Output a default button. A default button should be the first button
+  # in the form. Make sure the button is there in the DOM for the browser to
+  # pick up, but not actually visible to the user.
+  # Source of this hack:
+  # https://stackoverflow.com/questions/925334/how-is-the-default-submit-button-on-an-html-form-determined
+  pht_output "<button style='overflow: visible !important; "
+    . "height: 0 !important; width: 0 !important; margin: 0 !important; "
+    . "border: 0 !important; padding: 0 !important; "
+    . "display: block !important;' type='submit' name='do.$buttonName'/>\n";
+}
+
 sub put_form_buttons {
     my $name = shift(@_);
     my $label = shift(@_);
