@@ -290,6 +290,12 @@ sub process_photo
 	}
     }
 
+    if ($fname =~ /^VID_(\d\d\d\d\d\d\d\d)_(\d\d\d\d\d\d)\.mp4$/) {
+        # Video from Android phone, use timestamp from filename
+        $setID = $1;
+        $targetfile = "$1-$2";
+    }
+
     if ($gl_timeoffset) {
         if ($targetfile =~ /^(\d\d\d\d)(\d\d)(\d\d)-(\d\d)(\d\d)(\d\d)(\w?)$/) {
             my $year = $1;
