@@ -365,6 +365,12 @@ sub process_photo {
     }
   }
 
+  if ($fname =~ /^VID_(\d\d\d\d\d\d\d\d)_(\d\d\d\d\d\d)\.mp4$/) {
+    # Video from Android phone, use timestamp from filename
+    $setID = $1;
+    $targetfile = "$1-$2";
+  }
+
   if (($setID eq "") || ($targetfile eq "")) {
     print "No timestamp found in '$dir/$fname'\n";
   } else {
