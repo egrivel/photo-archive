@@ -414,7 +414,7 @@ sub disp_image {
   put_form_textlong("Title",       "title");
   put_form_textlong("Date / time", "datetime");
   put_form_text("Year", "year");
-  put_form_textlong("Description", "description", 0, "d");
+  put_form_textlong("Description", "description", 0, "s");
   # put_form_textlong("Comment", "comment");
   put_form_radio("Orientation" . put_help_link(4), "orientation", @orientation);
   put_form_textlong("Location", "location");
