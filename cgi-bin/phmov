@@ -3,6 +3,8 @@
 use inc_all;
 put_init();
 
+print "Content-type: video/mp4\n\n";
+
 my $movieid = parg_get("mov");
 
 my $srcname = pfs_get_raw_location($movieid);
@@ -14,7 +16,6 @@ if (! -f $fname) {
     system($cmd);
 }
 
-print "Content-type: video/mp4\n\n";
 my $data = "";
 open(FILE, "<$fname");
 binmode(FILE);
