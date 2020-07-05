@@ -185,6 +185,7 @@ sub process_photo {
   if ($fname =~ /\.cr2$/i) {
     $is_kids = 1;
   }
+  my $is_freeform = 0;
 
   print "Process $dir/$fname\n" if ($gl_verbose);
   open(FILE, "exiftool $dir/$fname|") || die "Cannot process '$dir/$fname'\n";
@@ -263,6 +264,9 @@ sub process_photo {
           if ($height > $width) {
             # Phone images can be taller than wide
             $phoneportrait = 1;
+          }
+          if ($width > 2 * $height) {
+            $is_freeform = true;
           }
         }
       }
@@ -429,7 +433,7 @@ sub process_photo {
     create_directory("$set_directory/custom");
 
     set_database_info($imageid, $do_portrait, $newer_rotate, $latlong,
-      $timezone, $dst, $is_mov, $is_kids);
+      $timezone, $dst, $is_mov, $is_kids, $is_freeform);
 
     # Move over the files we are processing
 
@@ -445,27 +449,27 @@ sub process_photo {
     } elsif ($fname =~ /\.nef$/i) {
       # Extract the JPG first
       system(
-        "exiftool -b -JpgFromRaw $dir/$fname > $set_directory/tif/$imageid.jpg"
+        "exiftool -b -JpgFromRaw \"$dir/$fname\" > \"$set_directory/tif/$imageid.jpg\""
       );
       # Add all the EXIF information to the JPG file
       system(
-"exiftool -TagsFromFile $dir/$fname -q -q -SerialNumber=0 -overwrite_original $set_directory/tif/$imageid.jpg"
+"exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0 -overwrite_original \"$set_directory/tif/$imageid.jpg\""
       );
       move_file("$dir/$fname", "$set_directory/tif/$imageid.nef");
     } elsif ($fname =~ /\.cr2$/i) {
       # Extract the JPG first
       system(
-"exiftool -b -PreviewImage $dir/$fname > $set_directory/tif/$imageid.jpg"
+"exiftool -b -PreviewImage \"$dir/$fname\" > \"$set_directory/tif/$imageid.jpg\""
       );
       # Add all the EXIF information to the JPG file
       system(
-"exiftool -TagsFromFile $dir/$fname -q -q -SerialNumber=0 -overwrite_original $set_directory/tif/$imageid.jpg"
+"exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0 -overwrite_original \"$set_directory/tif/$imageid.jpg\""
       );
       move_file("$dir/$fname", "$set_directory/tif/$imageid.cr2");
     } elsif ($fname =~ /\.mov$/i || $fname =~ /\.mp4$/i) {
       # Extract a JPG thumbnail
       system(
-        "ffmpeg -i $dir/$fname -vframes 1 -ss 1 $set_directory/tif/$imageid.jpg"
+        "ffmpeg -i \"$dir/$fname\" -vframes 1 -ss 1 \"$set_directory/tif/$imageid.jpg\""
       );
 # Add all the EXIF information to the JPG file
 #system("exiftool -TagsFromFile $dir/$fname -q -q -SerialNumber=0 -overwrite_original $set_directory/tif/$imageid.jpg");
@@ -486,7 +490,7 @@ sub create_directory {
 
   if (!-d $dirname) {
     mkdir($dirname);
-    system("chmod 777 $dirname");
+    system("chmod 777 \"$dirname\"");
   }
 }
 
@@ -502,8 +506,8 @@ sub move_file {
     warn "Move file '$srcfile' to '$dstfile': destination already exists\n";
     return;
   }
-  system("mv $srcfile $dstfile");
-  system("chmod 444 $dstfile");
+  system("mv \"$srcfile\" \"$dstfile\"");
+  system("chmod 444 \"$dstfile\"");
 }
 
 sub set_database_info {
@@ -515,6 +519,7 @@ sub set_database_info {
   my $dst         = $_[5];
   my $is_mov      = $_[6];
   my $is_kids     = $_[7];
+  my $is_freeform = $_[8];
   my @monthnames  = (
     "",     "January", "February", "March",     "April",   "May",
     "June", "July",    "August",   "September", "October", "November",
@@ -558,7 +563,11 @@ sub set_database_info {
       my $monthname = $monthnames[$month];
       pdb_set_datetime("$monthname $day, $year $hour:$minute:$second");
       pdb_set_year($year);
-      pdb_set_orientation($do_portrait ? $PCOM_PORTRAIT : $PCOM_LANDSCAPE);
+      if ($is_freeform) {
+        pdb_set_orientation($do_portrait ? $PCOM_FREEFORM_P : $PCOM_FREEFORM_L);
+      } else {
+        pdb_set_orientation($do_portrait ? $PCOM_PORTRAIT : $PCOM_LANDSCAPE);
+      }
       if ($is_kids) {
         pdb_set_category($PCOM_KIDS);
       } else {
