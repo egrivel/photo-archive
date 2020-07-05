@@ -265,7 +265,7 @@ sub process_photo {
             # Phone images can be taller than wide
             $phoneportrait = 1;
           }
-          if ($width > 2 * $height) {
+          if (($width > 2 * $height) || ($height > 2 * $width)) {
             $is_freeform = true;
           }
         }
