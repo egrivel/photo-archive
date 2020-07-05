@@ -232,7 +232,8 @@ sub process_photo {
           $thmbscale    = "-width 100 -height 150";
           $newer_rotate = "-90";
           $do_portrait  = 1;
-        } elsif ($value eq "Horizontal (normal)") {
+        } elsif ($value eq "Horizontal (normal)"
+          || $value eq "Unknown (0)") {
           # don't rotate
         } elsif ($value eq "Rotate 180") {
           # rotate 180, doesn't change width or height
