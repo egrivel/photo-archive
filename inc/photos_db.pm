@@ -1480,7 +1480,19 @@ sub pdb_get_image_hash_text {
     $text .= "$item: $hash\n";
   }
 
+  $item = "tif/$image.mov";
+  if (-f "$root/$set/$item") {
+    my $hash = pdb_get_file_item_hash($item, "$root/$set/$item", $do_update);
+    $text .= "$item: $hash\n";
+  }
+
   $item = "tif/$image.tif";
+  if (-f "$root/$set/$item") {
+    my $hash = pdb_get_file_item_hash($item, "$root/$set/$item", $do_update);
+    $text .= "$item: $hash\n";
+  }
+
+  $item = "tif/$image.mp4";
   if (-f "$root/$set/$item") {
     my $hash = pdb_get_file_item_hash($item, "$root/$set/$item", $do_update);
     $text .= "$item: $hash\n";
@@ -1493,6 +1505,12 @@ sub pdb_get_image_hash_text {
   }
 
   $item = "edited/$image.jpg";
+  if (-f "$root/$set/$item") {
+    my $hash = pdb_get_file_item_hash($item, "$root/$set/$item", $do_update);
+    $text .= "$item: $hash\n";
+  }
+
+  $item = "edited/$image.mp4";
   if (-f "$root/$set/$item") {
     my $hash = pdb_get_file_item_hash($item, "$root/$set/$item", $do_update);
     $text .= "$item: $hash\n";

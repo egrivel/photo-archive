@@ -548,15 +548,14 @@ sub pfs_cmd_copy_exif {
   my $targetfile = $_[1];
   my $origfile   = pfs_get_raw_location($imageID);
 
-  my $cmd = "";
+  # Blank out the EXIF orientation when generating a cached result. If the
+  # original is a .NEF file, also blank out the serial number, since that is
+  # nobody's business.
+  my $cmd = "exiftool -TagsFromFile $origfile -q -q";
   if ($origfile =~ /\.nef$/) {
-    # Only can get the exif if we have the original .NEF file
-    # Note: blank out the serial number (nobody's business) and the
-    # orientation (when we process the photo, it is already rotated,
-    # so the orientation will only confuse programs that recognize it).
-    $cmd =
-"exiftool -TagsFromFile $origfile -q -q -SerialNumber=0 -Orientation= -overwrite_original $targetfile";
+    $cmd .= " -SerialNumber=0";
   }
+  $cmd .= " -Orientation= -overwrite_original $targetfile";
   return $cmd;
 }
 
