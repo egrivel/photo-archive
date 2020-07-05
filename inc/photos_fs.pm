@@ -45,6 +45,8 @@ sub pfs_get_setdir {
   if ( (-f "$basedir/tif/$imageID.nef")
     || (-f "$basedir/tif/$imageID.jpg")
     || (-f "$basedir/tif/$imageID.tif")
+    || (-f "$basedir/tif/$imageID.mp4")
+    || (-f "$basedir/tif/$imageID.mov")
     || (-f "$basedir/tif/$imageID.JPG")
     || (-f "$basedir/edited/$imageID.jpg"))
   {
@@ -58,6 +60,8 @@ sub pfs_get_setdir {
   if ( (-f "$basedir/tif/$imageID.nef")
     || (-f "$basedir/tif/$imageID.jpg")
     || (-f "$basedir/tif/$imageID.tif")
+    || (-f "$basedir/tif/$imageID.mp4")
+    || (-f "$basedir/tif/$imageID.mov")
     || (-f "$basedir/tif/$imageID.JPG")
     || (-f "$basedir/edited/$imageID.jpg"))
   {
