@@ -67,6 +67,25 @@ sub remove_tag_from_image {
     }
 }
 
+sub generate_poster_image {
+  my $imageid = $_[0];
+
+  # The raw location is a TIFF, NEF, MOV or MP4 file
+  my $srcname = pfs_get_raw_location($movieid);
+  if (! -f $srcname) {
+    # No movie file exists
+    return;
+  }
+  my $postername = $srcname;
+  $postername =~ s/\.m[op][v4]$/.jpg/i;
+  if (-f $postername) {
+    # Poster already exists
+    return;
+  }
+  my $cmd = "ffmpeg -i \"$srcname\" -vframes 1 -ss 1 \"$postername\"";
+  system($cmd);
+}
+
 sub disp_image_page {
   my $imageid = $_[0];
   my $show_image = 1;
@@ -221,6 +240,8 @@ sub disp_image_page {
     }
 
     if (pdb_get_type($imageid) eq "MOV") {
+      # If somehow the 'poster' isn't there, generate it
+      generate_poster_image($imageid);
       pht_output "<div class='movie'>";
       pht_output "<video width='960' height='540' controls ";
       pht_output "poster='phimg?mov=$imageid'>";
