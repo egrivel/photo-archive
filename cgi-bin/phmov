@@ -8,7 +8,10 @@ print "Content-type: video/mp4\n\n";
 my $movieid = parg_get("mov");
 
 my $srcname = pfs_get_raw_location($movieid);
-my $fname = pfs_get_large_location($movieid);
+
+# To determine the target name, even if the movie is not there, get the
+# name of what a large-size image _should_ be, and replace the extension.
+my $fname = pfs_get_buffer_location($movieid, $PCOM_LARGE);
 $fname =~ s/\.jpg$/.mp4/;
 
 if (! -f $fname) {
