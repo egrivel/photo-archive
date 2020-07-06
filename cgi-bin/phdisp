@@ -74,15 +74,18 @@ sub generate_poster_image {
   my $srcname = pfs_get_raw_location($movieid);
   if (! -f $srcname) {
     # No movie file exists
+    print "No movie exists\n";
     return;
   }
   my $postername = $srcname;
   $postername =~ s/\.m[op][v4]$/.jpg/i;
   if (-f $postername) {
     # Poster already exists
+    print "Poster already exists\n";
     return;
   }
   my $cmd = "ffmpeg -i \"$srcname\" -vframes 1 -ss 1 \"$postername\"";
+  print "Command: $cmd\n";
   system($cmd);
 }
 
