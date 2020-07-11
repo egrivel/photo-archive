@@ -21,6 +21,7 @@ pusr_login("tester", "tester");
 my $gl_sourcedir = ".";
 my $gl_verbose   = 1;
 my $gl_testmode  = 0;
+my $gl_recursive = 0;
 
 # time offset: correction for the clock in the camera being off: the offset
 # adjust the time reported by the camera to the actual clock time
@@ -33,6 +34,11 @@ while (defined($arg = shift)) {
   if ($arg eq "-test") {
     $gl_testmode = 1;
     print "Turning on test mode\n";
+  } elsif ($arg eq "-r") {
+    $gl_recursive = 1;
+  } elsif ($arg eq "-h" || $arg eq "-help" || $arg eq "--help" || $arg eq "-?") {
+    help();
+    exit(0);
   } elsif ($arg eq "-offset") {
     my $value = shift;
     if (!defined($value)) {
@@ -70,48 +76,84 @@ while (defined($arg = shift)) {
   }
 }
 
-opendir(DIR, $gl_sourcedir)
-  || die "Cannot scan source directory '$sourcedir'\n";
-my %dirlist = ();
-my %neflist = ();
-while (defined($fname = readdir(DIR))) {
-  if ($fname =~ /^.+?\.jpg$/i) {
-    $dirlist{$fname}++;
-  }
-  if ($fname =~ /^(.+?)\.nef$/i) {
-    my $basename = $1;
-    if ( (-f "$gl_sourcedir/$basename.jpg")
-      || (-f "$gl_sourcedir/$basename.JPG"))
-    {
-      # Corresponding JPEG file also exists; add NEF to the %neflist
-      $neflist{ lc($fname) } = $fname;
-    } else {
-      # No corresponding JPEG file, so add NEF to the files to be
-      # processed
+process($gl_sourcedir);
+
+sub process {
+  my $dir = $_[0];
+
+  opendir(DIR, $dir)
+    || die "Cannot scan source directory '$dir'\n";
+  my %dirlist = ();
+  my %neflist = ();
+  my @subdirs = ();
+  my $subdir_count = 0;
+
+  my $fname;
+  while (defined($fname = readdir(DIR))) {
+    next if ($fname =~ /^\./);
+    if (-d "$dir/$fname") {
+      if ($gl_recursive) {
+        $subdirs[$subdir_count++] = "$dir/$fname";
+      }
+      next;
+    }
+    if ($fname =~ /^.+?\.jpg$/i) {
+      $dirlist{$fname}++;
+    }
+    if ($fname =~ /^(.+?)\.nef$/i) {
+      my $basename = $1;
+      if ( (-f "$dir/$basename.jpg")
+        || (-f "$dir/$basename.JPG"))
+      {
+        # Corresponding JPEG file also exists; add NEF to the %neflist
+        $neflist{ lc($fname) } = $fname;
+      } else {
+        # No corresponding JPEG file, so add NEF to the files to be
+        # processed
+        $dirlist{$fname}++;
+      }
+    }
+    if ($fname =~ /^(.+?)\.cr2$/i) {
+      my $basename = $1;
+      if ( (-f "$dir/$basename.jpg")
+        || (-f "$dir/$basename.JPG"))
+      {
+        # Corresponding JPEG file also exists; add CR2 to the %neflist
+        $neflist{ lc($fname) } = $fname;
+      } else {
+        # No corresponding JPEG file, so add CR2 to the files to be
+        # processed
+        $dirlist{$fname}++;
+      }
+    }
+    if (($fname =~ /^(.+?)\.mov$/i) || ($fname =~ /^(.+?)\.mp4$/i)) {
+      # copy over movies (from D750 or android device)
       $dirlist{$fname}++;
     }
   }
-  if ($fname =~ /^(.+?)\.cr2$/i) {
-    my $basename = $1;
-    if ( (-f "$gl_sourcedir/$basename.jpg")
-      || (-f "$gl_sourcedir/$basename.JPG"))
-    {
-      # Corresponding JPEG file also exists; add CR2 to the %neflist
-      $neflist{ lc($fname) } = $fname;
-    } else {
-      # No corresponding JPEG file, so add CR2 to the files to be
-      # processed
-      $dirlist{$fname}++;
-    }
+  closedir(DIR);
+  foreach $key (sort (keys %dirlist)) {
+    process_photo($dir, $key);
   }
-  if (($fname =~ /^(.+?)\.mov$/i) || ($fname =~ /^(.+?)\.mp4$/i)) {
-    # copy over movies (from D750 or android device)
-    $dirlist{$fname}++;
+
+  my $i;
+  for ($i = 0; $i < $subdir_count; $i++) {
+    process($subdirs[$i]);
   }
 }
-closedir(DIR);
-foreach $key (sort (keys %dirlist)) {
-  process_photo($gl_sourcedir, $key);
+
+sub help {
+  print "Usage:\n";
+  print "  process_digital [options] [directory]\n";
+  print "Processes all the photos for inclusion into the photo archive.\n";
+  print "If no directory is given, the current directory is processed.\n";
+  print "Options:\n";
+  print " -r: recursive (also process all subdirectorys of [directory]\n";
+  print " -offset <time offset>: offset the calculated time\n";
+  print "    Time offset must be in [+-]hh:mm:ss format\n";
+  print " -tz-offset <offset>: time zone offset\n";
+  print "    Time zone offset must be in [+-]hh:mm format\n";
+  print ""
 }
 
 sub get_shuttercount {

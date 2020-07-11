@@ -9,6 +9,7 @@ Make sure the prerequisites are installed:
  - Perl
  - Perl module DBI: database interface
  - Perl module Image::ExifTool to extract EXIF info from the photos
+ - ffmpeg to processs video (make sure MP4 codecs are there)
 
 ## Create the Database
 
@@ -23,6 +24,8 @@ which you definitely should do), then execute commands to create the database,
 create the user, and give the user access to the just created database.
 
 ```
+> su
+password: <enter root password>
 $ mysql --user=root -p mysql
 [mysql]> CREATE DATABASE <dbname>;
 [mysql]> CREATE USER '<dbuser>'@'localhost' IDENTIFIED BY '<dbpassword>';
@@ -113,9 +116,9 @@ You should see the result when you refresh the page.
 
 ## Adding photos to the archive
 
-Go to the `util` directory and copy the photos you want to add into this
+Go to the `tools` directory and copy the photos you want to add into this
 directory. Then run `./process_digital` which will _move_ all the images
-in the `util` directory into the archive.
+in the `tools` directory into the archive.
 
 Newly added photos are not yet visible to the public until the admistrator
 has had an opportunity to process the photos and weed out any
