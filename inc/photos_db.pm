@@ -1635,12 +1635,25 @@ sub pdb_sync_image {
   while ($sync_info =~ s/^([\w\-\.\/]+): (\w+)\n//) {
     my $fileid = $1;
     my $hash = $2;
+    my $root = local_photos_directory();
+    my $fname = "$root/$setid/$fileid";
+
     my $current_hash = phash_get_value("f-$fileid");
+    if ($current_hash eq "") {
+      # Don't have a hash value yet. However check if the file in question
+      # already exists on the file system, and if it does, get the hash from
+      # the file. This may save downloading the file
+      if (-f $fname) {
+        $current_hash = pdb_get_file_item_hash($fileid, $fname, 1);
+        if ($current_hash eq $hash) {
+          # OK, we have the file with the right hash, so done
+          return;;
+        }
+      }
+    }
     if ($current_hash ne $hash) {
       psync_retrieve_file($setid, $fileid);
     }
-    my $root = local_photos_directory();
-    my $fname = "$root/$setid/$fileid";
     pdb_get_file_item_hash($fileid, $fname, 1);
   }
 
