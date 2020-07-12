@@ -1003,4 +1003,38 @@ sub pfs_discard_cache {
   }
 }
 
+# Try to delete a set from the file system.
+#  - return 1 on success (set has been deleted)
+#  - return 0 on failure (set directory still exists)
+# This will fail if there are any files in the "tif" or "edited"
+# directory of the set
+sub pfs_delete_set {
+  my $setID = $_[0];
+
+  $basedir = pfs_get_set_basedir($setID);
+
+  # Try removing the edited directory. If this fails, the set cannot
+  # be deleted
+  system("rmdir \"$basedir/edited\"");
+  if (-d "$basedir/edited") {
+    # Could not delete the edited directory, so deleting the set failed
+    return 0;
+  }
+
+  # Try removing the tif directory. If this fails, need to re-establish
+  # edited directory
+  system("rmdir \"$basedir/tif\"");
+  if (-d "$basedir/tif") {
+    # Tif directory wasn't deleted
+    mkdir("$basedir/edited");
+    system("chmod a+w \"$basedir/edited\"");
+    return 0;
+  }
+
+  # The remainder is generated files, so anything left there can be
+  # removed
+  system("rm -rf \"$basedir\"");
+  return 1;
+}
+
 return 1;

@@ -82,14 +82,22 @@ if (($button eq "save") || ($button eq "next") || ($button eq "setOK")) {
   parg_set("showImages", "0");
   disp_set($setid);
 } elsif ($button eq "deleteSet") {
-  pdb_delete_set_if_empty($setid);
-  $setid = put_get_next_set($setid);
-  if (setid eq "") {
-    pht_redirect($return);
+  if (pfs_delete_set($setid)) {
+    # Set is deleted from the file system
+    pdb_delete_set_if_empty($setid);
+    $setid = put_get_next_set($setid);
+    if (setid eq "") {
+      pht_redirect($return);
+    } else {
+      parg_set("setid", $setid);
+      prefill_set_data($setid);
+      prefill_set_images($setid);
+      disp_set($setid);
+    }
   } else {
-    parg_set("setid", $setid);
     prefill_set_data($setid);
     prefill_set_images($setid);
+    put_form_error("deleteSet", "There are still files in this set");
     disp_set($setid);
   }
 } else {
@@ -478,6 +486,7 @@ sub disp_set {
     if ($showImages) {
       my $nr_images = parg_get("nr_images");
       if ($nr_images == 0) {
+        put_output_error("set-images");
         put_form_buttons("deleteSet", "Delete Set");
       } else {
         put_form_buttons("hideImages", "Hide Images");

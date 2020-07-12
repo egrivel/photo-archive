@@ -356,6 +356,7 @@ sub put_form_buttons {
         if ($label =~ s/\^(\w)/$1/) {
             $accesskey = " accesskey='$1' ";
         }
+        put_output_error($name);
         pht_output "<input type='submit' name='do.$name' value='$label' $accesskey />\n";
         $count++;
         $name = shift(@_);
