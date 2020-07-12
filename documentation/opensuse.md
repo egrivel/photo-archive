@@ -28,4 +28,8 @@ When installing OpenSuSE,
  - Make sure it's running
     - sudo systemctl enable mysql
     - sudo systemctl start mysql
-    
+
+# Installing ffmpeg
+ - Note that the `ffmpeg-3` package needs installing.
+ - Make sure the MP4 codecs are installed (they have to come
+   from the pacman repo)

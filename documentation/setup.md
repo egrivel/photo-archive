@@ -4,6 +4,7 @@
 
 Make sure the prerequisites are installed:
  - exiftool
+ - convert (part of the ImageMagick suite)
  - mysql (also known as mariadb)
  - apache (http Web server)
  - Perl
