@@ -654,6 +654,7 @@ sub set_database_info {
     pdb_set_settitle("");
     pdb_set_setcopyright("");
     pdb_set_setdescription("");
+    pdb_set_setcomment("");
 
     pdb_set_setsortid(pdb_create_setsortid($setid));
     if ($imageid =~ /^(\d\d\d\d)(\d\d)(\d\d)\-(\d\d)(\d\d)(\d\d)/) {
