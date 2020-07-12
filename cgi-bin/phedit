@@ -81,6 +81,17 @@ if (($button eq "save") || ($button eq "next") || ($button eq "setOK")) {
 } elsif ($button eq "hideImages") {
   parg_set("showImages", "0");
   disp_set($setid);
+} elsif ($button eq "deleteSet") {
+  pdb_delete_set_if_empty($setid);
+  $setid = put_get_next_set($setid);
+  if (setid eq "") {
+    pht_redirect($return);
+  } else {
+    parg_set("setid", $setid);
+    prefill_set_data($setid);
+    prefill_set_images($setid);
+    disp_set($setid);
+  }
 } else {
   # no button; display the initial form
   if ($imageid ne "") {
@@ -465,7 +476,12 @@ sub disp_set {
     $showImages = parg_get("showImages");
     put_form_default_button("save");
     if ($showImages) {
-      put_form_buttons("hideImages", "Hide Images");
+      my $nr_images = parg_get("nr_images");
+      if ($nr_images == 0) {
+        put_form_buttons("deleteSet", "Delete Set");
+      } else {
+        put_form_buttons("hideImages", "Hide Images");
+      }
     } else {
       put_form_buttons("showImages", "Show Images");
     }
