@@ -166,7 +166,7 @@ sub get_shuttercount {
   if ($fname eq "") {
     return 0;
   }
-  open(FILE, "exiftool $fname|") || die "Cannot look at '$fname'\n";
+  open(FILE, "exiftool \"$fname\"|") || die "Cannot look at '$fname'\n";
   while (<FILE>) {
     chomp();
     if (/^(.*?)\s*:\s*(.*?)\s*$/s) {
@@ -230,7 +230,7 @@ sub process_photo {
   my $is_freeform = 0;
 
   print "Process $dir/$fname\n" if ($gl_verbose);
-  open(FILE, "exiftool $dir/$fname|") || die "Cannot process '$dir/$fname'\n";
+  open(FILE, "exiftool \"$dir/$fname\"|") || die "Cannot process '$dir/$fname'\n";
   while (<FILE>) {
     chomp();
     if (/^(.*?)\s*:\s*(.*?)\s*$/s) {
