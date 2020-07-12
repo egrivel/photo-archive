@@ -255,6 +255,12 @@ sub pfs_get_raw_location {
     if (-f "$setdir/tif/$imageID.mp4") {
       return "$setdir/tif/$imageID.mp4";
     }
+    if (-f "$setdir/tif/$imageID.png") {
+      return "$setdir/tif/$imageID.png";
+    }
+    if (-f "$setdir/tif/$imageID.gif") {
+      return "$setdir/tif/$imageID.gif";
+    }
   }
 
   return "";
@@ -960,6 +966,12 @@ sub pfs_trash_image {
 
   if ($rawfile ne "") {
     pcom_mv($rawfile, $trashdir);
+    # in the case of a .gif, the first "get raw location" returns
+    # the .mp4, the second gets the gif
+    $rawfile = pfs_get_raw_location($imageID);
+    if ($rawfile ne "") {
+      pcom_mv($rawfile, $trashdir);
+    }
   }
   if ($origfile ne "") {
     pcom_mv($origfile, $trashdir);
