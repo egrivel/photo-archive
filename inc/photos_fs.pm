@@ -559,11 +559,11 @@ sub pfs_cmd_copy_exif {
     # orientation (when we process the photo, it is already rotated,
     # so the orientation will only confuse programs that recognize it).
     $cmd = "exiftool -TagsFromFile $origfile -q -q -SerialNumber=0 "
-      . "-Orientation= -overwrite_original $targetfile";
+      . "-Orientation= -overwrite_original $targetfile > /dev/null";
   } else {
     # For other files, just remove the orientation from the EXIF, since the
     # orientation is already applied
-    $cmd = "exiftool -Orientation= -overwrite_original $targetfile";
+    $cmd = "exiftool -Orientation= -overwrite_original $targetfile > /dev/null";
     pcom_log($PCOM_DEBUG, "EXIF: $cmd");
   }
   return $cmd;
