@@ -113,6 +113,8 @@ sub process {
       $dirlist{$fname}++;
     } elsif ($fname =~ /^(.+?)\.png$/i) {
       $dirlist{$fname}++;
+    } elsif ($fname =~ /^(.+?)\.gif$/i) {
+      $dirlist{$fname}++;
     } elsif ($fname =~ /^(.+?)\.nef$/i) {
       my $basename = $1;
       if ( (-f "$dir/$basename.jpg")
@@ -286,7 +288,7 @@ sub process_photo {
   my $shuttercount  = 0;
   my $phoneportrait = 0;
   my $is_mov        = 0;
-  if ($fname =~ /\.mov$/i || $fname =~ /\.mp4$/i) {
+  if ($fname =~ /\.mov$/i || $fname =~ /\.mp4$/i || $fname =~ /\.gif$/i) {
     $is_mov = 1;
   }
   my $is_kids = 0;
@@ -412,23 +414,39 @@ sub process_photo {
     $targetfile = $targetfile2;
   }
 
-  if ($setID eq "") {
-    # No set ID found, so try getting it from the filename
-    if (($fname =~ /\.jpe?g$/i) || ($fname =~ /\.png$/i)) {
-      my $id = get_id_from_file_name($fname);
-      if ($id ne "") {
-        if ($id =~ /^(\d\d\d\d\d\d\d\d)/) {
-          $setID = $1;
-          $targetfile = $id;
-        }
-      }
-    }
-  }
-
   if ($fname =~ /^VID_(\d\d\d\d\d\d\d\d)_(\d\d\d\d\d\d)\.mp4$/) {
     # Video from Android phone, use timestamp from filename
     $setID      = $1;
     $targetfile = "$1-$2";
+  }
+
+  if ($setID eq "") {
+    # No set ID found, so try getting it from the filename
+    # Think this applies to all files, not just images
+    # if (($fname =~ /\.jpe?g$/i) || ($fname =~ /\.png$/i)) {
+    my $id = get_id_from_file_name($fname);
+    if ($id ne "") {
+      if ($id =~ /^(\d\d\d\d\d\d\d\d)/) {
+        $setID = $1;
+        $targetfile = $id;
+      }
+    }
+    # }
+  }
+
+  if ($setID eq "") {
+    # Still no set ID found based on the filename, try the
+    # directory
+    my $temp = $dir;
+    $temp =~ s/\/$//;
+    $temp =~ s/^.*\///;;
+    my $id = get_id_from_file_name($temp);
+    if ($id ne "") {
+      if ($id =~ /^(\d\d\d\d\d\d\d\d)/) {
+        $setID = $1;
+        $targetfile = $id;
+      }
+    }
   }
 
   if ($gl_timeoffset) {
@@ -607,6 +625,13 @@ sub process_photo {
       } else {
         move_file("$dir/$fname", "$set_directory/tif/$imageid.mp4");
       }
+    } elsif ($fname =~ /\.gif$/i) {
+      # Convert GIF to an MP4 file
+      system("ffmpeg -i \"$dir/$fname\" \"$set_directory/tif/$imageid.mp4\"");
+      # Extract JPG
+      system("ffmpeg -i \"$dir/$fname\" -vframes 1 -ss 1 \"$set_directory/tif/$imageid.jpg\"");
+      # Move the GIF to the target
+      move_file("$dir/$fname", "$set_directory/tif/$imageid.gif");
     } else {
       print "Don't know what to do with file $fname\n";
     }
