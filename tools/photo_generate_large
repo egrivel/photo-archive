@@ -1,7 +1,14 @@
-#!/usr/bin/perl -w -I . -I /mnt/washington/d1/photos/inc
+#!/usr/bin/perl -w
 
-use localsettings;
-use photos_util;
+my $script   = __FILE__;
+my $localdir = ".";
+if ($script =~ s/\/[^\/]*$//) {
+  $localdir = $script;
+}
+push @INC, "$localdir/../inc";
+push @INC, $localdir;
+
+require photos_util;
 
 put_init();
 
@@ -302,7 +309,7 @@ sub display_mobile {
     }
 
     my $did_generate = 0;
-    my $cmd = pfs_cmd_resize($imageid, $rotation, $outfile, 
+    my $cmd = pfs_cmd_resize($imageid, $rotation, $outfile,
                              $finalwidth, $finalheight,
                              1, 0, 0, 0, 1, 0, $ratio);
     if (-f $outfile) {

@@ -1713,6 +1713,8 @@ sub pdb_sync_all_years {
   print "Syncing all years\n";
   my $sync_info = psync_get_all_years_info();
 
+  # It seems there is a year 0 sometimess? If it's there, ignore it
+  $sync_info =~ s/^0: \w+\n//;
   while ($sync_info =~ s/^(\d\d\d\d): (\w+)\n//) {
     my $year = $1;
     my $hash = $2;
