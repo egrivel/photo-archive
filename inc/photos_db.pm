@@ -1693,14 +1693,16 @@ sub pdb_sync_year {
   print "Syncing year $year\n";
   my $sync_info = psync_get_year_info($year);
 
-  while ($sync_info =~ s/^(\w+): (\w+)\n//) {
+  while ($sync_info =~ s/^(\w+):\s+(\w+)?\n//) {
     my $setid = $1;
     my $hash = $2;
 
-    my $current_hash = phash_get_value("s-$setid");
-    if ($current_hash ne $hash) {
-      print "Set $setid: $current_hash => $hash\n";
-      pdb_sync_set($setid);
+    if (defined($hash)) {
+      my $current_hash = phash_get_value("s-$setid");
+      if ($current_hash ne $hash) {
+        print "Set $setid: $current_hash => $hash\n";
+        pdb_sync_set($setid);
+      }
     }
   }
 
