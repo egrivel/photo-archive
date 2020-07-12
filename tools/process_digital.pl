@@ -85,6 +85,7 @@ sub process {
     || die "Cannot scan source directory '$dir'\n";
   my %dirlist = ();
   my %neflist = ();
+  my %editedlist = ();
   my @subdirs = ();
   my $subdir_count = 0;
 
@@ -97,10 +98,22 @@ sub process {
       }
       next;
     }
-    if ($fname =~ /^.+?\.jpg$/i) {
+    if ($fname =~ /^(.+?)[_-]edited\.(jpe?g)$/) {
+      # Edited file; if the corresponding non-edited exists, only use that
+      my $basename = $1;
+      my $suffix = $2;
+      if (-f "$dir/$basename.$suffix") {
+        $editedlist{lc($fname)} = $fname;
+        # do not process the edited file separately
+      } else {
+        # Only edited file, no original, so process the edited file
+        $dirlist{$fname}++;
+      }
+    } elsif ($fname =~ /^(.+?)\.jpe?g$/i) {
       $dirlist{$fname}++;
-    }
-    if ($fname =~ /^(.+?)\.nef$/i) {
+    } elsif ($fname =~ /^(.+?)\.png$/i) {
+      $dirlist{$fname}++;
+    } elsif ($fname =~ /^(.+?)\.nef$/i) {
       my $basename = $1;
       if ( (-f "$dir/$basename.jpg")
         || (-f "$dir/$basename.JPG"))
@@ -112,8 +125,7 @@ sub process {
         # processed
         $dirlist{$fname}++;
       }
-    }
-    if ($fname =~ /^(.+?)\.cr2$/i) {
+    } elsif ($fname =~ /^(.+?)\.cr2$/i) {
       my $basename = $1;
       if ( (-f "$dir/$basename.jpg")
         || (-f "$dir/$basename.JPG"))
@@ -125,10 +137,11 @@ sub process {
         # processed
         $dirlist{$fname}++;
       }
-    }
-    if (($fname =~ /^(.+?)\.mov$/i) || ($fname =~ /^(.+?)\.mp4$/i)) {
+    } elsif (($fname =~ /^(.+?)\.mov$/i) || ($fname =~ /^(.+?)\.mp4$/i)) {
       # copy over movies (from D750 or android device)
       $dirlist{$fname}++;
+    } else {
+      # ignore remaining files
     }
   }
   closedir(DIR);
@@ -198,6 +211,46 @@ sub last_day_of_month {
   }
 }
 
+sub get_id_from_file_name {
+  my $fname = $_[0];
+
+  # remove suffix
+  $fname =~ /\.\w+$/;
+  if ($fname =~ /^(.*?)(20\d\d[_-]?\d\d[_-]?\d\d[_-]?\d\d[_-]?\d\d[_-]?\d\d)(.*)$/) {
+    # there is something that looks like a date-time in the middle; make sure
+    # it's not preceded or followed by digits;
+    my $part1 = $1;
+    my $part2 = $2;
+    my $part3 = $3;
+    if (! ($part1 =~ /\d$/) && !($part3 =~ /^\d/)) {
+      # Seems to be valid
+      $part2 =~ s/\D//;
+      if ($part2 =~ /^(\d\d\d\d\d\d\d\d)(\d\d\d\d\d\d)$/) {
+        # found a valid ID
+        return "$1-$2";
+      }
+    }
+  }
+
+  if ($fname =~ /^(.*?)(20\d\d[_-]?\d\d[_-]?\d\d)(.*)$/) {
+    # there is something that looks like a date-time in the middle; make sure
+    # it's not preceded or followed by digits;
+    my $part1 = $1;
+    my $part2 = $2;
+    my $part3 = $3;
+    if (! ($part1 =~ /\d$/) && !($part3 =~ /^\d/)) {
+      # Seems to be valid
+      $part2 =~ s/\D//g;
+      if ($part2 =~ /^(\d\d\d\d\d\d\d\d)$/) {
+        # found a valid ID
+        return "$1-000000";
+      }
+    }
+  }
+
+  return "";
+}
+
 sub process_photo {
   my $dir   = $_[0];
   my $fname = $_[1];
@@ -228,6 +281,17 @@ sub process_photo {
     $is_kids = 1;
   }
   my $is_freeform = 0;
+
+  my $edited_file = "";
+  if ($fname =~ /^(.*?)(\.jpe?g)$/) {
+    my $part1 = $1;
+    my $part2 = $2;
+    if (-f "$dir/${part1}-edited$part2") {
+      $edited_file = "${part1}-edited$part2";
+    } elsif (-f "$dir/${part1}_edited$part2") {
+      $edited_file = "${part1}_edited$part2";
+    }
+  }
 
   print "Process $dir/$fname\n" if ($gl_verbose);
   open(FILE, "exiftool \"$dir/$fname\"|") || die "Cannot process '$dir/$fname'\n";
@@ -336,9 +400,15 @@ sub process_photo {
   }
 
   if ($setID eq "") {
-    if ($fname =~ /^(\d\d\d\d\d\d\d\d)-(\d\d\d\d\d\d).jpg$/) {
-      $setID      = $1;
-      $targetfile = "$1-$2";
+    # No set ID found, so try getting it from the filename
+    if (($fname =~ /\.jpe?g$/) || ($fname =~ /\.png$/)) {
+      my $id = get_id_from_file_name($fname);
+      if ($id ne "") {
+        if ($id =~ /^(\d\d\d\d\d\d\d\d)/) {
+          $setID = $1;
+          $targetfile = $id;
+        }
+      }
     }
   }
 
@@ -488,6 +558,10 @@ sub process_photo {
         # Got a ".nef" file (Nikon RAW format), copy that too
         move_file("$dir/$neflist{$nefname}", "$set_directory/tif/$imageid.nef");
       }
+    } elsif ($fname =~ /\.png$/i) {
+      # Get the JPG first
+      system("convert \"$dir/$fname\" \"$set_directory/tif/$imageid.jpg\"");
+      move_file("$dir/$fname", "$set_directory/tif/$imageid.png");
     } elsif ($fname =~ /\.nef$/i) {
       # Extract the JPG first
       system(
@@ -522,6 +596,9 @@ sub process_photo {
       }
     } else {
       print "Don't know what to do with file $fname\n";
+    }
+    if ($edited_file ne "") {
+      move_file("$dir/$edited_file", "$set_directory/edited/$imageid.jpg");
     }
   }
   print "\n" if ($gl_verbose);
@@ -573,6 +650,11 @@ sub set_database_info {
     # Set does not yet exist; add it
     print "Create set $setid\n";
     pdb_open_set($setid);
+    # default some fields
+    pdb_set_settitle("");
+    pdb_set_setcopyright("");
+    pdb_set_setdescription("");
+
     pdb_set_setsortid(pdb_create_setsortid($setid));
     if ($imageid =~ /^(\d\d\d\d)(\d\d)(\d\d)\-(\d\d)(\d\d)(\d\d)/) {
       my $year      = int($1);
