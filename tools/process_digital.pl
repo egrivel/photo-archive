@@ -224,7 +224,7 @@ sub get_id_from_file_name {
     my $part3 = $3;
     if (! ($part1 =~ /\d$/) && !($part3 =~ /^\d/)) {
       # Seems to be valid
-      $part2 =~ s/\D//;
+      $part2 =~ s/\D//g;
       if ($part2 =~ /^(\d\d\d\d\d\d\d\d)(\d\d\d\d\d\d)$/) {
         # found a valid ID
         return "$1-$2";
@@ -249,6 +249,19 @@ sub get_id_from_file_name {
   }
 
   return "";
+}
+
+sub get_indexed_image {
+  my $targetfile = $_[0];
+  my $index = $_[1];
+
+  if ($targetfile =~ s/000000$//) {
+    while (length($index) < 6) {
+      $index = "0$index";
+    }
+    return "$targetfile$index";
+  }
+  return $targetfile . chr($index + 96);
 }
 
 sub process_photo {
@@ -401,7 +414,7 @@ sub process_photo {
 
   if ($setID eq "") {
     # No set ID found, so try getting it from the filename
-    if (($fname =~ /\.jpe?g$/) || ($fname =~ /\.png$/)) {
+    if (($fname =~ /\.jpe?g$/i) || ($fname =~ /\.png$/i)) {
       my $id = get_id_from_file_name($fname);
       if ($id ne "") {
         if ($id =~ /^(\d\d\d\d\d\d\d\d)/) {
@@ -509,7 +522,7 @@ sub process_photo {
       }
       # Image exists; add suffix
       $suffixnr = 1;
-      $imageid  = $targetfile . chr($suffixnr + 96);
+      $imageid  = get_indexed_image($targetfile, $suffixnr);
       while (pdb_image_exists($imageid)) {
         if ( ($shuttercount > 0)
           && ($shuttercount == get_shuttercount($imageid))
@@ -524,7 +537,7 @@ sub process_photo {
           return;
         }
         $suffixnr++;
-        $imageid = $targetfile . chr($suffixnr + 96);
+        $imageid  = get_indexed_image($targetfile, $suffixnr);
       }
     }
     print "Determined image ID to be $imageid\n" if ($gl_verbose);
