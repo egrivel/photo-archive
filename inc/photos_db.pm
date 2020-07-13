@@ -1498,6 +1498,18 @@ sub pdb_get_image_hash_text {
     $text .= "$item: $hash\n";
   }
 
+  $item = "tif/$image.png";
+  if (-f "$root/$set/$item") {
+    my $hash = pdb_get_file_item_hash($item, "$root/$set/$item", $do_update);
+    $text .= "$item: $hash\n";
+  }
+
+  $item = "tif/$image.gif";
+  if (-f "$root/$set/$item") {
+    my $hash = pdb_get_file_item_hash($item, "$root/$set/$item", $do_update);
+    $text .= "$item: $hash\n";
+  }
+
   $item = "tif/$image.jpg";
   if (-f "$root/$set/$item") {
     my $hash = pdb_get_file_item_hash($item, "$root/$set/$item", $do_update);
