@@ -322,8 +322,7 @@ sub process_photo {
           $targetfile = "$1$2$3-$4$5$6";
         }
       } elsif (($label eq "Date/Time")
-        || ($label eq "Date/Time Original"))
-      {
+        || ($label eq "Date/Time Original")) {
         # Use the Date/Time only if there is no Create Date. In case
         # the photo is modified in-camera, the Date/Time will be the
         # timestamp for the original photo (which would make this a
@@ -396,6 +395,12 @@ sub process_photo {
     }
   }
   close FILE;
+
+  if ($setID eq "00000000") {
+    # Not a valid set ID
+    $setID = "";
+    $targetfile = "";
+  }
 
   if ($phoneportrait && !$do_portrait) {
     # Images from a phone, in portrait mode, are already rotated, so
