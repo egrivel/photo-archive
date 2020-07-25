@@ -7,6 +7,16 @@ if ($script =~ s/\/[^\/]*$//) {
 }
 push @INC, "$localdir/../inc";
 
+my $gl_debug = 0;
+
+my $arg = shift;
+while (defined($arg)) {
+    if ($arg eq "--debug") {
+        $gl_debug = 1;
+    }
+    $arg = shift;
+}
+
 require "photos_util.pm";
 
 put_init();
@@ -28,12 +38,14 @@ if ($root_info =~ /^all: (\w+)\n/) {
 
 my $all_info = psync_get_all_info();
 
+print "All info:\n$all_info\n" if ($gl_debug);
+
 if ($all_info =~ /users: (\w+)/) {
   my $server_users = $1;
   my $users_hash = phash_get_value("users");
   if ($users_hash ne $server_users) {
     print "Users need updating\n   $users_hash\n   => $server_users\n";
-    pusr_sync_users();
+    pusr_sync_users($gl_debug);
   }
 }
 
@@ -51,6 +63,6 @@ if ($all_info =~ /years: (\w+)/) {
   my $years_hash = phash_get_value("years");
   if ($years_hash ne $server_years) {
     print "Years need updating\n   $years_hash\n   => $server_years\n";
-    pdb_sync_all_years();
+    pdb_sync_all_years($gl_debug);
   }
 }

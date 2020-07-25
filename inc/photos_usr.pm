@@ -462,6 +462,15 @@ sub pusr_get_user_list {
   return %users;
 }
 
+sub pusr_delete_user {
+    my $userid = $_[0];
+    if (!defined($userid) || $userid eq "") {
+        return;
+    }
+    my $query = "DELETE FROM users WHERE userid='$userid';";
+    psql_command($query);
+}
+
 sub pusr_dump_table {
   psql_dump_table("users", 1, \@user_fields);
 
@@ -494,17 +503,39 @@ sub pusr_get_hash_text {
 }
 
 sub pusr_sync_users {
+  my $debug = $_[0];
+  if (!defined($debug)) {
+      $debug = 0;
+  }
   print "Syncing users\n";
 
   my $sync_info = psync_get_users_info();
+  if ($debug) {
+      print "Remote user info:\n$sync_info\n";
+  }
 
+  my %remote_users = ();
   while ($sync_info =~ s/^(\w+): ([^\n]+)\n//) {
     my $user = $1;
     my $database = $2;
+    $remote_users{$user}++;
     psql_upsert("users", $database);
   }
 
+  # Updated all users which exist remotely. Remove any users which do not
+  # exist remotely anymore.
+  my %local_userlist = pusr_get_user_list();
+  foreach $local_user (keys %local_userlist) {
+      if (!defined($remote_users{$local_user})) {
+          print "Need to remove user $local_user\n";
+          pusr_delete_user($local_user);
+      }
+  }
+
   my $text = pusr_get_hash_text(0);
+  if ($debug) {
+      print "Local user info:\n$text\n";
+  }
   my $new_hash = phash_do_hash($text);
   phash_set_value("users", "users", $new_hash);
 }

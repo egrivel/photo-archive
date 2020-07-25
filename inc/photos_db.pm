@@ -1268,9 +1268,18 @@ sub pdb_trash_image {
 sub pdb_delete_set_if_empty {
   my $setid = $_[0];
 
-  my $query =
-"DELETE FROM sets WHERE (setid='$setid') AND NOT EXISTS (SELECT * FROM images WHERE setid = '$setid') ";
+  my $query = "DELETE FROM sets WHERE (setid='$setid') "
+      . "AND NOT EXISTS (SELECT * FROM images WHERE setid = '$setid') ";
   psql_command($query);
+}
+
+# During synchronization, have a set delete that does NOT delete the
+# underlying images. This will allow images to still exist (albeit
+# unreachable) in the backup when they are accidentally deleted.
+sub pdb_delete_set_sync {
+    my $setid = $_[0];
+    my $query = "DELETE FROM sets WHERE setid='$setid'";
+    psql_command($query);
 }
 
 sub pdb_random_image {
@@ -1701,13 +1710,21 @@ sub pdb_sync_set {
 
 sub pdb_sync_year {
   my $year = $_[0];
+  my $debug = $_[1];
+  if (!defined($debug)) {
+      $debug = 0;
+  }
 
   print "Syncing year $year\n";
   my $sync_info = psync_get_year_info($year);
 
+  print "Remote sync info:\n$sync_info\n" if ($debug);
+
+  my %remote_sets = ();
   while ($sync_info =~ s/^(\w+):\s+(\w+)?\n//) {
     my $setid = $1;
     my $hash = $2;
+    $remote_sets{$setid}++;
 
     if (defined($hash)) {
       my $current_hash = phash_get_value("s-$setid");
@@ -1718,12 +1735,27 @@ sub pdb_sync_year {
     }
   }
 
+  my $local_sets = pdb_get_year_sets($year);
+  for (my $i = 0; defined(@$local_sets[$i]); $i++) {
+      my $setid = @$local_sets[$i];
+      if (!defined($remote_sets{$setid})) {
+          print "Remove set $setid\n";
+          pdb_delete_set_sync($setid);
+      }
+  }
+
   my $text = pdb_get_year_hash_text($year, 0);
+  print "Local sync info:\n$text\n" if ($debug);
+  
   my $new_hash = phash_do_hash($text);
   phash_set_value("y-$year", "year", $new_hash);
 }
 
 sub pdb_sync_all_years {
+  my $debug = $_[0];
+  if (!defined($debug)) {
+      $debug = 0;
+  }
   print "Syncing all years\n";
   my $sync_info = psync_get_all_years_info();
 
@@ -1736,7 +1768,7 @@ sub pdb_sync_all_years {
     my $current_hash = phash_get_value("y-$year");
     if ($current_hash ne $hash) {
       print "Year $year: $current_hash => $hash\n";
-      pdb_sync_year($year);
+      pdb_sync_year($year, $debug);
     }
   }
 
