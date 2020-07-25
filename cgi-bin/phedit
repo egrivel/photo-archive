@@ -73,7 +73,13 @@ if (($button eq "save") || ($button eq "next") || ($button eq "setOK")) {
   }
 } elsif ($button eq "cancel") {
   # done editing; display the image we just edited
-  pht_redirect("phdisp?imageid=$imageid");
+  if ($imageid ne "") {
+    pht_redirect("phdisp?imageid=$imageid");
+  } elsif ($setid ne "") {
+    pht_redirect("phbrowse?setid=$setid");
+  } else {
+    pht_redirect("phbrowse");
+  }
 } elsif ($button eq "showImages") {
   parg_set("showImages", "1");
   prefill_set_images($setid);
