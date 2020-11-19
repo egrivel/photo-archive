@@ -19,7 +19,7 @@ sub psync_get_content {
   usleep($gl_api_delay * 1000);
 
   my $response;
-  while ($retry < 10) {
+  while ($retry < 99) {
     $response = $gl_ua->get($url);
     if ($response->is_success) {
       last;
@@ -28,7 +28,7 @@ sub psync_get_content {
     if (!($response->status_line =~ /no route to host/)) {
       # Seems to be getting this error a lot; just sleep for a second
       # and retry
-      if ($retry < 5) {
+      if ($retry < 15) {
         print "Connection error, retry...\n";
         $retry++;
         usleep(1000 * 1000);
