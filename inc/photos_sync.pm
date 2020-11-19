@@ -18,8 +18,9 @@ sub psync_get_content {
   # usleep takes microseconds, so multiply miliseconds by 1000
   usleep($gl_api_delay * 1000);
 
+  my $response;
   while ($retry < 10) {
-    my $response = $gl_ua->get($url);
+    $response = $gl_ua->get($url);
     if ($response->is_success) {
       last;
     }
