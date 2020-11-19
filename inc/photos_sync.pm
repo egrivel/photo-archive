@@ -19,7 +19,7 @@ sub psync_get_content {
   usleep($gl_api_delay * 1000);
 
   my $response;
-  while ($retry < 99) {
+  while (true) {
     $response = $gl_ua->get($url);
     if ($response->is_success) {
       last;
@@ -31,7 +31,7 @@ sub psync_get_content {
       if ($retry < 15) {
         print "Connection error, retry...\n";
         $retry++;
-        usleep(1000 * 1000);
+        usleep(2 * 1000 * 1000);
         next;
       }
       die "Still getting a connection error after 5 tries\n";
