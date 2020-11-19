@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 
 my $script   = __FILE__;
 my $localdir = ".";
@@ -115,6 +115,9 @@ while (defined($arg)) {
         generate_set($arg);
     } elsif ($arg =~ /^\d\d\d\d\d\d\d\d-\d\d\d\d\d\d\w?$/) {
         generate_image($arg);
+    } elsif ($arg eq "-help") {
+      help();
+      exit(0);
     } else {
         warn "Invalid parameter '$arg': not a valid photo set ID\n";
         help();

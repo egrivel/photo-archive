@@ -7,14 +7,11 @@
 # use photos_sql;
 
 # Note: 'key' and 'value' may be reserved words in SQL, so avoid those.
-my @sys_fields = (
-  "syskey",
-  "sysvalue"
-);
+my @sys_fields = ("syskey", "sysvalue");
 
 # System version. Has to be updated manually for now, have to remember to
 # update this every time a new version is pushed
-my $VERSION = "2.0.3";
+my $VERSION = "2.0.4";
 
 sub psys_init {
   psql_init();
@@ -92,7 +89,7 @@ sub psys_get_data {
   my $result = "";
 
   if ($key ne "" && $value ne "") {
-    $result .= "syskey='" . psql_encode($key);;
+    $result .= "syskey='" . psql_encode($key);
     $result .= "', sysvalue='" . psql_encode($value);
     $result .= "'";
   }

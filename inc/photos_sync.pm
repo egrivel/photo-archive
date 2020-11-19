@@ -9,6 +9,7 @@ my $gl_api_delay = 100;
 
 sub psync_get_content {
   my $url = $_[0];
+  my $retry = 0;
 
   if (!defined($gl_ua)) {
     $gl_ua = new LWP::UserAgent;
@@ -17,11 +18,30 @@ sub psync_get_content {
   # usleep takes microseconds, so multiply miliseconds by 1000
   usleep($gl_api_delay * 1000);
 
-  my $response = $gl_ua->get($url);
-  if (! $response->is_success) {
-    die "Error fetching url $url:\n  "
-      . $response->status_line . "\n";
+  while ($retry < 10) {
+    my $response = $gl_ua->get($url);
+    if ($response->is_success) {
+      last;
+    }
+
+    if (!($response->status_line =~ /no route to host/)) {
+      # Seems to be getting this error a lot; just sleep for a second
+      # and retry
+      if ($retry < 5) {
+        print "Connection error, retry...\n";
+        $retry++;
+        usleep(1000 * 1000);
+        next;
+      }
+      die "Still getting a connection error after 5 tries\n";
+    }
+
+    # Some other error, so die anyway
+    if (!$response->is_success) {
+      die "Error fetching url $url:\n  " . $response->status_line . "\n";
+    }
   }
+
   return $response->decoded_content();
 }
 
@@ -34,14 +54,14 @@ sub psync_get_file {
     my $set = $2;
     my $sub = $3;
     my $img = $4;
-    if (! -d $root) {
-      die ("Root $root does not exist\n");
+    if (!-d $root) {
+      die("Root $root does not exist\n");
     }
-    if (! -d "$root/$set") {
+    if (!-d "$root/$set") {
       mkdir("$root/$set");
       system("chmod a+w \"$root/$set\"");
     }
-    if (! -d "$root/$set/$sub") {
+    if (!-d "$root/$set/$sub") {
       mkdir("$root/$set/$sub");
       system("chmod a+w \"$root/$set/$sub\"");
     }
@@ -55,8 +75,8 @@ sub psync_get_file {
   # usleep takes microseconds, so multiply miliseconds by 1000
   usleep($gl_file_delay * 1000);
 
-  my $response = $gl_ua->get($url, ":content_file"=>$fname);
-  if (! $response->is_success) {
+  my $response = $gl_ua->get($url, ":content_file" => $fname);
+  if (!$response->is_success) {
     unlink($fname);
     die "Failed to get file $fname from $url\n";
   }
