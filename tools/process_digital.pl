@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-my $script   = __FILE__;
+my $script = __FILE__;
 my $localdir = ".";
 if ($script =~ s/\/[^\/]*$//) {
   $localdir = $script;
@@ -11,6 +11,7 @@ push @INC, $localdir;
 require photos_util;
 require film_process;
 # require localsettings;
+require process_tools;
 
 put_init();
 
@@ -19,8 +20,8 @@ put_init();
 pusr_login("tester", "tester");
 
 my $gl_sourcedir = ".";
-my $gl_verbose   = 1;
-my $gl_testmode  = 0;
+my $gl_verbose = 1;
+my $gl_testmode = 0;
 my $gl_recursive = 0;
 
 # time offset: correction for the clock in the camera being off: the offset
@@ -36,7 +37,8 @@ while (defined($arg = shift)) {
     print "Turning on test mode\n";
   } elsif ($arg eq "-r") {
     $gl_recursive = 1;
-  } elsif ($arg eq "-h" || $arg eq "-help" || $arg eq "--help" || $arg eq "-?") {
+  } elsif ($arg eq "-h" || $arg eq "-help" || $arg eq "--help" || $arg eq "-?")
+  {
     help();
     exit(0);
   } elsif ($arg eq "-offset") {
@@ -118,10 +120,9 @@ sub process {
     } elsif ($fname =~ /^(.+?)\.nef$/i) {
       my $basename = $1;
       if ( (-f "$dir/$basename.jpg")
-        || (-f "$dir/$basename.JPG"))
-      {
+        || (-f "$dir/$basename.JPG")) {
         # Corresponding JPEG file also exists; add NEF to the %neflist
-        $neflist{ lc($fname) } = $fname;
+        $neflist{lc($fname)} = $fname;
       } else {
         # No corresponding JPEG file, so add NEF to the files to be
         # processed
@@ -130,10 +131,9 @@ sub process {
     } elsif ($fname =~ /^(.+?)\.cr2$/i) {
       my $basename = $1;
       if ( (-f "$dir/$basename.jpg")
-        || (-f "$dir/$basename.JPG"))
-      {
+        || (-f "$dir/$basename.JPG")) {
         # Corresponding JPEG file also exists; add CR2 to the %neflist
-        $neflist{ lc($fname) } = $fname;
+        $neflist{lc($fname)} = $fname;
       } else {
         # No corresponding JPEG file, so add CR2 to the files to be
         # processed
@@ -168,12 +168,12 @@ sub help {
   print "    Time offset must be in [+-]hh:mm:ss format\n";
   print " -tz-offset <offset>: time zone offset\n";
   print "    Time zone offset must be in [+-]hh:mm format\n";
-  print ""
+  print "";
 }
 
 sub get_shuttercount {
   my $imageid = $_[0];
-  my $fname   = pfs_get_raw_location($imageid);
+  my $fname = pfs_get_raw_location($imageid);
   if ($fname eq "") {
     $fname = pfs_get_orig_location($imageid);
   }
@@ -198,7 +198,7 @@ sub get_shuttercount {
 }
 
 sub last_day_of_month {
-  my $year  = $_[0];
+  my $year = $_[0];
   my $month = $_[1];
   if ($month == 2) {
     if (4 * int($year / 4) == $year) {
@@ -218,13 +218,14 @@ sub get_id_from_file_name {
 
   # remove suffix
   $fname =~ /\.\w+$/;
-  if ($fname =~ /^(.*?)(20\d\d[_-]?\d\d[_-]?\d\d[_-]?\d\d[_-]?\d\d[_-]?\d\d)(.*)$/) {
+  if ($fname =~
+    /^(.*?)(20\d\d[_-]?\d\d[_-]?\d\d[_-]?\d\d[_-]?\d\d[_-]?\d\d)(.*)$/) {
     # there is something that looks like a date-time in the middle; make sure
     # it's not preceded or followed by digits;
     my $part1 = $1;
     my $part2 = $2;
     my $part3 = $3;
-    if (! ($part1 =~ /\d$/) && !($part3 =~ /^\d/)) {
+    if (!($part1 =~ /\d$/) && !($part3 =~ /^\d/)) {
       # Seems to be valid
       $part2 =~ s/\D//g;
       if ($part2 =~ /^(\d\d\d\d\d\d\d\d)(\d\d\d\d\d\d)$/) {
@@ -240,7 +241,7 @@ sub get_id_from_file_name {
     my $part1 = $1;
     my $part2 = $2;
     my $part3 = $3;
-    if (! ($part1 =~ /\d$/) && !($part3 =~ /^\d/)) {
+    if (!($part1 =~ /\d$/) && !($part3 =~ /^\d/)) {
       # Seems to be valid
       $part2 =~ s/\D//g;
       if ($part2 =~ /^(\d\d\d\d\d\d\d\d)$/) {
@@ -267,27 +268,28 @@ sub get_indexed_image {
 }
 
 sub process_photo {
-  my $dir   = $_[0];
+  my $dir = $_[0];
   my $fname = $_[1];
 
-  my %attrib        = ();
-  my $setID         = "";
-  my $targetfile    = "";
-  my $setID2        = "";
-  my $targetfile2   = "";
-  my $rotate        = "";
-  my $thmbscale     = "-width 150 -height 100";
-  my $newrotate     = "";
-  my $newsize       = "900x600";
-  my $newresize     = "904x600";
-  my $newer_rotate  = "0";
-  my $do_portrait   = 0;
-  my $latlong       = "";
-  my $timezone      = "+00:00";
-  my $dst           = "No";
-  my $shuttercount  = 0;
+  my %attrib = ();
+  my $setID = "";
+  my $targetfile = "";
+  my $setID2 = "";
+  my $targetfile2 = "";
+  my $rotate = "";
+  my $thmbscale = "-width 150 -height 100";
+  my $newrotate = "";
+  my $newsize = "900x600";
+  my $newresize = "904x600";
+  my $newer_rotate = "0";
+  my $do_portrait = 0;
+  my $latlong = "";
+  my $timezone = "+00:00";
+  my $dst = "No";
+  my $shuttercount = 0;
   my $phoneportrait = 0;
-  my $is_mov        = 0;
+  my $is_mov = 0;
+
   if ($fname =~ /\.mov$/i || $fname =~ /\.mp4$/i || $fname =~ /\.gif$/i) {
     $is_mov = 1;
   }
@@ -309,7 +311,8 @@ sub process_photo {
   }
 
   print "Process $dir/$fname\n" if ($gl_verbose);
-  open(FILE, "exiftool \"$dir/$fname\"|") || die "Cannot process '$dir/$fname'\n";
+  open(FILE, "exiftool \"$dir/$fname\"|")
+    || die "Cannot process '$dir/$fname'\n";
   while (<FILE>) {
     chomp();
     if (/^(.*?)\s*:\s*(.*?)\s*$/s) {
@@ -318,7 +321,7 @@ sub process_photo {
       $attrib{$label} = $value;
       if ($label eq "Create Date") {
         if ($value =~ /(\d\d\d\d):(\d\d):(\d\d) (\d\d):(\d\d):(\d\d)/) {
-          $setID      = "$1$2$3";
+          $setID = "$1$2$3";
           $targetfile = "$1$2$3-$4$5$6";
         }
       } elsif (($label eq "Date/Time")
@@ -329,36 +332,34 @@ sub process_photo {
         # duplicate), but the Create Date will be the real timestamp
         # for this photo.
         if ($value =~ /(\d\d\d\d):(\d\d):(\d\d) (\d\d):(\d\d):(\d\d)/) {
-          $setID2      = "$1$2$3";
+          $setID2 = "$1$2$3";
           $targetfile2 = "$1$2$3-$4$5$6";
         }
       } elsif ($label eq "Orientation") {
         if ( ($value eq "rotate 90")
-          || ($value eq "Rotate 90 CW"))
-        {
-          $rotate       = " | pnmrotate -90 ";
-          $newrotate    = "-rotate 90";
-          $newsize      = "600x900";
-          $newresize    = "600x904";
-          $thmbscale    = "-width 100 -height 150";
+          || ($value eq "Rotate 90 CW")) {
+          $rotate = " | pnmrotate -90 ";
+          $newrotate = "-rotate 90";
+          $newsize = "600x900";
+          $newresize = "600x904";
+          $thmbscale = "-width 100 -height 150";
           $newer_rotate = "90";
-          $do_portrait  = 1;
+          $do_portrait = 1;
         } elsif (($value eq "rotate 270")
-          || ($value eq "Rotate 270 CW"))
-        {
-          $rotate       = " | pnmrotate 90 ";
-          $newrotate    = "-rotate -90";
-          $newsize      = "600x900";
-          $newresize    = "600x904";
-          $thmbscale    = "-width 100 -height 150";
+          || ($value eq "Rotate 270 CW")) {
+          $rotate = " | pnmrotate 90 ";
+          $newrotate = "-rotate -90";
+          $newsize = "600x900";
+          $newresize = "600x904";
+          $thmbscale = "-width 100 -height 150";
           $newer_rotate = "-90";
-          $do_portrait  = 1;
+          $do_portrait = 1;
         } elsif ($value eq "Horizontal (normal)"
           || $value eq "Unknown (0)") {
           # don't rotate
         } elsif ($value eq "Rotate 180") {
           # rotate 180, doesn't change width or height
-          $rotate    = " | pnmrotate 180 ";
+          $rotate = " | pnmrotate 180 ";
           $newrotate = "-rotate -180";
         } else {
           print "Unknown rotation value '$value'\n";
@@ -379,7 +380,7 @@ sub process_photo {
         $shuttercount = $value;
       } elsif ($label eq "Image Size") {
         if ($value =~ /(\d+)x(\d+)/) {
-          my $width  = $1;
+          my $width = $1;
           my $height = $2;
           if ($height > $width) {
             # Phone images can be taller than wide
@@ -406,9 +407,9 @@ sub process_photo {
     # Images from a phone, in portrait mode, are already rotated, so
     # they don't show up when looking for rotation or orientation
     # Recognize them as portrait photos after all
-    $newsize     = "600x900";
-    $newresize   = "600x904";
-    $thmbscale   = "-width 100 -height 150";
+    $newsize = "600x900";
+    $newresize = "600x904";
+    $thmbscale = "-width 100 -height 150";
     $do_portrait = 1;
   }
 
@@ -421,7 +422,7 @@ sub process_photo {
 
   if ($fname =~ /^VID_(\d\d\d\d\d\d\d\d)_(\d\d\d\d\d\d)\.mp4$/) {
     # Video from Android phone, use timestamp from filename
-    $setID      = $1;
+    $setID = $1;
     $targetfile = "$1-$2";
   }
 
@@ -444,7 +445,7 @@ sub process_photo {
     # directory
     my $temp = $dir;
     $temp =~ s/\/$//;
-    $temp =~ s/^.*\///;;
+    $temp =~ s/^.*\///;
     my $id = get_id_from_file_name($temp);
     if ($id ne "") {
       if ($id =~ /^(\d\d\d\d\d\d\d\d)/) {
@@ -456,11 +457,11 @@ sub process_photo {
 
   if ($gl_timeoffset) {
     if ($targetfile =~ /^(\d\d\d\d)(\d\d)(\d\d)-(\d\d)(\d\d)(\d\d)(\w?)$/) {
-      my $year    = $1;
-      my $month   = $2;
-      my $day     = $3;
+      my $year = $1;
+      my $month = $2;
+      my $day = $3;
       my $seconds = 3600 * $4 + 60 * $5 + $6;
-      my $suffix  = $7;
+      my $suffix = $7;
       $seconds += $gl_timeoffset;
       my $minutes = int($seconds / 60);
       $seconds -= 60 * $minutes;
@@ -491,11 +492,11 @@ sub process_photo {
           }
         }
       }
-      $month   = '0' . int($month) if ($month < 10);
-      $day     = '0' . int($day)   if ($day < 10);
-      $hours   = '0' . $hours      if ($hours < 10);
-      $minutes = '0' . $minutes    if ($minutes < 10);
-      $seconds = '0' . $seconds    if ($seconds < 10);
+      $month = '0' . int($month) if ($month < 10);
+      $day = '0' . int($day) if ($day < 10);
+      $hours = '0' . $hours if ($hours < 10);
+      $minutes = '0' . $minutes if ($minutes < 10);
+      $seconds = '0' . $seconds if ($seconds < 10);
       $targetfile = "$year$month$day-$hours$minutes$seconds$suffix";
     } else {
       print "Got offset but don't recognize target file $targetfile, skip\n";
@@ -509,12 +510,12 @@ sub process_photo {
       $minutes += $gl_timezoneoffset;
       my $sign = '+';
       if ($minutes < 0) {
-        $sign    = '-';
+        $sign = '-';
         $minutes = 0 - $minutes;
       }
       my $hours = int($minutes / 60);
       $minutes -= 60 * $hours;
-      $hours   = '0' . int($hours)   if ($hours < 10);
+      $hours = '0' . int($hours) if ($hours < 10);
       $minutes = '0' . int($minutes) if ($minutes < 10);
       $timezone = $sign . $hours . ':' . $minutes;
     } else {
@@ -533,8 +534,7 @@ sub process_photo {
     if (pdb_image_exists($imageid)) {
       if ( ($shuttercount > 0)
         && ($shuttercount == get_shuttercount($imageid))
-        && !$gl_testmode)
-      {
+        && !$gl_testmode) {
         # duplicate!
         if ($fname =~ /\.nef$/i) {
           move_file("$dir/$fname", "$set_directory/tif/$imageid.nef");
@@ -545,12 +545,11 @@ sub process_photo {
       }
       # Image exists; add suffix
       $suffixnr = 1;
-      $imageid  = get_indexed_image($targetfile, $suffixnr);
+      $imageid = get_indexed_image($targetfile, $suffixnr);
       while (pdb_image_exists($imageid)) {
         if ( ($shuttercount > 0)
           && ($shuttercount == get_shuttercount($imageid))
-          && !$gl_testmode)
-        {
+          && !$gl_testmode) {
           # duplicate!
           if ($fname =~ /\.nef$/i) {
             move_file("$dir/$fname", "$set_directory/tif/$imageid.nef");
@@ -560,7 +559,7 @@ sub process_photo {
           return;
         }
         $suffixnr++;
-        $imageid  = get_indexed_image($targetfile, $suffixnr);
+        $imageid = get_indexed_image($targetfile, $suffixnr);
       }
     }
     print "Determined image ID to be $imageid\n" if ($gl_verbose);
@@ -580,8 +579,10 @@ sub process_photo {
     create_directory("$set_directory/edited");
     create_directory("$set_directory/custom");
 
-    set_database_info($imageid, $do_portrait, $newer_rotate, $latlong,
-      $timezone, $dst, $is_mov, $is_kids, $is_freeform);
+    set_database_info(
+      $imageid, $do_portrait, $newer_rotate, $latlong, $timezone,
+      $dst, $is_mov, $is_kids, $is_freeform
+    );
 
     # Move over the files we are processing
 
@@ -605,17 +606,17 @@ sub process_photo {
       );
       # Add all the EXIF information to the JPG file
       system(
-"exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0 -overwrite_original \"$set_directory/tif/$imageid.jpg\""
+        "exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0 -overwrite_original \"$set_directory/tif/$imageid.jpg\""
       );
       move_file("$dir/$fname", "$set_directory/tif/$imageid.nef");
     } elsif ($fname =~ /\.cr2$/i) {
       # Extract the JPG first
       system(
-"exiftool -b -PreviewImage \"$dir/$fname\" > \"$set_directory/tif/$imageid.jpg\""
+        "exiftool -b -PreviewImage \"$dir/$fname\" > \"$set_directory/tif/$imageid.jpg\""
       );
       # Add all the EXIF information to the JPG file
       system(
-"exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0 -overwrite_original \"$set_directory/tif/$imageid.jpg\""
+        "exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0 -overwrite_original \"$set_directory/tif/$imageid.jpg\""
       );
       move_file("$dir/$fname", "$set_directory/tif/$imageid.cr2");
     } elsif ($fname =~ /\.mov$/i || $fname =~ /\.mp4$/i) {
@@ -623,8 +624,8 @@ sub process_photo {
       system(
         "ffmpeg -i \"$dir/$fname\" -vframes 1 -ss 1 \"$set_directory/tif/$imageid.jpg\""
       );
-# Add all the EXIF information to the JPG file
-#system("exiftool -TagsFromFile $dir/$fname -q -q -SerialNumber=0 -overwrite_original $set_directory/tif/$imageid.jpg");
+      # Add all the EXIF information to the JPG file
+      #system("exiftool -TagsFromFile $dir/$fname -q -q -SerialNumber=0 -overwrite_original $set_directory/tif/$imageid.jpg");
       if ($fname =~ /\.mov$/i) {
         move_file("$dir/$fname", "$set_directory/tif/$imageid.mov");
       } else {
@@ -634,7 +635,9 @@ sub process_photo {
       # Convert GIF to an MP4 file
       system("ffmpeg -i \"$dir/$fname\" \"$set_directory/tif/$imageid.mp4\"");
       # Extract JPG
-      system("ffmpeg -i \"$dir/$fname\" -vframes 1 -ss 1 \"$set_directory/tif/$imageid.jpg\"");
+      system(
+        "ffmpeg -i \"$dir/$fname\" -vframes 1 -ss 1 \"$set_directory/tif/$imageid.jpg\""
+      );
       # Move the GIF to the target
       move_file("$dir/$fname", "$set_directory/tif/$imageid.gif");
     } else {
@@ -670,94 +673,4 @@ sub move_file {
   }
   system("mv \"$srcfile\" \"$dstfile\"");
   system("chmod 444 \"$dstfile\"");
-}
-
-sub set_database_info {
-  my $imageid     = $_[0];
-  my $do_portrait = $_[1];
-  my $do_rotate   = $_[2];
-  my $latlong     = $_[3];
-  my $timezone    = $_[4];
-  my $dst         = $_[5];
-  my $is_mov      = $_[6];
-  my $is_kids     = $_[7];
-  my $is_freeform = $_[8];
-  my @monthnames  = (
-    "",     "January", "February", "March",     "April",   "May",
-    "June", "July",    "August",   "September", "October", "November",
-    "December"
-  );
-
-  my $setid = pcom_get_set($imageid);
-  if (!pdb_set_info($setid)) {
-    # Set does not yet exist; add it
-    print "Create set $setid\n";
-    pdb_open_set($setid);
-    # default some fields
-    pdb_set_settitle("");
-    pdb_set_setcopyright("");
-    pdb_set_setdescription("");
-    pdb_set_setcomment("");
-
-    pdb_set_setsortid(pdb_create_setsortid($setid));
-    if ($imageid =~ /^(\d\d\d\d)(\d\d)(\d\d)\-(\d\d)(\d\d)(\d\d)/) {
-      my $year      = int($1);
-      my $month     = int($2);
-      my $day       = int($3);
-      my $monthname = $monthnames[$month];
-      pdb_set_setdatetime("$monthname $day, $year");
-      pdb_set_setyear($year);
-    }
-    if ($is_kids) {
-      pdb_set_setcategory($PCOM_KIDS);
-    } else {
-      pdb_set_setcategory($PCOM_NEW);
-    }
-    pdb_close_set();
-  }
-
-  if (!pdb_image_info($imageid)) {
-    if ($imageid =~ /^(\d\d\d\d)(\d\d)(\d\d)\-(\d\d)(\d\d)(\d\d)/) {
-      pdb_open_image($imageid);
-      my $year   = int($1);
-      my $month  = int($2);
-      my $day    = int($3);
-      my $hour   = int($4);
-      my $minute = $5;
-      my $second = $6;
-
-      pdb_set_sortid(pdb_create_sortid($imageid, $timezone, $dst));
-      pdb_set_setid($setid);
-      my $monthname = $monthnames[$month];
-      pdb_set_datetime("$monthname $day, $year $hour:$minute:$second");
-      pdb_set_year($year);
-      if ($is_freeform) {
-        pdb_set_orientation($do_portrait ? $PCOM_FREEFORM_P : $PCOM_FREEFORM_L);
-      } else {
-        pdb_set_orientation($do_portrait ? $PCOM_PORTRAIT : $PCOM_LANDSCAPE);
-      }
-      if ($is_kids) {
-        pdb_set_category($PCOM_KIDS);
-      } else {
-        pdb_set_category($PCOM_NEW);
-      }
-      pdb_set_quality($PCOM_QUAL_DEFAULT);
-      pdb_set_latlong($latlong);
-      if ($is_mov) {
-        pdb_set_type("MOV");
-      }
-      my $rotation = 0;
-      if ($do_rotate == 90) {
-        $rotation = 90;
-      } elsif ($do_rotate == -90) {
-        $rotation = 270;
-      }
-      pdb_set_rotation($rotation);
-      pdb_close_image();
-    } else {
-      warn "Cannot recognize image format '$imageid' to add to database\n";
-    }
-  } else {
-    warn "Image '$imageid' already in database (not added)\n";
-  }
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-my $script   = __FILE__;
+my $script = __FILE__;
 my $localdir = ".";
 if ($script =~ s/\/[^\/]*$//) {
   $localdir = $script;
@@ -25,365 +25,365 @@ my $gl_force = 0;
 my $arg = shift;
 my $count = 0;
 while (defined($arg)) {
-    $count++;
-    if ($arg eq "-all") {
-        my $iter = pdb_iter_set_new("20100101");
-        my $setid = pdb_iter_next($iter);
-        while (defined($setid) && ($setid ne "")) {
-            generate_set($setid);
-            $setid = pdb_iter_next($iter);
-        }
-    } elsif ($arg eq "-new") {
-        # For now, default to also to "m5" size
-        $gl_do_size = 1;
-        $gl_size = "m5";
-        my $iter = pdb_iter_new("20070101-000000", 500);
-        pdb_iter_filter_category($iter, $PCOM_NEW);
-        my $imageid = pdb_iter_next($iter);
-        while (defined($imageid) && ($imageid ne "")) {
-            generate_image($imageid);
-            $imageid = pdb_iter_next($iter);
-        }
-    } elsif ($arg eq "-all-digital") {
-        my $iter = pdb_iter_set_new("20040921");
-        my $setid = pdb_iter_next($iter);
-        while (defined($setid) && ($setid ne "")) {
-            generate_set($setid);
-            $setid = pdb_iter_next($iter);
-        }
-    } elsif ($arg eq "-all-p") {
-        # Generate all of pa Grivel's film sets (p*)
-        my $iter = pdb_iter_set_new("p00");
-        my $setid = pdb_iter_next($iter);
-        while (defined($setid) && ($setid ne "") && ($setid le "p99")) {
-            generate_set($setid);
-            $setid = pdb_iter_next($iter);
-        }
-    } elsif ($arg eq "-all-d") {
-        # Generate all of pa Grivel's slide sets (d*)
-        my $iter = pdb_iter_set_new("d00");
-        my $setid = pdb_iter_next($iter);
-        while (defined($setid) && ($setid ne "") && ($setid le "d99")) {
-            generate_set($setid);
-            $setid = pdb_iter_next($iter);
-        }
-    } elsif ($arg eq "-all-film") {
-        # All films - skip the digital sets, which start with 200, 201 or
-        # 202. This should work all the way through the year 2029, after
-        # which we'll probably have different stuff anyway
-        my $iter = pdb_iter_set_new("001");
-        my $setid = pdb_iter_next($iter);
-        while (defined($setid) && ($setid ne "") && ($setid lt "200")) {
-            generate_set($setid);
-            $setid = pdb_iter_next($iter);
-        }
-        generate_set("200");
-        generate_set("201");
-        generate_set("202");
-        generate_set("203");
-        $iter = pdb_iter_set_new("203");
-        $setid = pdb_iter_next($iter);
-        while (defined($setid) && ($setid ne "") && ($setid le "999")) {
-            generate_set($setid);
-            $setid = pdb_iter_next($iter);
-        }
-    } elsif ($arg eq "-google") {
-        $gl_do_google = 1;
-    } elsif ($arg eq "-nogoogle") {
-        $gl_do_google = 0;
-    } elsif ($arg eq "-square") {
-        $gl_do_square = 1;
-    } elsif ($arg eq "-nosquare") {
-        $gl_do_square = 0;
-    } elsif ($arg eq "-normal") {
-        $gl_do_normal = 1;
-    } elsif ($arg eq "-nonormal") {
-        $gl_do_normal = 0;
-    } elsif ($arg eq "-large") {
-        $gl_do_large = 1;
-    } elsif ($arg eq "-nolarge") {
-        $gl_do_large = 0;
-    } elsif ($arg eq "-size") {
-        $gl_do_size = 1;
-        $arg = shift;
-        if (defined($arg)) {
-            $gl_size = $arg;
-        }
-    } elsif ($arg eq "-nosize") {
-        $gl_do_size = 0;
-    } elsif (pcom_is_set_valid($arg)) {
-        generate_set($arg);
-    } elsif ($arg =~ /^\d\d\d\d\d\d\d\d-\d\d\d\d\d\d\w?$/) {
-        generate_image($arg);
-    } elsif ($arg eq "-help") {
-      help();
-      exit(0);
-    } else {
-        warn "Invalid parameter '$arg': not a valid photo set ID\n";
-        help();
+  $count++;
+  if ($arg eq "-all") {
+    my $iter = pdb_iter_set_new("20100101");
+    my $setid = pdb_iter_next($iter);
+    while (defined($setid) && ($setid ne "")) {
+      generate_set($setid);
+      $setid = pdb_iter_next($iter);
     }
+  } elsif ($arg eq "-new") {
+    # For now, default to also to "m5" size
+    $gl_do_size = 1;
+    $gl_size = "m5";
+    my $iter = pdb_iter_new("20070101-000000", 500);
+    pdb_iter_filter_category($iter, $PCOM_NEW);
+    my $imageid = pdb_iter_next($iter);
+    while (defined($imageid) && ($imageid ne "")) {
+      generate_image($imageid);
+      $imageid = pdb_iter_next($iter);
+    }
+  } elsif ($arg eq "-all-digital") {
+    my $iter = pdb_iter_set_new("20040921");
+    my $setid = pdb_iter_next($iter);
+    while (defined($setid) && ($setid ne "")) {
+      generate_set($setid);
+      $setid = pdb_iter_next($iter);
+    }
+  } elsif ($arg eq "-all-p") {
+    # Generate all of pa Grivel's film sets (p*)
+    my $iter = pdb_iter_set_new("p00");
+    my $setid = pdb_iter_next($iter);
+    while (defined($setid) && ($setid ne "") && ($setid le "p99")) {
+      generate_set($setid);
+      $setid = pdb_iter_next($iter);
+    }
+  } elsif ($arg eq "-all-d") {
+    # Generate all of pa Grivel's slide sets (d*)
+    my $iter = pdb_iter_set_new("d00");
+    my $setid = pdb_iter_next($iter);
+    while (defined($setid) && ($setid ne "") && ($setid le "d99")) {
+      generate_set($setid);
+      $setid = pdb_iter_next($iter);
+    }
+  } elsif ($arg eq "-all-film") {
+    # All films - skip the digital sets, which start with 200, 201 or
+    # 202. This should work all the way through the year 2029, after
+    # which we'll probably have different stuff anyway
+    my $iter = pdb_iter_set_new("001");
+    my $setid = pdb_iter_next($iter);
+    while (defined($setid) && ($setid ne "") && ($setid lt "200")) {
+      generate_set($setid);
+      $setid = pdb_iter_next($iter);
+    }
+    generate_set("200");
+    generate_set("201");
+    generate_set("202");
+    generate_set("203");
+    $iter = pdb_iter_set_new("203");
+    $setid = pdb_iter_next($iter);
+    while (defined($setid) && ($setid ne "") && ($setid le "999")) {
+      generate_set($setid);
+      $setid = pdb_iter_next($iter);
+    }
+  } elsif ($arg eq "-google") {
+    $gl_do_google = 1;
+  } elsif ($arg eq "-nogoogle") {
+    $gl_do_google = 0;
+  } elsif ($arg eq "-square") {
+    $gl_do_square = 1;
+  } elsif ($arg eq "-nosquare") {
+    $gl_do_square = 0;
+  } elsif ($arg eq "-normal") {
+    $gl_do_normal = 1;
+  } elsif ($arg eq "-nonormal") {
+    $gl_do_normal = 0;
+  } elsif ($arg eq "-large") {
+    $gl_do_large = 1;
+  } elsif ($arg eq "-nolarge") {
+    $gl_do_large = 0;
+  } elsif ($arg eq "-size") {
+    $gl_do_size = 1;
     $arg = shift;
+    if (defined($arg)) {
+      $gl_size = $arg;
+    }
+  } elsif ($arg eq "-nosize") {
+    $gl_do_size = 0;
+  } elsif (pcom_is_set_valid($arg)) {
+    generate_set($arg);
+  } elsif ($arg =~ /^\d\d\d\d\d\d\d\d-\d\d\d\d\d\d\w?$/) {
+    generate_image($arg);
+  } elsif ($arg eq "-help") {
+    help();
+    exit(0);
+  } else {
+    warn "Invalid parameter '$arg': not a valid photo set ID\n";
+    help();
+  }
+  $arg = shift;
 }
 if (!$count) {
-    warn "Must specify the set ID or '-all' to extract.\n";
-    help();
+  warn "Must specify the set ID or '-all' to extract.\n";
+  help();
 }
 exit;
 
 sub generate_image {
-    my $imageid = $_[0];
+  my $imageid = $_[0];
 
-    if ($gl_do_large) {
-        my $outfile = pfs_get_buffer_location($imageid, "large");
-        if ($outfile eq "") {
-            print "Can't get large buffer location for $imageid\n";
-        } else {
-            if (pfs_get_large_location($imageid) eq "") {
-                my $rotation = pdb_get_rotation($imageid);
-                my $cmd = pfs_cmd_large($imageid, $rotation, $outfile);
-                print $cmd, "\n";
-                system($cmd);
-                $cmd = "chmod a+w $outfile";
-                print $cmd . "\n";
-                system($cmd);
-            }
-            # Also check for movies
-            if (pdb_get_type($imageid) eq "MOV") {
-                my $orig = pfs_get_raw_location($imageid);
-                if ($orig ne "") {
-                    $outfile =~ s/\.jpg/.mp4/;
-                    if (! -f $outfile) {
-                        my $cmd = pfs_cmd_large_movie($imageid);
-                        print "$cmd\n";
-                        system($cmd);
-                    }
-                }
-            }
+  if ($gl_do_large) {
+    my $outfile = pfs_get_buffer_location($imageid, "large");
+    if ($outfile eq "") {
+      print "Can't get large buffer location for $imageid\n";
+    } else {
+      if (pfs_get_large_location($imageid) eq "") {
+        my $rotation = pdb_get_rotation($imageid);
+        my $cmd = pfs_cmd_large($imageid, $rotation, $outfile);
+        print $cmd, "\n";
+        system($cmd);
+        $cmd = "chmod a+w $outfile";
+        print $cmd . "\n";
+        system($cmd);
+      }
+      # Also check for movies
+      if (pdb_get_type($imageid) eq "MOV") {
+        my $orig = pfs_get_raw_location($imageid);
+        if ($orig ne "") {
+          $outfile =~ s/\.jpg/.mp4/;
+          if (!-f $outfile) {
+            my $cmd = pfs_cmd_large_movie($imageid);
+            print "$cmd\n";
+            system($cmd);
+          }
         }
+      }
     }
+  }
 
-    if ($gl_do_google && (pfs_get_google_location($imageid) eq "")) {
-        my $outfile = pfs_get_buffer_location($imageid, "google");
-	if ($outfile eq "") {
-	    print "Can't get google buffer location for $imageid\n";
-	} else {
-	    my $rotation = pdb_get_rotation($imageid);
-	    my $cmd = pfs_cmd_google($imageid, $rotation, $outfile);
-	    print $cmd, "\n";
-	    system($cmd);
-	    system("chmod a+w $outfile");
-	}
+  if ($gl_do_google && (pfs_get_google_location($imageid) eq "")) {
+    my $outfile = pfs_get_buffer_location($imageid, "google");
+    if ($outfile eq "") {
+      print "Can't get google buffer location for $imageid\n";
+    } else {
+      my $rotation = pdb_get_rotation($imageid);
+      my $cmd = pfs_cmd_google($imageid, $rotation, $outfile);
+      print $cmd, "\n";
+      system($cmd);
+      system("chmod a+w $outfile");
     }
+  }
 
-    if ($gl_do_square && (pfs_get_thumbnail_square_location($imageid) eq "")) {
-        my $outfile = pfs_get_buffer_location($imageid, "thsqu");
-	if ($outfile eq "") {
-	    print "Can't get square buffer location for $imageid\n";
-	} else {
-	    my $rotation = pdb_get_rotation($imageid);
-	    my $cmd = pfs_cmd_thumbnail_square($imageid, $rotation, $outfile);
-	    print $cmd, "\n";
-	    system($cmd);
-	    system("chmod a+w $outfile");
-	}
+  if ($gl_do_square && (pfs_get_thumbnail_square_location($imageid) eq "")) {
+    my $outfile = pfs_get_buffer_location($imageid, "thsqu");
+    if ($outfile eq "") {
+      print "Can't get square buffer location for $imageid\n";
+    } else {
+      my $rotation = pdb_get_rotation($imageid);
+      my $cmd = pfs_cmd_thumbnail_square($imageid, $rotation, $outfile);
+      print $cmd, "\n";
+      system($cmd);
+      system("chmod a+w $outfile");
     }
+  }
 
-    if ($gl_do_normal && (pfs_get_normal_location($imageid) eq "")) {
-        my $outfile = pfs_get_buffer_location($imageid, "normal");
-	if ($outfile eq "") {
-	    print "Can't get normal buffer location for $imageid\n";
-	} else {
-	    my $rotation = pdb_get_rotation($imageid);
-	    my $cmd = pfs_cmd_normal($imageid, $rotation, $outfile);
-	    print $cmd, "\n";
-	    system($cmd);
-	    system("chmod a+w $outfile");
-	}
+  if ($gl_do_normal && (pfs_get_normal_location($imageid) eq "")) {
+    my $outfile = pfs_get_buffer_location($imageid, "normal");
+    if ($outfile eq "") {
+      print "Can't get normal buffer location for $imageid\n";
+    } else {
+      my $rotation = pdb_get_rotation($imageid);
+      my $cmd = pfs_cmd_normal($imageid, $rotation, $outfile);
+      print $cmd, "\n";
+      system($cmd);
+      system("chmod a+w $outfile");
     }
+  }
 
-    if ($gl_do_size) {
-        my $outfile = pfs_get_mobile_location($imageid, $gl_size);
-	if ($outfile eq "") {
-	    print "Can't get $gl_size buffer location for $imageid\n";
-	} else {
-            my $do_generate = 1;
-            if (-f $outfile) {
-                # File already exist, check if it is up-to-date
-                my $edittime = 0;
-                if (pfs_get_edited_location($imageid) ne "") {
-                    $edittime = pfs_get_time(pfs_get_edited_location($imageid));
-                } elsif (pfs_get_orig_location($imageid) ne "") {
-                    $edittime = pfs_get_time(pfs_get_orig_location($imageid));
-                }
-                if (pfs_get_time($outfile) >= $edittime) {
-                    # Generated file is newer than edited one, so no need
-                    # to re-generate
-                    print "File $outfile already up-to-date\n";
-                    $do_generate = 0;
-                }
-            }
-            if ($do_generate) {
-                my $rotation = pdb_get_rotation($imageid);
-                my $width = 900;
-                my $height = 600;
-                if ($gl_size eq "m1") {
-                    $width = $PCOM_M1_WIDTH;
-                    $height = $PCOM_M1_HEIGHT;
-                } elsif ($gl_size eq "m2") {
-                    $width = $PCOM_M2_WIDTH;
-                    $height = $PCOM_M2_HEIGHT;
-                } elsif ($gl_size eq "m3") {
-                    $width = $PCOM_M3_WIDTH;
-                    $height = $PCOM_M3_HEIGHT;
-                } elsif ($gl_size eq "m4") {
-                    $width = $PCOM_M4_WIDTH;
-                    $height = $PCOM_M4_HEIGHT;
-                } elsif ($gl_size eq "m5") {
-                    $width = $PCOM_M5_WIDTH;
-                    $height = $PCOM_M5_HEIGHT;
-                }
-                display_mobile($imageid, $gl_size, $width, $height);
-            }
-	}
+  if ($gl_do_size) {
+    my $outfile = pfs_get_mobile_location($imageid, $gl_size);
+    if ($outfile eq "") {
+      print "Can't get $gl_size buffer location for $imageid\n";
+    } else {
+      my $do_generate = 1;
+      if (-f $outfile) {
+        # File already exist, check if it is up-to-date
+        my $edittime = 0;
+        if (pfs_get_edited_location($imageid) ne "") {
+          $edittime = pfs_get_time(pfs_get_edited_location($imageid));
+        } elsif (pfs_get_orig_location($imageid) ne "") {
+          $edittime = pfs_get_time(pfs_get_orig_location($imageid));
+        }
+        if (pfs_get_time($outfile) >= $edittime) {
+          # Generated file is newer than edited one, so no need
+          # to re-generate
+          print "File $outfile already up-to-date\n";
+          $do_generate = 0;
+        }
+      }
+      if ($do_generate) {
+        my $rotation = pdb_get_rotation($imageid);
+        my $width = 900;
+        my $height = 600;
+        if ($gl_size eq "m1") {
+          $width = $PCOM_M1_WIDTH;
+          $height = $PCOM_M1_HEIGHT;
+        } elsif ($gl_size eq "m2") {
+          $width = $PCOM_M2_WIDTH;
+          $height = $PCOM_M2_HEIGHT;
+        } elsif ($gl_size eq "m3") {
+          $width = $PCOM_M3_WIDTH;
+          $height = $PCOM_M3_HEIGHT;
+        } elsif ($gl_size eq "m4") {
+          $width = $PCOM_M4_WIDTH;
+          $height = $PCOM_M4_HEIGHT;
+        } elsif ($gl_size eq "m5") {
+          $width = $PCOM_M5_WIDTH;
+          $height = $PCOM_M5_HEIGHT;
+        }
+        display_mobile($imageid, $gl_size, $width, $height);
+      }
     }
+  }
 
-    # Always do thumbnails
-    if (pfs_get_thumbnail_location($imageid) eq "") {
-        my $outfile = pfs_get_buffer_location($imageid, "thumbnail");
-	if ($outfile eq "") {
-	    print "Can't get thumbnail buffer location for $imageid\n";
-	} else {
-	    my $rotation = pdb_get_rotation($imageid);
-	    my $cmd = pfs_cmd_thumbnail($imageid, $rotation, $outfile);
-	    print $cmd, "\n";
-	    system($cmd);
-	    system("chmod a+w $outfile");
-	}
+  # Always do thumbnails
+  if (pfs_get_thumbnail_location($imageid) eq "") {
+    my $outfile = pfs_get_buffer_location($imageid, "thumbnail");
+    if ($outfile eq "") {
+      print "Can't get thumbnail buffer location for $imageid\n";
+    } else {
+      my $rotation = pdb_get_rotation($imageid);
+      my $cmd = pfs_cmd_thumbnail($imageid, $rotation, $outfile);
+      print $cmd, "\n";
+      system($cmd);
+      system("chmod a+w $outfile");
     }
+  }
 }
 
 sub display_mobile {
-    my $imageid = $_[0];
-    my $size = $_[1];
-    my $width = $_[2];
-    my $height = $_[3];
+  my $imageid = $_[0];
+  my $size = $_[1];
+  my $width = $_[2];
+  my $height = $_[3];
 
-    # This is used to support mobile devices. For these, the given
-    # width and height are always landscape
-    my $edited_fname = pfs_get_edited_location($imageid);
-    my $rotation = 0;
-    my ($realwidth, $realhight);
+  # This is used to support mobile devices. For these, the given
+  # width and height are always landscape
+  my $edited_fname = pfs_get_edited_location($imageid);
+  my $rotation = 0;
+  my ($realwidth, $realhight);
+  if ($edited_fname eq "") {
+    ($realwidth, $realheight) = pfs_get_orig_dimensions($imageid);
+    # use the indicated rotation only if the file hasn't been edited;
+    # if the file was edited, assume rotation is not needed
+    $rotation = pdb_get_rotation($imageid);
+  } else {
+    ($realwidth, $realheight) = pfs_get_file_dimensions($edited_fname);
+  }
+  if ($realheight > $realwidth) {
+    my $temp = $realheight;
+    $realheight = $realwidth;
+    $realwidth = $temp;
+  }
+
+  # Determine the scale ratio, and then match width and height to that
+  # matches or exceeds the other dimension
+  my $s1 = (1.0 * $width / $realwidth);
+  my $s2 = (1.0 * $height / $realheight);
+  my $ratio = $s1;
+  if ($s1 < $s2) {
+    $ratio = $s2;
+  }
+  my $finalwidth = int($realwidth * $ratio);
+  my $finalheight = int($realheight * $ratio);
+  if ($finalwidth < $width) {
+    $finalwidth = $width;
+  }
+  if ($finalheight < $height) {
+    $finalheight = $height;
+  }
+
+  my $outfile = pfs_get_mobile_location($imageid, $size);
+  my $has_tempfile = 0;
+  if ($outfile eq "") {
+    (undef, $outfile) = tempfile();
+    $has_tempfile = 1;
+  }
+
+  my $did_generate = 0;
+  my $cmd = pfs_cmd_resize($imageid, $rotation, $outfile,
+    $finalwidth, $finalheight, 1, 0, 0, 0, 1, 0, $ratio);
+  if (-f $outfile) {
+    # File exists, but check if it needs to be re-generated
+    my $edittime = 0;
     if ($edited_fname eq "") {
-        ($realwidth, $realheight) = pfs_get_orig_dimensions($imageid);
-        # use the indicated rotation only if the file hasn't been edited;
-        # if the file was edited, assume rotation is not needed
-        $rotation = pdb_get_rotation($imageid);
+      $edittime = pfs_get_time(pfs_get_orig_location($imageid));
     } else {
-        ($realwidth, $realheight) = pfs_get_file_dimensions($edited_fname);
+      $edittime = pfs_get_time($edited_fname);
     }
-    if ($realheight > $realwidth) {
-        my $temp = $realheight;
-        $realheight = $realwidth;
-        $realwidth = $temp;
+    if (pfs_get_time($outfile) < $edittime) {
+      # Cached file exists, but is older than the edited file, so
+      # it needs to be overwritten
+      print "$cmd\n";
+      system($cmd);
+      $did_generate = 1;
     }
+  } else {
+    # File doesn't exist yet, create it
+    print "$cmd\n";
+    system($cmd);
+    $did_generate = 1;
+  }
 
-    # Determine the scale ratio, and then match width and height to that
-    # matches or exceeds the other dimension
-    my $s1 = (1.0 * $width / $realwidth);
-    my $s2 = (1.0 * $height / $realheight);
-    my $ratio = $s1;
-    if ($s1 < $s2) {
-        $ratio = $s2;
-    }
-    my $finalwidth = int($realwidth * $ratio);
-    my $finalheight = int($realheight * $ratio);
-    if ($finalwidth < $width) {
-        $finalwidth = $width;
-    }
-    if ($finalheight < $height) {
-        $finalheight = $height;
-    }
-
-    my $outfile = pfs_get_mobile_location($imageid, $size);
-    my $has_tempfile = 0;
-    if ($outfile eq "") {
-        (undef, $outfile) = tempfile();
-        $has_tempfile = 1;
-    }
-
-    my $did_generate = 0;
-    my $cmd = pfs_cmd_resize($imageid, $rotation, $outfile,
-                             $finalwidth, $finalheight,
-                             1, 0, 0, 0, 1, 0, $ratio);
-    if (-f $outfile) {
-        # File exists, but check if it needs to be re-generated
-        my $edittime = 0;
-        if ($edited_fname eq "") {
-            $edittime = pfs_get_time(pfs_get_orig_location($imageid));
-        } else {
-            $edittime = pfs_get_time($edited_fname);
-        }
-        if (pfs_get_time($outfile) < $edittime) {
-            # Cached file exists, but is older than the edited file, so
-            # it needs to be overwritten
-            print "$cmd\n";
-            system($cmd);
-            $did_generate = 1;
-        }
-    } else {
-        # File doesn't exist yet, create it
-        print "$cmd\n";
-        system($cmd);
-        $did_generate = 1;
-    }
-
-    if ($has_tempfile) {
-        # Done with the output file, discard it
-        unlink($outfile);
-    } elsif ($did_generate) {
-        # Permanent; make auto-generated file writable.
-        system("chmod a+w $outfile");
-    }
+  if ($has_tempfile) {
+    # Done with the output file, discard it
+    unlink($outfile);
+  } elsif ($did_generate) {
+    # Permanent; make auto-generated file writable.
+    system("chmod a+w $outfile");
+  }
 }
 
 sub generate_set {
-    my $setid = $_[0];
+  my $setid = $_[0];
 
-    print "Do set $setid\n";
-    my $img_iter = pdb_iter_new($setid, 50);
-    pdb_iter_filter_setid($img_iter, $setid);
-    my $imageid = pdb_iter_next($img_iter);
-    while (pcom_get_set($imageid) le $setid) {
-        print "Check $imageid\n";
-        if (pcom_get_set($imageid) eq $setid) {
-            print "Generate image $imageid\n";
-            generate_image($imageid);
-        }
-        $imageid = pdb_iter_next($img_iter);
-        last if (! defined($imageid));
-        last if ($imageid eq "");
+  print "Do set $setid\n";
+  my $img_iter = pdb_iter_new($setid, 50);
+  pdb_iter_filter_setid($img_iter, $setid);
+  my $imageid = pdb_iter_next($img_iter);
+  while (pcom_get_set($imageid) le $setid) {
+    print "Check $imageid\n";
+    if (pcom_get_set($imageid) eq $setid) {
+      print "Generate image $imageid\n";
+      generate_image($imageid);
     }
-    pdb_iter_done($img_iter);
+    $imageid = pdb_iter_next($img_iter);
+    last if (!defined($imageid));
+    last if ($imageid eq "");
+  }
+  pdb_iter_done($img_iter);
 }
 
 sub help {
-    print "Usage:\n";
-    print "   photo_generate_large <options> <spec>\n";
-    print "Options are:\n";
-    print " -google    create google-size photos\n";
-    print " -nogoogle  do not create google-size photos (default)\n";
-    print " -square    create squarey thumbnail-size photos\n";
-    print " -noquare   do not create square thumbnail-size photos (default)\n";
-    print " -normal    create normal-size photos\n";
-    print " -nonormal  do not create normal-size photos (default)\n";
-    print " -large     create large-size photos (default)\n";
-    print " -nolarge   do not create large-size photos\n";
-    print "Spec can be one or more of:\n";
-    print " -all       process all photos in the database, starting in 2010\n";
-    print " -new       process the new photos in the database (category 'new')\n";
-    print " -all-digital  process all the digital photo sets in the database\n";
-    print " -all-p     process all the p* photo sets in the database\n";
-    print " -all-d     process all the d* photo sets in the database\n";
-    print " -all-film  process all the 001 through 399 film sets in the database\n";
-    print " set_id     process a specific set\n";
+  print "Usage:\n";
+  print "   photo_generate_large <options> <spec>\n";
+  print "Options are:\n";
+  print " -google    create google-size photos\n";
+  print " -nogoogle  do not create google-size photos (default)\n";
+  print " -square    create squarey thumbnail-size photos\n";
+  print " -noquare   do not create square thumbnail-size photos (default)\n";
+  print " -normal    create normal-size photos\n";
+  print " -nonormal  do not create normal-size photos (default)\n";
+  print " -large     create large-size photos (default)\n";
+  print " -nolarge   do not create large-size photos\n";
+  print "Spec can be one or more of:\n";
+  print " -all       process all photos in the database, starting in 2010\n";
+  print " -new       process the new photos in the database (category 'new')\n";
+  print " -all-digital  process all the digital photo sets in the database\n";
+  print " -all-p     process all the p* photo sets in the database\n";
+  print " -all-d     process all the d* photo sets in the database\n";
+  print
+    " -all-film  process all the 001 through 399 film sets in the database\n";
+  print " set_id     process a specific set\n";
 }
