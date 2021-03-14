@@ -20,7 +20,14 @@ sub set_database_info {
   }
 
   my $setid = pcom_get_set($imageid);
-  if ($do_force || !pdb_set_info($setid)) {
+  my $do_create = !pdb_set_info($setid);
+  if ($do_force && !$do_create) {
+    if (!isset($gl_created_set[$setid])) {
+      $do_create = 1;
+      $gl_created_set[$setid] = 1;
+    }
+  }
+  if ($do_create || !pdb_set_info($setid)) {
     # Set does not yet exist; add it
     print "Create set $setid\n";
     pdb_open_set($setid);
