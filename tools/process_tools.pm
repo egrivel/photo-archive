@@ -22,7 +22,7 @@ sub set_database_info {
   my $setid = pcom_get_set($imageid);
   my $do_create = !pdb_set_info($setid);
   if ($do_force && !$do_create) {
-    if (!isset($gl_created_set[$setid])) {
+    if (!defined($gl_created_set[$setid])) {
       $do_create = 1;
       $gl_created_set[$setid] = 1;
     }
