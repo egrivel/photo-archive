@@ -19,7 +19,7 @@ sub psync_get_content {
   usleep($gl_api_delay * 1000);
 
   my $response;
-  while (true) {
+  while (1) {
     $response = $gl_ua->get($url);
     if ($response->is_success) {
       last;
