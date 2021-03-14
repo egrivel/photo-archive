@@ -20,7 +20,7 @@ sub set_database_info {
   }
 
   my $setid = pcom_get_set($imageid);
-  if (!pdb_set_info($setid)) {
+  if ($do_force || !pdb_set_info($setid)) {
     # Set does not yet exist; add it
     print "Create set $setid\n";
     pdb_open_set($setid);
@@ -38,6 +38,9 @@ sub set_database_info {
       my $monthname = $monthnames[$month];
       pdb_set_setdatetime("$monthname $day, $year");
       pdb_set_setyear($year);
+    } elsif ($imageid =~ /^(\w\d\d)(\d\d\w?)$/) {
+      pdb_set_setdatetime("");
+      pdb_set_setyear(pcom_get_year($setid));
     }
     if ($is_kids) {
       pdb_set_setcategory($PCOM_KIDS);
