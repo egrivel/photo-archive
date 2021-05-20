@@ -89,7 +89,11 @@ sub disp_info_page {
                     }
                     pht_output "<div class='infoline'>\n";
                     pht_output "<div class='infolabel'>$label:</div>\n";
-                    pht_output "<div class='infodata'>$dataref->{$name}</div>\n";
+                    if (defined($name) && defined($dataref->{$name})) {
+                        pht_output "<div class='infodata'>$dataref->{$name}</div>\n";
+                    } else {
+                        pht_output "<div class='infodata'></div>\n";
+                    }
                     pht_output "</div>\n";
                 }
                 pht_output "<div class='infolink'>";

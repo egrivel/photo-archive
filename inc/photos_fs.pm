@@ -917,9 +917,12 @@ sub pfs_cmd_large_movie {
   my $orig    = pfs_get_raw_location($imageid);
   my $outfile = pfs_get_buffer_location($imageid, "large");
   if (($orig ne "") && ($outfile ne "")) {
-    $outfile =~ s/\.jpg$/.mp4/;
+      $outfile =~ s/\.jpg$/.mp4/;
+      # add -max_muxing_queue_size 400 to handle "movies with sparse video
+      # or audio frames", see:
+      #    https://trac.ffmpeg.org/ticket/6375
     return
-"ffmpeg -i $orig -vcodec libx264 -acodec libvorbis -aq 5 -ac 2 -qmax 25 -vf scale=960:540 $outfile.mp4; qt-faststart $outfile.mp4 $outfile; rm $outfile.mp4; chmod a+w $outfile";
+"ffmpeg -i $orig -max_muxing_queue_size 400 -vcodec libx264 -acodec libvorbis -aq 5 -ac 2 -qmax 25 -vf scale=960:540 $outfile.mp4; qt-faststart $outfile.mp4 $outfile; rm $outfile.mp4; chmod a+w $outfile";
   }
   return "";
 }
