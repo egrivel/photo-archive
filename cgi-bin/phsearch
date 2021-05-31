@@ -367,7 +367,7 @@ sub search_form {
   put_form_text("Title" . put_help_link(5), "title", 0);
   put_form_text("Description" . put_help_link(6), "descr", 0);
   put_form_text("Persons" . put_help_link(7),
-    "persons", 0, "Multiple people separated by semicolon");
+    "persons", 0, "<br/>Multiple people separated by semicolon");
   put_form_text("Comment" . put_help_link(8), "comment", 0);
   put_form_text("Year" . put_help_link(9), "year", 0);
   put_form_text("Minimum quality" . put_help_link(10), "minquality", 0);
