@@ -12,6 +12,8 @@ require "photos_util.pm";
 put_init();
 put_restore_session();
 
+pht_page_start(0, 0);
+
 my $start = get_value("start");
 my $end = get_value("end");
 my $image = get_value("image");
@@ -29,7 +31,9 @@ if ( ($image =~ /^\d\d\d\d\d\d\d\d$/)
 my $next = get_next_image($image);
 
 my $is_end = 0;
-if ( ($end =~ /^\d\d\d\d\d\d\d\d$/)
+if ($next eq "") {
+  $is_end = 1;
+} elsif (($end =~ /^\d\d\d\d\d\d\d\d$/)
   || ($end =~ /^\w\d\d$/)) {
   # End is a set; check against the set name
   my $imageset = "";
@@ -47,6 +51,7 @@ if ( ($end =~ /^\d\d\d\d\d\d\d\d$/)
   }
 }
 
+print "image = $image, next = $next, is_end = $is_end<br/>";
 if ($is_end) {
   # Reached the end; wrap back to the start
   $next = $start;
@@ -54,15 +59,6 @@ if ($is_end) {
     || ($next =~ /^\w\d\d$/)) {
     # Start is a set; use get next to get the first of the set
     $next = get_next_image($next);
-  }
-}
-
-if ($image ge $end) {
-  $next = $start;
-} else {
-  $next = get_next_image($image);
-  if ($next eq "") {
-    $next = $start;
   }
 }
 
@@ -89,32 +85,20 @@ sub display_img {
       . "<source src='phmov?mov=$image' type='video/mp4'/>"
       . "</video>";
   } else {
-    $style .= "  background-image: url('$url'
-  );
-  \n ";
-    $style .= " background-size : contain;
-  \n ";
-    $style .= " background-repeat : no -repeat;
-  \n ";
-    $style .= " background-position : center center;
-  \n ";
+    $style .= "  background-image: url('$url');\n";
+    $style .= "  background-size: contain;\n";
+    $style .= "  background-repeat: no-repeat;\n";
+    $style .= "  background-position: center center;\n";
   }
 
-  pht_page_start(0, 0);
-
-  print " < body onclick = 'goNext()' > \n ";
-  print " < style > \n ";
-  print " html {
-    \n ";
-  print " height : 100 %;
-    \n ";
-  print "
-  }
-  \n ";
-  print " body {
-    \n ";
+  print "<body onclick='goNext()'>\n";
+  print "<style>\n";
+  print "html {\n ";
+  print "  height: 100%;\n";
+  print "}\n";
+  print "body {\n";
   print $style;
-  print " background-color :    #333;\n";
+  print "  background-color: #333;\n";
   print "  width: 100%;\n";
   print "  height: 100%;\n";
   print "  overflow: hidden;\n";
