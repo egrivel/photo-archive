@@ -30,12 +30,15 @@ if ($image ge $end) {
   }
 }
 
-display_img($image, $next);
+display_img($image, $next, $start, $end);
 exit(0);
 
 sub display_img {
   my $image = $_[0];
   my $next = $_[1];
+  my $start = $_[2];
+  my $end = $_[3];
+
   my $size = "m5";
 
   my $url = "phimg?$size=$image&orientation=landscape";
@@ -76,7 +79,6 @@ sub display_img {
   print "  left: 50%;\n";
   print "  min-height: 80%;\n";
   print "  min-width: 80%;\n";
-  print "  z-index: -1;\n";
   print "  transform: translateY(-50%) translateX(-50%);\n";
   print "}\n";
   print "</style>\n";
