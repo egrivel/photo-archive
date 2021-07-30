@@ -1,0 +1,181 @@
+#!/usr/bin/perl
+
+my $script = __FILE__;
+my $localdir = ".";
+if ($script =~ s/\/[^\/]*$//) {
+  $localdir = $script;
+}
+push @INC, "$localdir/../inc";
+
+require "photos_util.pm";
+
+put_init();
+put_restore_session();
+
+my $start = get_value("start");
+my $end = get_value("end");
+my $image = get_value("image");
+
+if ($image eq "") {
+  $image = $start;
+}
+
+my $next = "";
+if ($image ge $end) {
+  $next = $start;
+} else {
+  $next = get_next_image($image);
+}
+
+display_img($image, $next);
+exit(0);
+
+sub display_img {
+  my $image = $_[0];
+  my $next = $_[1];
+  my $size = "m5";
+
+  my $url = "phimg?$size=$image&orientation=landscape";
+
+  my $content = "";
+  my $style = "";
+
+  if (pdb_get_type($image) eq "MOV") {
+    $content =
+        "<video width='80%' height='80%' "
+      . "controls poster='phimg?mov=$image'>"
+      . "<source src='phmov?mov=$image' type='video/mp4'/>"
+      . "</video>";
+  } else {
+    $style .= "  background-image: url('$url');\n";
+    $style .= "  background-size: contain;\n";
+    $style .= "  background-repeat: no-repeat;\n";
+    $style .= "  background-position: center center;\n";
+  }
+
+  pht_page_start(0, 0);
+
+  print "<body onclick='goNext()'>\n";
+  print "<style>\n";
+  print "html {\n";
+  print "  height: 100%;\n";
+  print "}\n";
+  print "body {\n";
+  print $style;
+  print "  background-color: #333;\n";
+  print "  width: 100%;\n";
+  print "  height: 100%;\n";
+  print "  overflow: hidden;\n";
+  print "}\n";
+  print "video {\n";
+  print "  position: absolute;\n";
+  print "  top: 50%;\n";
+  print "  left: 50%;\n";
+  print "  min-height: 80%;\n";
+  print "  min-width: 80%;\n";
+  print "  z-index: -1;\n";
+  print "  transform: translateY(-50%) translateX(-50%);\n";
+  print "}\n";
+  print "</style>\n";
+  print "<script>\n";
+  print "function goNext() {\n";
+  print "  location='phslideshow?image=$next';\n";
+  print "};\n";
+  print "</script>\n";
+  print $content;
+  print "<img src='./phimg?$size=$next&orientation=landscape' width='1' ";
+  print " height='1' border='0'>\n";
+
+  pht_page_end(0);
+}
+
+sub get_value {
+  my $varname = $_[0];
+  my $default = $_[1];
+  if (!defined($default)) {
+    $default = "";
+  }
+
+  my $value = $default;
+
+  if (parg_exists($varname)) {
+    $value = parg_get($varname);
+    # Specific value specified; save it in the session
+    pses_set($varname, $value);
+  } else {
+    # No value specified; get one from the session
+    my $temp = pses_get($varname);
+    if ($temp ne "") {
+      $value = $temp;
+    }
+  }
+  return $value;
+}
+
+sub set_value {
+  my $varname = $_[0];
+  my $value = $_[1];
+  pses_set($varname, $value);
+  return $value;
+}
+
+sub get_next_image {
+  my $imageid = $_[0];
+
+  my $user = $PUSR_GUEST_ACCOUNT;
+
+  # Set the filters appropriately
+  my $types = get_types($user);
+  my $min_quality = get_value("min_quality");
+  if ($min_quality eq "") {
+    $min_quality = get_quality($user);
+  }
+
+  # Determine the next image
+
+  my $class = put_get_class($imageid);
+
+  my $iter = pdb_iter_new($imageid);
+  pdb_iter_filter_category($iter, $types);
+  pdb_iter_filter_min_quality($iter, $min_quality);
+
+  my $next = pdb_iter_next($iter);
+  if ($next eq $imageid) {
+    $next = pdb_iter_next($iter);
+  }
+  pdb_iter_done($iter);
+
+  if (put_get_class($next) ne $class) {
+    # different class, so do not walk over into it
+    $next = "";
+  }
+  return $next;
+}
+
+sub get_types {
+  my $effective_user = $_[0];
+
+  if ($effective_user ne "") {
+    # Use the edit function to retrieve the settings for the
+    # "random" user
+    pusr_load($effective_user);
+  }
+
+  my $types = put_types();
+
+  return $types;
+}
+
+sub get_quality {
+  my $effective_user = $_[0];
+
+  if ($effective_user ne "") {
+    # Use the edit function to retrieve the settings for the
+    # "random" user
+    pusr_load($effective_user);
+  }
+
+  my $quality = put_quality();
+
+  return $quality;
+}
