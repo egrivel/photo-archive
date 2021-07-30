@@ -25,6 +25,9 @@ if ($image ge $end) {
   $next = $start;
 } else {
   $next = get_next_image($image);
+  if ($next eq "") {
+    $next = $start;
+  }
 }
 
 display_img($image, $next);
@@ -79,7 +82,7 @@ sub display_img {
   print "</style>\n";
   print "<script>\n";
   print "function goNext() {\n";
-  print "  location='phslideshow?image=$next';\n";
+  print "  location='phslideshow?image=$next&start=$start&end=$end';\n";
   print "};\n";
   print "</script>\n";
   print $content;
