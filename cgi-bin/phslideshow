@@ -15,7 +15,7 @@ put_restore_session();
 my $start = get_value("start");
 my $end = get_value("end");
 my $image = get_value("image");
-my $do_prev = get_value("prev");
+my $do_settings = get_value("doSettings");
 
 # auto-refresh, must be whole number
 my $auto = get_value("auto");
@@ -23,8 +23,17 @@ if (!($auto =~ /^\d+$/)) {
   $auto = "";
 }
 
+if ($do_settings ne "") {
+  display_settings($image, $start, $end, $auto);
+  exit(0);
+}
+
 if ($image eq "") {
   $image = $start;
+  if ($image eq "") {
+    # Without a start, start at the beginning
+    $image = "00000000";
+  }
 }
 
 if ( ($image =~ /^\d\d\d\d\d\d\d\d$/)
@@ -63,6 +72,9 @@ if ($next eq "" || $next eq $image) {
 if ($is_next_end) {
   # Reached the end; wrap back to the start
   $next = $start;
+  if ($next eq "") {
+    $next = "00000000";
+  }
   if ( ($next =~ /^\d\d\d\d\d\d\d\d$/)
     || ($next =~ /^\w\d\d$/)) {
     # Start is a set; use get next to get the first of the set
@@ -95,22 +107,7 @@ if ($is_prev_end) {
 display_img($image, $prev, $next, $start, $end, $auto);
 exit(0);
 
-sub display_img {
-  my $image = $_[0];
-  my $prev = $_[1];
-  my $next = $_[2];
-  my $start = $_[3];
-  my $end = $_[4];
-  my $auto = $_[5];
-
-  # Default size to "m5", which is about 1920x1080, which should be a good
-  # default for most phone, tablet and laptop displays
-  my $size = "m5";
-
-  my $image_url = "phimg?$size=$image&orientation=landscape";
-
-  my $content = "";
-
+sub custom_header {
   # Build the header elements. This contains custom styles and the script to
   # handle the body click.
   my $header = "";
@@ -119,11 +116,6 @@ sub display_img {
   $header .= "html {\n";
   $header .= "  height: 100%;\n";
   $header .= "}\n";
-  if (pdb_get_type($image) ne "MOV") {
-    $header .= "body.slideshow {\n";
-    $header .= "  background-image: url('$image_url');\n";
-    $header .= "}\n";
-  }
   $header .= "div.prevClick {\n";
   $header .= "  position: absolute;\n";
   $header .= "  top: 0;\n";
@@ -140,56 +132,182 @@ sub display_img {
   $header .= "  height: 100%;\n";
   $header .= "  cursor: pointer;\n";
   $header .= "}\n";
+  $header .= "
+  html {
+    height: 100%;
+  }
+  body.slideshow {
+    font-size: 16pt;
+    line-height: 150%;
+  }
+  body.slideshow form {
+    margin: 1em;
+  }
+  div.icons {
+    text-align: right;
+    font-size: 250%;
+    padding: 0.2em;
+    z-index: 10;
+  }
+  div.icons a {
+    position: relative;
+    display: inline-block;
+    margin: 0.1em;
+    border-radius: 1em;
+    background-color: rgba(0, 0, 0, 0.25);
+  }
+  div.icons a i {
+    display: inline-block;
+    font-size: 50%;
+    padding: 0.5em;
+    color: #fff;
+  }
+  div.icons a i.fa-stop {
+    color: #f00;
+  }
+  div.icons a i.fa-play {
+    color: #0f0;
+  }
+  div.icons a:hover i {
+    color: #c00;
+  }
+  ";
   $header .= "</style>\n";
 
-  my $prev_url = "phslideshow?image=$prev";
-  $prev_url .= "&start=$start" if ($start ne "");
-  $prev_url .= "&end=$end" if ($end ne "");
-  $prev_url .= "&auto=$auto" if ($auto ne "");
-
-  my $next_url = "phslideshow?image=$next";
-  $next_url .= "&start=$start" if ($start ne "");
-  $next_url .= "&end=$end" if ($end ne "");
-  $next_url .= "&auto=$auto" if ($auto ne "");
-
   $header .= "<script>\n";
-  $header .= "function goNext() {\n";
+  $header .= "function go(event, url) {\n";
   $header .= "  event.preventDefault();\n";
-  $header .= "  location='$next_url';\n";
-  $header .= "  return false;\n";
-  $header .= "};\n";
-  $header .= "function goPrev(event) {\n";
-  $header .= "  event.preventDefault();\n";
-  $header .= "  location='$prev_url';\n";
+  $header .= "  location=url;\n";
   $header .= "  return false;\n";
   $header .= "};\n";
   $header .= "</script>\n";
 
   pht_add_header($header);
+}
+
+sub display_img {
+  my $image = $_[0];
+  my $prev = $_[1];
+  my $next = $_[2];
+  my $start = $_[3];
+  my $end = $_[4];
+  my $auto = $_[5];
+
+  # Default size to "m5", which is about 1920x1080, which should be a good
+  # default for most phone, tablet and laptop displays
+  my $size = "m5";
+
+  my $image_url = "phimg?$size=$image&orientation=landscape";
+
+  my $content = "";
+
+  custom_header();
+
+  my $url_suffix = "";
+  $url_suffix .= "&start=$start" if ($start ne "");
+  $url_suffix .= "&end=$end" if ($end ne "");
+  $url_suffix .= "&auto=$auto" if ($auto ne "");
+
+  my $curr_url = "phslideshow?image=$image$url_suffix";
+  my $prev_url = "phslideshow?image=$prev$url_suffix";
+  my $next_url = "phslideshow?image=$next$url_suffix";
+
+  if (pdb_get_type($image) ne "MOV") {
+    my $header = "";
+    $header .= "<style>\n";
+    $header .= "body.slideshow {\n";
+    $header .= "  background-image: url('$image_url');\n";
+    $header .= "}\n";
+    $header .= "</style>\n";
+    pht_add_header($header);
+  }
+
+  pht_add_header(
+    "<script src='https://kit.fontawesome.com/c54eb67fb4.js' crossorigin='anonymous'></script>"
+  );
 
   if ($auto ne "" && $auto > 0) {
     pht_set_refresh("$auto; url='$next_url'");
   }
 
-  if (pdb_get_type($image) eq "MOV") {
-    $content =
-        "<video width='80%' height='80%' "
-      . "controls poster='phimg?mov=$image'>"
-      . "<source src='phmov?mov=$image' type='video/mp4'/>"
-      . "</video>";
-  }
-
   pht_page_start(0, 0);
 
   print "<body class='slideshow'>\n";
-  print "<div class='prevClick' onclick='goPrev(event)'>&nbsp;</div>\n";
-  print "<div class='nextClick' onclick='goNext(event)'>&nbsp;</div>\n";
-  print $content;
+  print "<div class='prevClick' onclick='go(event, \"$next_url\")'>";
+  print "&nbsp;</div>\n";
+  print "<div class='nextClick' onclick='go(event, \"$prev_url\")'>";
+  print "&nbsp;</div>\n";
 
+  print "<div class='icons'>";
+  print "<a href='phslideshow?doSettings=1&image=$image&$url_suffix'>";
+  print "<i class='fas fa-cog' title='Settings'></i>";
+  print "</a><br/>";
+  if ($auto ne "" && $auto > 0) {
+    my $auto_url = $curr_url;
+    $auto_url =~ s/&auto=\d+//;
+    print "<a href='$auto_url'>";
+    print "<i class='fas fa-stop' title='Stop'></i>";
+    print "</a><br/>";
+  } else {
+    my $auto_url = $curr_url;
+    $auto_url .= "&auto=5";
+    print "<a href='$auto_url'>";
+    print "<i class='fas fa-play' title='Auto Slideshow'></i>";
+    print "</a><br/>";
+  }
+  print "</div>\n";
+  if (pdb_get_type($image) eq "MOV") {
+    print "<video width='80%' height='80%' controls poster='phimg?mov=$image'>";
+    print "<source src='phmov?mov=$image' type='video/mp4'/>";
+    print "</video>";
+  }
   # Pre-load the next image, to make loading faster
   print "<img src='./phimg?$size=$next&orientation=landscape' width='1' ";
   print " height='1' border='0'>\n";
 
+  pht_page_end(0);
+}
+
+sub display_settings {
+  my $image = $_[0];
+  my $start = $_[1];
+  my $end = $_[2];
+  my $auto = $_[3];
+
+  my $url_suffix = "";
+  $url_suffix .= "&start=$start" if ($start ne "");
+  $url_suffix .= "&end=$end" if ($end ne "");
+  $url_suffix .= "&auto=$auto" if ($auto ne "");
+
+  my $url = "phslideshow?image=$image$url_suffix";
+
+  custom_header();
+
+  pht_page_start(0, 0);
+
+  print "<body class='slideshow'>\n";
+  print "<form method='GET' target='phslideshow'>\n";
+  print "<h1>Slideshow Settings</h1>\n";
+  print "<p>The <em>Photo Archive Slide Show Tool</em> is used to produce a\n";
+  print "slide show of photos in the photo archive. By default, the slide\n";
+  print "show starts at the beginning and goes on to the end of the archive.\n";
+  print "The settings on this page can change this default.</p>\n";
+  print "<input type='hidden' name='image' value='$image' />\n";
+  print "<p><b>Start</b>: <input name='start' value='$start' /></p>\n";
+  print "<p><b>End</b>: <input name='end' value='$end' /></p>\n";
+  print "<p><b>Auto</b>: <input name='auto' value='$auto' /></p>\n";
+  print "<p><input type='submit' value='Start' />\n";
+  print "<input type='submit' value='Cancel' onclick='go(event, \"$url\")'/>";
+  print "</p>\n";
+  print "<p>Explanation:</p>\n";
+  print "<ul>\n";
+  print "<li><b>Start</b> is the image or set ID where to start the\n";
+  print "slideshow.</li>\n";
+  print "<li><b>End</b> is the image or set ID where to end the\n";
+  print "slideshow.</li>\n";
+  print "<li><b>Auto</b>, if set, is the time (in seconds) when to\n";
+  print "automatically advance to the next image.</li>\n";
+  print "</form>\n";
   pht_page_end(0);
 }
 
