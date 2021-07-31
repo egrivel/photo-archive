@@ -133,14 +133,16 @@ sub get_value {
 
   if (parg_exists($varname)) {
     $value = parg_get($varname);
-    # Specific value specified; save it in the session
-    pses_set($varname, $value);
-  } else {
-    # No value specified; get one from the session
-    my $temp = pses_get($varname);
-    if ($temp ne "") {
-      $value = $temp;
-    }
+    # Note: using value from session is disabled for now, it doesn't work
+    # through the proxy
+    # # Specific value specified; save it in the session
+    # pses_set($varname, $value);
+    # } else {
+    #   # No value specified; get one from the session
+    #   my $temp = pses_get($varname);
+    #   if ($temp ne "") {
+    #     $value = $temp;
+    #   }
   }
   return $value;
 }
