@@ -143,6 +143,12 @@ sub custom_header {
   body.slideshow form {
     margin: 1em;
   }
+  div.no-image {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateY(-50%) translateX(-50%);
+  }
   div.icons {
     text-align: right;
     font-size: 250%;
@@ -201,6 +207,24 @@ sub display_img {
 
   my $content = "";
 
+  my $show_image = 1;
+
+  # If the image doesn't exist, give an error
+  if (!pdb_image_info($image)) {
+    $show_image = 0;
+  }
+
+  # If no category defined for the image, give an error
+  my $category = pdb_get_category($image);
+  if ($category eq "") {
+    $show_image = 0;
+  }
+
+  # If the current user isn't alowed to see the image, give an error
+  if (!pusr_allowed($PUSR_SEE . $category)) {
+    $show_image = 0;
+  }
+
   custom_header();
 
   my $url_suffix = "";
@@ -213,13 +237,15 @@ sub display_img {
   my $next_url = "phslideshow?image=$next$url_suffix";
 
   if (pdb_get_type($image) ne "MOV") {
-    my $header = "";
-    $header .= "<style>\n";
-    $header .= "body.slideshow {\n";
-    $header .= "  background-image: url('$image_url');\n";
-    $header .= "}\n";
-    $header .= "</style>\n";
-    pht_add_header($header);
+    if ($show_image) {
+      my $header = "";
+      $header .= "<style>\n";
+      $header .= "body.slideshow {\n";
+      $header .= "  background-image: url('$image_url');\n";
+      $header .= "}\n";
+      $header .= "</style>\n";
+      pht_add_header($header);
+    }
   }
 
   pht_add_header(
@@ -256,10 +282,13 @@ sub display_img {
     print "</a><br/>";
   }
   print "</div>\n";
-  if (pdb_get_type($image) eq "MOV") {
+  if ((pdb_get_type($image) eq "MOV") && $show_image) {
     print "<video width='80%' height='80%' controls poster='phimg?mov=$image'>";
     print "<source src='phmov?mov=$image' type='video/mp4'/>";
     print "</video>";
+  }
+  if (!$show_image) {
+    print "<div class='no-image'>This image is not available.</div>\n";
   }
   # Pre-load the next image, to make loading faster
   print "<img src='./phimg?$size=$next&orientation=landscape' width='1' ";
