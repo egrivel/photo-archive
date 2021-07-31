@@ -275,7 +275,7 @@ sub display_img {
     print "<i class='fas fa-stop' title='Stop'></i>";
     print "</a><br/>";
   } else {
-    my $auto_url = $curr_url;
+    my $auto_url = $next_url;
     $auto_url .= "&auto=5";
     print "<a href='$auto_url'>";
     print "<i class='fas fa-play' title='Auto Slideshow'></i>";
