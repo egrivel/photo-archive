@@ -51,7 +51,6 @@ if ($next eq "") {
   }
 }
 
-print "image = $image, next = $next, is_end = $is_end<br/>";
 if ($is_end) {
   # Reached the end; wrap back to the start
   $next = $start;
