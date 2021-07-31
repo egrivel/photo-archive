@@ -5,7 +5,8 @@ html {
 
 body {
   font-family: Verdana, Arial, Helvetica, sans-serif;
-  font-family: "Lucida Grance", "Lucida Sans Unicode", "Lucida Sans", Verdana, Tahoma, sans-serif;
+  font-family: "Lucida Grance", "Lucida Sans Unicode", "Lucida Sans", Verdana,
+    Tahoma, sans-serif;
   font-size: 10.5pt;
   line-height: 14pt;
   margin-left: 1em;
@@ -19,7 +20,12 @@ body.form {
   color: #000000;
 }
 
-body.photo, body.info, body.yearlist, body.setlist, body.imagelist, body.about {
+body.photo,
+body.info,
+body.yearlist,
+body.setlist,
+body.imagelist,
+body.about {
   background-color: #feffe7;
   color: #000000;
 }
@@ -30,7 +36,9 @@ body.about {
   margin-right: auto;
 }
 
-body.about p, body.about ul, body.about h1 {
+body.about p,
+body.about ul,
+body.about h1 {
   padding-right: 30%;
   text-align: justify;
 }
@@ -40,17 +48,19 @@ body.about div.img {
   margin: 0;
   overflow: visible;
 }
-body.about div.img, body.about h2 {
+body.about div.img,
+body.about h2 {
   clear: both;
 }
-body.about div.img+p {
+body.about div.img + p {
   margin-top: 0;
 }
 body.about img.right {
   width: 28%;
   float: right;
 }
-body.about p, body.about h2 {
+body.about p,
+body.about h2 {
   padding-left: 5px;
 }
 
@@ -68,7 +78,6 @@ body.albumlist {
 body.albumlist a {
   color: #ddeeff;
 }
-
 
 body.info {
   margin-left: 0.3em;
@@ -118,7 +127,8 @@ table.form {
   margin-right: auto;
 }
 
-.form td, .form th  {
+.form td,
+.form th {
   border: solid 1px black;
   padding: 2px;
 }
@@ -129,7 +139,8 @@ table.form {
   font-size: 90%;
 }
 
-.noborder td, .noborder th {
+.noborder td,
+.noborder th {
   border: none;
 }
 
@@ -206,7 +217,6 @@ img.qualdot {
   margin: 2px;
 }
 
-
 div#title {
   text-align: center;
   font-size: 130%;
@@ -217,7 +227,8 @@ div.datetime {
   text-align: center;
 }
 
-div.img, div.description {
+div.img,
+div.description {
   text-align: center;
   padding-top: 0.2em;
 }
@@ -238,7 +249,7 @@ div.tabs {
   text-align: left;
   border-bottom: solid 1px black;
   /* font-size: 80%; */
-/*  x-margin-bottom: 0.3em; */
+  /*  x-margin-bottom: 0.3em; */
   padding-bottom: 2px;
 }
 
@@ -265,7 +276,7 @@ span.tab a {
 span#prevlink {
   float: left;
   margin-left: 0.5em;
-/*  padding-top: -1px; */
+  /*  padding-top: -1px; */
 }
 
 span#nextlink {
@@ -304,7 +315,9 @@ div.infoline {
 }
 
 /* Hides from IE-mac \*/
-* html .infoline {height: 1%;}
+* html .infoline {
+  height: 1%;
+}
 /* End hide from IE-mac */
 
 div.infolink {
@@ -379,7 +392,8 @@ div.setlist {
   margin-bottom: 0.6em;
 }
 
-div.listtitle, div.listdescr {
+div.listtitle,
+div.listdescr {
   /* font-family: Verdana, Arial, Helvetica, Geneva, sans-serif; */
   /* font-size: 90%; */
   text-align: center;
@@ -399,7 +413,8 @@ div.imagelist {
   margin: 7px;
 }
 
-div.compactlandscape, div.compactportrait {
+div.compactlandscape,
+div.compactportrait {
   width: 150px;
   height: 150px;
   text-align: center;
@@ -543,7 +558,9 @@ div.large {
   margin-right: auto;
 }
 
-div.normal, div.small, div.thumbnail {
+div.normal,
+div.small,
+div.thumbnail {
   width: 582px;
   margin-left: auto;
   margin-right: auto;
@@ -585,11 +602,13 @@ div.album {
   font-size: 80%;
 }
 
-div.first, div.third {
+div.first,
+div.third {
   margin-right: 0.3in;
 }
 
-div.second, div.fourth {
+div.second,
+div.fourth {
 }
 
 div.fourth + div.first {
@@ -639,7 +658,7 @@ div#albumbody-small {
 
 body.albumedit div#albumbody {
   border: 5px dashed #dddddd;
-  width: 910px;  /* adjust width for the border size */
+  width: 910px; /* adjust width for the border size */
   min-height: 610px;
   margin-top: 0.75em;
   margin-bottom: 0.75em;
@@ -733,7 +752,7 @@ div#albumbody h1, div#albumbody-small h1, div#albumbody-normal h1, div#albumbody
   margin: 5px;
   margin-top: 15px;
   background-image: url("../images/icon-important-25x25.gif");
-  background-repeat:  no-repeat; 
+  background-repeat: no-repeat;
   background-position: 15px 10px;
 }
 .systemmessage h2 {
@@ -746,28 +765,50 @@ div#albumbody h1, div#albumbody-small h1, div#albumbody-normal h1, div#albumbody
 }
 
 div.quicktags {
-    clear: both;
-    margin-top: 1em;
+  clear: both;
+  margin-top: 1em;
 }
 
 div.quicktags span {
-    border: solid 1px #000;
-    border-radius: 0.3em;
-    padding: 0.2em 0.5em;
-    background: linear-gradient(#eee, #ddd);
-    margin-right: 0.5em;
-    font-weight: bold;
+  border: solid 1px #000;
+  border-radius: 0.3em;
+  padding: 0.2em 0.5em;
+  background: linear-gradient(#eee, #ddd);
+  margin-right: 0.5em;
+  font-weight: bold;
 }
 
 div.quicktags span a {
-    text-decoration: none;
-    color: inherit;
+  text-decoration: none;
+  color: inherit;
 }
 
 div.quicktags span.quicktag-on {
-    background: linear-gradient(#bef, #bdf);
+  background: linear-gradient(#bef, #bdf);
 }
 
 div.quicktags span.quicktag-on a {
-    color: #03f;
+  color: #03f;
+}
+
+/* Slideshow custom styles */
+body.slideshow {
+  background-color: #333;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center center;
+  color: #fff;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+body.slideshow video {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  min-height: 80%;
+  min-width: 80%;
+  transform: translateY(-50%) translateX(-50%);
 }

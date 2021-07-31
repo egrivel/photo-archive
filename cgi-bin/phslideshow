@@ -12,8 +12,6 @@ require "photos_util.pm";
 put_init();
 put_restore_session();
 
-pht_page_start(0, 0);
-
 my $start = get_value("start");
 my $end = get_value("end");
 my $image = get_value("image");
@@ -33,21 +31,24 @@ my $next = get_next_image($image);
 my $is_end = 0;
 if ($next eq "") {
   $is_end = 1;
-} elsif (($end =~ /^\d\d\d\d\d\d\d\d$/)
-  || ($end =~ /^\w\d\d$/)) {
-  # End is a set; check against the set name
-  my $imageset = "";
-  if ($next =~ /^(\w\d\d)\d\d\w?$/) {
-    $imageset = $1;
-  } elsif ($next =~ /^(\d\d\d\d\d\d\d\d)-\d\d\d\d\d\d\w?$/) {
-    $imageset = $1;
-  }
-  if ($imageset gt $end) {
-    $is_end = 1;
-  }
-} else {
-  if ($next gt $end) {
-    $is_end = 1;
+} elsif ($end ne "") {
+  # If $end is blank, go all the way to the end
+  if ( ($end =~ /^\d\d\d\d\d\d\d\d$/)
+    || ($end =~ /^\w\d\d$/)) {
+    # End is a set; check against the set name
+    my $imageset = "";
+    if ($next =~ /^(\w\d\d)\d\d\w?$/) {
+      $imageset = $1;
+    } elsif ($next =~ /^(\d\d\d\d\d\d\d\d)-\d\d\d\d\d\d\w?$/) {
+      $imageset = $1;
+    }
+    if ($imageset gt $end) {
+      $is_end = 1;
+    }
+  } else {
+    if ($next gt $end) {
+      $is_end = 1;
+    }
   }
 }
 
@@ -70,12 +71,36 @@ sub display_img {
   my $start = $_[2];
   my $end = $_[3];
 
+  # Default size to "m5", which is about 1920x1080, which should be a good
+  # default for most phone, tablet and laptop displays
   my $size = "m5";
 
   my $url = "phimg?$size=$image&orientation=landscape";
 
   my $content = "";
-  my $style = "";
+
+  # Build the header elements. This contains custom styles and the script to
+  # handle the body click.
+  my $header = "";
+
+  $header .= "<style>\n";
+  $header .= "html {\n";
+  $header .= "  height: 100%;\n";
+  $header .= "}\n";
+  if (pdb_get_type($image) ne "MOV") {
+    $header .= "body.slideshow {\n";
+    $header .= "  background-image: url('$url');\n";
+    $header .= "}\n";
+  }
+  $header .= "</style>\n";
+
+  $header .= "<script>\n";
+  $header .= "function goNext() {\n";
+  $header .= "  location='phslideshow?image=$next&start=$start&end=$end';\n";
+  $header .= "};\n";
+  $header .= "</script>\n";
+
+  pht_add_header($header);
 
   if (pdb_get_type($image) eq "MOV") {
     $content =
@@ -83,40 +108,14 @@ sub display_img {
       . "controls poster='phimg?mov=$image'>"
       . "<source src='phmov?mov=$image' type='video/mp4'/>"
       . "</video>";
-  } else {
-    $style .= "  background-image: url('$url');\n";
-    $style .= "  background-size: contain;\n";
-    $style .= "  background-repeat: no-repeat;\n";
-    $style .= "  background-position: center center;\n";
   }
 
-  print "<body onclick='goNext()'>\n";
-  print "<style>\n";
-  print "html {\n ";
-  print "  height: 100%;\n";
-  print "}\n";
-  print "body {\n";
-  print $style;
-  print "  background-color: #333;\n";
-  print "  width: 100%;\n";
-  print "  height: 100%;\n";
-  print "  overflow: hidden;\n";
-  print "}\n";
-  print "video {\n";
-  print "  position: absolute;\n";
-  print "  top: 50%;\n";
-  print "  left: 50%;\n";
-  print "  min-height: 80%;\n";
-  print "  min-width: 80%;\n";
-  print "  transform: translateY(-50%) translateX(-50%);\n";
-  print "}\n";
-  print "</style>\n";
-  print "<script>\n";
-  print "function goNext() {\n";
-  print "  location='phslideshow?image=$next&start=$start&end=$end';\n";
-  print "};\n";
-  print "</script>\n";
+  pht_page_start(0, 0);
+
+  print "<body class='slideshow' onclick='goNext()'>\n";
   print $content;
+
+  # Pre-load the next image, to make loading faster
   print "<img src='./phimg?$size=$next&orientation=landscape' width='1' ";
   print " height='1' border='0'>\n";
 
