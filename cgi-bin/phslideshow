@@ -124,6 +124,22 @@ sub display_img {
     $header .= "  background-image: url('$image_url');\n";
     $header .= "}\n";
   }
+  $header .= "div.prevClick {\n";
+  $header .= "  position: absolute;\n";
+  $header .= "  top: 0;\n";
+  $header .= "  left: 0;\n";
+  $header .= "  width: 39%;\n";
+  $header .= "  height: 100%;\n";
+  $header .= "  cursor: pointer;\n";
+  $header .= "}\n";
+  $header .= "div.nextClick {\n";
+  $header .= "  position: absolute;\n";
+  $header .= "  top: 0;\n";
+  $header .= "  right: 0;\n";
+  $header .= "  width: 59%;\n";
+  $header .= "  height: 100%;\n";
+  $header .= "  cursor: pointer;\n";
+  $header .= "}\n";
   $header .= "</style>\n";
 
   my $prev_url = "phslideshow?image=$prev";
@@ -166,10 +182,8 @@ sub display_img {
   pht_page_start(0, 0);
 
   print "<body class='slideshow'>\n";
-  print
-    "<div style='position: absolute; top: 0; left: 0; width: 39%; height: 100%;' onclick='goPrev(event)'>&nbsp;</div>\n";
-  print
-    "<div style='position: absolute; top: 0; right: 0; width: 59%; height: 100%;' onclick='goNext(event)'>&nbsp;</div>\n";
+  print "<div class='prevClick' onclick='goPrev(event)'>&nbsp;</div>\n";
+  print "<div class='nextClick' onclick='goNext(event)'>&nbsp;</div>\n";
   print $content;
 
   # Pre-load the next image, to make loading faster

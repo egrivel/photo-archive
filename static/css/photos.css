@@ -801,7 +801,8 @@ body.slideshow {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  cursor: pointer;
+  margin: 0;
+  padding: 0;
 }
 
 body.slideshow video {
