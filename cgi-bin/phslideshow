@@ -15,6 +15,7 @@ put_restore_session();
 my $start = get_value("start");
 my $end = get_value("end");
 my $image = get_value("image");
+my $do_prev = get_value("prev");
 
 # auto-refresh, must be whole number
 my $auto = get_value("auto");
@@ -32,11 +33,12 @@ if ( ($image =~ /^\d\d\d\d\d\d\d\d$/)
   $image = get_next_image($image);
 }
 
+my $prev = get_prev_image($image);
 my $next = get_next_image($image);
 
-my $is_end = 0;
+my $is_next_end = 0;
 if ($next eq "" || $next eq $image) {
-  $is_end = 1;
+  $is_next_end = 1;
 } elsif ($end ne "") {
   # If $end is blank, go all the way to the end
   if ( ($end =~ /^\d\d\d\d\d\d\d\d$/)
@@ -49,16 +51,16 @@ if ($next eq "" || $next eq $image) {
       $imageset = $1;
     }
     if ($imageset gt $end) {
-      $is_end = 1;
+      $is_next_end = 1;
     }
   } else {
     if ($next gt $end) {
-      $is_end = 1;
+      $is_next_end = 1;
     }
   }
 }
 
-if ($is_end) {
+if ($is_next_end) {
   # Reached the end; wrap back to the start
   $next = $start;
   if ( ($next =~ /^\d\d\d\d\d\d\d\d$/)
@@ -68,15 +70,38 @@ if ($is_end) {
   }
 }
 
-display_img($image, $next, $start, $end, $auto);
+my $is_prev_end = 0;
+if ($prev eq "" || $prev eq $image) {
+  $is_prev_end = 1;
+} elsif ($start ne "") {
+  # If $start is blank, go all the way to the beginning
+  if ($prev lt $start) {
+    $is_prev_end = 1;
+  }
+}
+
+if ($is_prev_end) {
+  # Reached the end; wrap back to the end
+  $prev = $end;
+  if ($prev eq "") {
+    $prev = get_prev_image("21991231-235959");
+  } elsif ($prev =~ /^\d\d\d\d\d\d\d\d$/) {
+    $prev = get_prev_image("$prev-235959z");
+  } elsif ($next =~ /^\w\d\d$/) {
+    $prev = get_prev_image("${prev}99z");
+  }
+}
+
+display_img($image, $prev, $next, $start, $end, $auto);
 exit(0);
 
 sub display_img {
   my $image = $_[0];
-  my $next = $_[1];
-  my $start = $_[2];
-  my $end = $_[3];
-  my $auto = $_[4];
+  my $prev = $_[1];
+  my $next = $_[2];
+  my $start = $_[3];
+  my $end = $_[4];
+  my $auto = $_[5];
 
   # Default size to "m5", which is about 1920x1080, which should be a good
   # default for most phone, tablet and laptop displays
@@ -101,6 +126,11 @@ sub display_img {
   }
   $header .= "</style>\n";
 
+  my $prev_url = "phslideshow?image=$prev";
+  $prev_url .= "&start=$start" if ($start ne "");
+  $prev_url .= "&end=$end" if ($end ne "");
+  $prev_url .= "&auto=$auto" if ($auto ne "");
+
   my $next_url = "phslideshow?image=$next";
   $next_url .= "&start=$start" if ($start ne "");
   $next_url .= "&end=$end" if ($end ne "");
@@ -108,7 +138,14 @@ sub display_img {
 
   $header .= "<script>\n";
   $header .= "function goNext() {\n";
+  $header .= "  event.preventDefault();\n";
   $header .= "  location='$next_url';\n";
+  $header .= "  return false;\n";
+  $header .= "};\n";
+  $header .= "function goPrev(event) {\n";
+  $header .= "  event.preventDefault();\n";
+  $header .= "  location='$prev_url';\n";
+  $header .= "  return false;\n";
   $header .= "};\n";
   $header .= "</script>\n";
 
@@ -128,7 +165,11 @@ sub display_img {
 
   pht_page_start(0, 0);
 
-  print "<body class='slideshow' onclick='goNext()'>\n";
+  print "<body class='slideshow'>\n";
+  print
+    "<div style='position: absolute; top: 0; left: 0; width: 39%; height: 100%;' onclick='goPrev(event)'>&nbsp;</div>\n";
+  print
+    "<div style='position: absolute; top: 0; right: 0; width: 59%; height: 100%;' onclick='goNext(event)'>&nbsp;</div>\n";
   print $content;
 
   # Pre-load the next image, to make loading faster
@@ -201,6 +242,39 @@ sub get_next_image {
     $next = "";
   }
   return $next;
+}
+
+sub get_prev_image {
+  my $imageid = $_[0];
+
+  my $user = $PUSR_GUEST_ACCOUNT;
+
+  # Set the filters appropriately
+  my $types = get_types($user);
+  my $min_quality = get_value("min_quality");
+  if ($min_quality eq "") {
+    $min_quality = get_quality($user);
+  }
+
+  # Determine the previous image
+
+  my $class = put_get_class($imageid);
+
+  my $iter = pdb_iter_new($imageid);
+  pdb_iter_filter_category($iter, $types);
+  pdb_iter_filter_min_quality($iter, $min_quality);
+
+  my $prev = pdb_iter_previous($iter);
+  if ($prev eq $imageid) {
+    $prev = pdb_iter_previous($iter);
+  }
+  pdb_iter_done($iter);
+
+  if (put_get_class($next) ne $class) {
+    # different class, so do not walk over into it
+    $prev = "";
+  }
+  return $prev;
 }
 
 sub get_types {

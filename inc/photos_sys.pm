@@ -13,7 +13,8 @@ my @sys_fields = ("syskey", "sysvalue");
 # update this every time a new version is pushed
 # Version 2.1.0: added phslideshow tool
 # Version 2.2.0: allow start and end for slide show to be set
-my $VERSION = "2.2.5";
+# Version 2.3.0: allow going back in slideshow
+my $VERSION = "2.3.0";
 
 sub psys_init {
   psql_init();
