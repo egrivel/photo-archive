@@ -233,9 +233,9 @@ sub display_img {
   pht_page_start(0, 0);
 
   print "<body class='slideshow'>\n";
-  print "<div class='prevClick' onclick='go(event, \"$next_url\")'>";
+  print "<div class='prevClick' onclick='go(event, \"$prev_url\")'>";
   print "&nbsp;</div>\n";
-  print "<div class='nextClick' onclick='go(event, \"$prev_url\")'>";
+  print "<div class='nextClick' onclick='go(event, \"$next_url\")'>";
   print "&nbsp;</div>\n";
 
   print "<div class='icons'>";
