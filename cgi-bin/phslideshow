@@ -16,6 +16,12 @@ my $start = get_value("start");
 my $end = get_value("end");
 my $image = get_value("image");
 
+# auto-refresh, must be whole number
+my $auto = get_value("auto");
+if (!($auto =~ /^\d+$/)) {
+  $auto = "";
+}
+
 if ($image eq "") {
   $image = $start;
 }
@@ -29,7 +35,7 @@ if ( ($image =~ /^\d\d\d\d\d\d\d\d$/)
 my $next = get_next_image($image);
 
 my $is_end = 0;
-if ($next eq "") {
+if ($next eq "" || $next eq $image) {
   $is_end = 1;
 } elsif ($end ne "") {
   # If $end is blank, go all the way to the end
@@ -62,7 +68,7 @@ if ($is_end) {
   }
 }
 
-display_img($image, $next, $start, $end);
+display_img($image, $next, $start, $end, $auto);
 exit(0);
 
 sub display_img {
@@ -70,12 +76,13 @@ sub display_img {
   my $next = $_[1];
   my $start = $_[2];
   my $end = $_[3];
+  my $auto = $_[4];
 
   # Default size to "m5", which is about 1920x1080, which should be a good
   # default for most phone, tablet and laptop displays
   my $size = "m5";
 
-  my $url = "phimg?$size=$image&orientation=landscape";
+  my $image_url = "phimg?$size=$image&orientation=landscape";
 
   my $content = "";
 
@@ -89,18 +96,27 @@ sub display_img {
   $header .= "}\n";
   if (pdb_get_type($image) ne "MOV") {
     $header .= "body.slideshow {\n";
-    $header .= "  background-image: url('$url');\n";
+    $header .= "  background-image: url('$image_url');\n";
     $header .= "}\n";
   }
   $header .= "</style>\n";
 
+  my $next_url = "phslideshow?image=$next";
+  $next_url .= "&start=$start" if ($start ne "");
+  $next_url .= "&end=$end" if ($end ne "");
+  $next_url .= "&auto=$auto" if ($auto ne "");
+
   $header .= "<script>\n";
   $header .= "function goNext() {\n";
-  $header .= "  location='phslideshow?image=$next&start=$start&end=$end';\n";
+  $header .= "  location='$next_url';\n";
   $header .= "};\n";
   $header .= "</script>\n";
 
   pht_add_header($header);
+
+  if ($auto ne "" && $auto > 0) {
+    pht_set_refresh("$auto; url='$next_url'");
+  }
 
   if (pdb_get_type($image) eq "MOV") {
     $content =
