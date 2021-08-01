@@ -693,7 +693,6 @@ sub ppers_sync_set_person {
       . psql_encode($personid) . "','"
       . psql_encode($imageid) . "');";
     psql_command($query);
-    return $query;
   }
 
   return "OK";
