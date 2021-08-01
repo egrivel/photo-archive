@@ -125,6 +125,8 @@ if ($put ne "") {
     $text = pusr_sync_set_user($data);
   } elsif ($put eq "person") {
     $text = ppers_sync_set_person($data);
+  } else {
+    $text = "Unknown put type: '$put'";
   }
   print "Content-Type: text/plain; charset=utf-8\n\n";
   print "$text\n";
@@ -147,6 +149,8 @@ if ($del ne "") {
     $text = pusr_sync_del_user($id);
   } elsif ($del eq "person") {
     $text = ppers_sync_del_person($id);
+  } else {
+    $text = "Unknown del type: '$del'";
   }
   print "Content-Type: text/plain; charset=utf-8\n\n";
   print "$text\n";
