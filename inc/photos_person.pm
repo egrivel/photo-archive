@@ -685,6 +685,7 @@ sub ppers_sync_set_person {
     "DELETE FROM personref WHERE personid='" . psql_encode($personid) . "'";
   psql_command($query);
 
+  return "data left: $data";
   while ($data =~ s/^([\w-]+)\n//) {
     my $imageid = $1;
     $query =
