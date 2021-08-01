@@ -15,7 +15,8 @@ my @sys_fields = ("syskey", "sysvalue");
 # Version 2.2.0: allow start and end for slide show to be set
 # Version 2.3.0: allow going back in slideshow
 # Version 2.4.0: start/stop and settings in slideshow
-my $VERSION = "2.4.3";
+# Version 2.5.0: allow reverse synchronization
+my $VERSION = "2.5.0-alpha";
 
 sub psys_init {
   psql_init();

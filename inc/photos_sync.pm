@@ -7,6 +7,8 @@ my $gl_ua;
 my $gl_file_delay = 500;
 my $gl_api_delay = 100;
 
+my $gl_nr_retries = 15;
+
 sub psync_get_content {
   my $url = $_[0];
   my $retry = 0;
@@ -28,13 +30,52 @@ sub psync_get_content {
     if (!($response->status_line =~ /no route to host/)) {
       # Seems to be getting this error a lot; just sleep for a second
       # and retry
-      if ($retry < 15) {
+      if ($retry < $gl_nr_retries) {
         print "Connection error, retry...\n";
         $retry++;
         usleep(2 * 1000 * 1000);
         next;
       }
-      die "Still getting a connection error after 5 tries\n";
+      die "Still getting a connection error after $gl_nr_retries tries\n";
+    }
+
+    # Some other error, so die anyway
+    if (!$response->is_success) {
+      die "Error fetching url $url:\n  " . $response->status_line . "\n";
+    }
+  }
+
+  return $response->decoded_content();
+}
+
+sub psync_post_content {
+  my $url = $_[0];
+  my $data = $_[1];
+
+  if (!defined($gl_ua)) {
+    $gl_ua = new LWP::UserAgent;
+  }
+
+  # usleep takes microseconds, so multiply miliseconds by 1000
+  usleep($gl_api_delay * 1000);
+
+  my $response;
+  while (1) {
+    $response = $gl_ua->post($url, {'data' => $data});
+    if ($response->is_success) {
+      last;
+    }
+
+    if (!($response->status_line =~ /no route to host/)) {
+      # Seems to be getting this error a lot; just sleep for a second
+      # and retry
+      if ($retry < $gl_nr_retries) {
+        print "Connection error, retry...\n";
+        $retry++;
+        usleep(2 * 1000 * 1000);
+        next;
+      }
+      die "Still getting a connection error after $gl_nr_retries tries\n";
     }
 
     # Some other error, so die anyway
@@ -153,6 +194,30 @@ sub psync_retrieve_file {
   my $root = local_photos_directory();
   my $url = "$master?set=$set&file=$fileid";
   psync_get_file($url, "$root/$set/$fileid");
+}
+
+sub psync_put_data {
+  my $type = $_[0];
+  my $data = $_[1];
+
+  my $master = get_master();
+  my $url = "$master?put=$type";
+  my $response = psync_post_content($url, $data);
+  if ($response ne "OK") {
+    die "Putting data $url resulted in '$response'\n";
+  }
+}
+
+sub psync_del_data {
+  my $type = $_[0];
+  my $id = $_[1];
+
+  my $master = get_master();
+  my $url = "$master?del=$type&id=$id";
+  my $response = psync_get_content($url);
+  if ($response ne "OK") {
+    die "Delete $url resulted in '$response'\n";
+  }
 }
 
 return 1;

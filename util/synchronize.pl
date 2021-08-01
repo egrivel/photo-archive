@@ -11,10 +11,10 @@ my $gl_debug = 0;
 
 my $arg = shift;
 while (defined($arg)) {
-    if ($arg eq "--debug") {
-        $gl_debug = 1;
-    }
-    $arg = shift;
+  if ($arg eq "--debug") {
+    $gl_debug = 1;
+  }
+  $arg = shift;
 }
 
 require "photos_util.pm";

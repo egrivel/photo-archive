@@ -103,4 +103,12 @@ sub get_master {
   return setting_get("master");
 }
 
+sub get_remote_key {
+  return setting_get("remote-key");
+}
+
+sub get_master_key {
+  return setting_get("master-key");
+}
+
 return 1;
