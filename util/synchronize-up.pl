@@ -131,39 +131,38 @@ sub sync_persons {
     return;
   }
 
-  my $local_text = ppers_get_hash_text();
+  my $local_text = ppers_get_all_persons_text(0);
   my %local_persons = ();
-  while ($local_text =~ s/^(\w+):\s+([^\n]+)\n//) {
-    my $name = $1;
+  while ($local_text =~ s/^([\w-]+):\s+([^\n]+)\n//) {
+    my $id = $1;
     my $value = $2;
-    if (defined($local_persons{$name})) {
+    if (defined($local_persons{$id})) {
       print "ERROR: person $name listed multiple times in local list\n";
       return;
     }
-    $local_persons{$name} = $value;
+    $local_persons{$id} = $value;
   }
 
-  my $remote_text = psync_get_persons_info();
+  my $remote_text = psync_get_all_persons_info();
   my %remote_persons = ();
-  while ($remote_text =~ s/^(\w+):\s+([^\n]+)\n//) {
-    my $name = $1;
+  while ($remote_text =~ s/^([\w-]+):\s+([^\n]+)\n//) {
+    my $instead = $1;
     my $value = $2;
-    if (defined($remote_persons{$name})) {
-      print "ERROR: person $name listed multiple times in remote list\n";
+    if (defined($remote_persons{$id})) {
+      print "ERROR: person $id listed multiple times in remote list\n";
       return;
     }
-    $remote_persons{$name} = $value;
+    $remote_persons{$id} = $value;
   }
 
   my $person;
   foreach $person (keys %local_persons) {
     if (!defined($remote_persons{$person})) {
       print "Person $person does not exist remotely, must be added.\n";
-      print $local_persons{$user} . "\n";
-      psync_put_data("person", $local_persons{$person}, $gl_key);
+      sync_single_person($person, 0);
     } elsif ($local_persons{$person} ne $remote_persons{$person}) {
       print "Person $person is different remotely, must be updated.\n";
-      psync_put_data("person", $local_persons{$person}, $gl_key);
+      sync_single_person($person, 0);
     }
   }
   foreach $person (keys %remote_persons) {
@@ -172,6 +171,14 @@ sub sync_persons {
       psync_del_data("person", $person, $gl_key);
     }
   }
+}
+
+sub sync_single_person {
+  my $person = $_[0];
+
+  my $local_text = ppers_get_person_text($person, $do_update);
+  print "person $person: $local_text\n";
+  psync_put_data("person", $local_text, $gl_key);
 }
 
 sub sync_years {
