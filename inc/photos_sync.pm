@@ -208,6 +208,7 @@ sub psync_put_data {
   my $url = "$master";
   my $payloadref = {'put' => $type, 'data' => $data, 'key' => $key};
   my $response = psync_post_content($url, $payloadref);
+  print "psync_put_data $type: got $response\n";
   $response =~ s/^\s*(.*?)\s*$/$1/s;
   if ($response ne "OK") {
     die "Putting data $url for $type resulted in '$response'\n";

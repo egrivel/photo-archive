@@ -179,6 +179,7 @@ sub sync_single_person {
   my $local_text = ppers_get_person_text($person, $do_update);
   print "person $person: $local_text\n";
   psync_put_data("person", $local_text, $gl_key);
+  print "done putting person\n\n";
 }
 
 sub sync_years {
