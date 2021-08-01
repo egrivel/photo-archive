@@ -123,9 +123,10 @@ if ($put ne "") {
   my $text = "Unknown PUT type '$put'";
   if ($put eq "user") {
     $text = pusr_sync_set_user($data);
+    pusr_get_hash_text(1);
   } elsif ($put eq "person") {
-    # $text = "Putting person: $data";
     $text = ppers_sync_set_person($data);
+    ppers_get_all_persons_text(1);
   } else {
     $text = "Unknown put type: '$put'";
   }
@@ -148,8 +149,10 @@ if ($del ne "") {
   my $text = "Unknown DEL type '$del'";
   if ($del eq "user") {
     $text = pusr_sync_del_user($id);
+    pusr_get_hash_text(1);
   } elsif ($del eq "person") {
     $text = ppers_sync_del_person($id);
+    ppers_get_all_persons_text(1);
   } else {
     $text = "Unknown del type: '$del'";
   }

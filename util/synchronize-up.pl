@@ -144,7 +144,6 @@ sub sync_persons {
   }
 
   my $remote_text = psync_get_all_persons_info();
-  print "Remote person text:\n$remote_text\n\n";
   my %remote_persons = ();
   while ($remote_text =~ s/^([\w-]+):\s+([^\n]+)\n//) {
     my $id = $1;
