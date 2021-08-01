@@ -663,6 +663,7 @@ sub ppers_sync_all_persons {
 
 sub ppers_sync_set_person {
   my $data = $_[0];
+  my $response = "";
 
   # The person data consists of a first row with the person record, followed
   # by zero or more rows with image links
@@ -675,7 +676,7 @@ sub ppers_sync_set_person {
     } else {
       return "Person database info doesn't start with personid: $database";
     }
-    psql_upsert("person", $1);
+    psql_upsert("person", $database);
   } else {
     return "Person data doesn't start with database: $data";
   }

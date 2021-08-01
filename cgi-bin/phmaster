@@ -125,7 +125,6 @@ if ($put ne "") {
     $text = pusr_sync_set_user($data);
   } elsif ($put eq "person") {
     $text = ppers_sync_set_person($data);
-    $text .= "\nSynching person $id";
   } else {
     $text = "Unknown put type: '$put'";
   }
