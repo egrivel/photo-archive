@@ -107,20 +107,18 @@ sub sync_users {
     if (!defined($remote_users{$user})) {
       print "User $user does not exist remotely, must be added.\n";
       print $local_users{$user} . "\n";
-      psync_put_data("user", $local_users{$user});
+      psync_put_data("user", $local_users{$user}, $gl_key);
     } elsif ($local_users{$user} ne $remote_users{$user}) {
       print "User $user is different remotely, must be updated.\n";
-      psync_put_data("user", $local_users{$user});
+      psync_put_data("user", $local_users{$user}, $gl_key);
     }
   }
   foreach $user (keys %remote_users) {
     if (!defined($local_users{$user})) {
       print "User $user does not exist locally, must be removed.\n";
-      psync_del_data("user", $user);
+      psync_del_data("user", $user, $gl_key);
     }
   }
-
-  print "Sync users not yet inplemented\n\n";
 }
 
 sub sync_persons {
@@ -133,7 +131,47 @@ sub sync_persons {
     return;
   }
 
-  print "Sync persons not yet inplemented\n\n";
+  my $local_text = ppers_get_hash_text();
+  my %local_persons = ();
+  while ($local_text =~ s/^(\w+):\s+([^\n]+)\n//) {
+    my $name = $1;
+    my $value = $2;
+    if (defined($local_persons{$name})) {
+      print "ERROR: person $name listed multiple times in local list\n";
+      return;
+    }
+    $local_persons{$name} = $value;
+  }
+
+  my $remote_text = psync_get_persons_info();
+  my %remote_persons = ();
+  while ($remote_text =~ s/^(\w+):\s+([^\n]+)\n//) {
+    my $name = $1;
+    my $value = $2;
+    if (defined($remote_persons{$name})) {
+      print "ERROR: person $name listed multiple times in remote list\n";
+      return;
+    }
+    $remote_persons{$name} = $value;
+  }
+
+  my $person;
+  foreach $person (keys %local_persons) {
+    if (!defined($remote_persons{$person})) {
+      print "Person $person does not exist remotely, must be added.\n";
+      print $local_persons{$user} . "\n";
+      psync_put_data("person", $local_persons{$person}, $gl_key);
+    } elsif ($local_persons{$person} ne $remote_persons{$person}) {
+      print "Person $person is different remotely, must be updated.\n";
+      psync_put_data("person", $local_persons{$person}, $gl_key);
+    }
+  }
+  foreach $person (keys %remote_persons) {
+    if (!defined($local_persons{$person})) {
+      print "Person $person does not exist locally, must be removed.\n";
+      psync_del_data("person", $person, $gl_key);
+    }
+  }
 }
 
 sub sync_years {

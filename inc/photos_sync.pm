@@ -50,7 +50,10 @@ sub psync_get_content {
 
 sub psync_post_content {
   my $url = $_[0];
-  my $data = $_[1];
+  my $dataref = $_[1];
+  # my $type = $_[1];
+  # my $data = $_[2];
+  # my $key = $_[3];
 
   if (!defined($gl_ua)) {
     $gl_ua = new LWP::UserAgent;
@@ -61,7 +64,7 @@ sub psync_post_content {
 
   my $response;
   while (1) {
-    $response = $gl_ua->post($url, {'data' => $data});
+    $response = $gl_ua->post($url, $dataref);
     if ($response->is_success) {
       last;
     }
@@ -199,24 +202,31 @@ sub psync_retrieve_file {
 sub psync_put_data {
   my $type = $_[0];
   my $data = $_[1];
+  my $key = $_[2];
 
   my $master = get_master();
-  my $url = "$master?put=$type";
-  my $response = psync_post_content($url, $data);
+  my $url = "$master";
+  my $payloadref = {'put' => $type, 'data' => $data, 'key' => $key};
+  my $response = psync_post_content($url, $payloadref);
+  $response =~ s/^\s*(.*?)\s*$/$1/s;
   if ($response ne "OK") {
-    die "Putting data $url resulted in '$response'\n";
+    die "Putting data $url for $type resulted in '$response'\n";
   }
 }
 
 sub psync_del_data {
   my $type = $_[0];
   my $id = $_[1];
+  my $key = $_[2];
 
   my $master = get_master();
-  my $url = "$master?del=$type&id=$id";
-  my $response = psync_get_content($url);
+  my $url = "$master";
+  my $payloadref = {'del' => $type, 'id' => $id, 'key' => $key};
+  # Note: use a 'put' to keep they key encrypted
+  my $response = psync_put_content($url, $payloadref);
+  $response =~ s/^\s*(.*?)\s*$/$1/s;
   if ($response ne "OK") {
-    die "Delete $url resulted in '$response'\n";
+    die "Delete $type, $id resulted in '$response'\n";
   }
 }
 

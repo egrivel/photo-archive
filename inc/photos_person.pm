@@ -656,4 +656,16 @@ sub ppers_sync_all_persons {
   phash_set_value("persons", "persons", $new_hash);
 }
 
+sub ppers_sync_set_person {
+  my $database = $_[0];
+  psql_upsert("person", $database);
+  return "OK";
+}
+
+sub ppers_sync_del_person {
+  my $person = $_[0];
+  ppers_delete_person($person);
+  return "OK";
+}
+
 return 1;
