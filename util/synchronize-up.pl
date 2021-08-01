@@ -144,9 +144,10 @@ sub sync_persons {
   }
 
   my $remote_text = psync_get_all_persons_info();
+  print "Remote person text:\n$remote_text\n\n";
   my %remote_persons = ();
   while ($remote_text =~ s/^([\w-]+):\s+([^\n]+)\n//) {
-    my $instead = $1;
+    my $id = $1;
     my $value = $2;
     if (defined($remote_persons{$id})) {
       print "ERROR: person $id listed multiple times in remote list\n";
