@@ -159,10 +159,10 @@ sub sync_persons {
   foreach $person (keys %local_persons) {
     if (!defined($remote_persons{$person})) {
       print "Person $person does not exist remotely, must be added.\n";
-      sync_single_person($person, 0);
+      sync_single_person($person);
     } elsif ($local_persons{$person} ne $remote_persons{$person}) {
       print "Person $person is different remotely, must be updated.\n";
-      sync_single_person($person, 0);
+      sync_single_person($person);
     }
   }
   foreach $person (keys %remote_persons) {
@@ -192,5 +192,126 @@ sub sync_years {
     return;
   }
 
-  print "Sync years not yet inplemented\n\n";
+  my $local_text = pdb_get_all_years_hash_text(0);
+  my %local_years = ();
+  while ($local_text =~ s/(\d\d\d\d): (\w+)\s*//s) {
+    $local_years{$1} = $2;
+  }
+
+  my $remote_text = psync_get_all_years_info();
+  my %remote_years = ();
+  while ($remote_text =~ s/(\d\d\d\d): (\w+)\s*//s) {
+    $remote_years{$1} = $2;
+  }
+
+  my $year;
+  foreach $year (keys %local_years) {
+    if (!defined($remote_years{$year})) {
+      print "Year $year does not exist remotely, must be added.\n";
+      sync_single_year($year);
+    } elsif ($local_years{$year} ne $remote_years{$year}) {
+      print "Year $year is different remotely, must be updated.\n";
+      sync_single_year($year);
+    }
+  }
+  foreach $year (keys %remote_years) {
+    if (!defined($local_years{$year})) {
+      print "Year $year does not exist locally, must be removed.\n";
+      die "Removing remote year not yet implemented.\n";
+    }
+  }
+}
+
+sub sync_single_year {
+  my $year = $_[0];
+
+  my $local_text = pdb_get_year_hash_text($year, 0);
+  print "Year $year: local text $local_text\n";
+  my %local_sets = ();
+  while ($local_text =~ s/^(\w+):\s+(\w+)?\n//s) {
+    $local_sets{$1} = $2;
+  }
+
+  my $remote_text = psync_get_year_info($year);
+  print "Year $year: remote text $remote_text\n";
+  my %remote_sets = ();
+  while ($remote_text =~ s/^(\w+):\s+(\w+)?\n//s) {
+    $remote_sets{$1} = $2;
+  }
+
+  my $set;
+  foreach $set (keys %local_sets) {
+    if (!defined($remote_sets{$set})) {
+      print "Set $set does not exist remotely, but be added.\n";
+      sync_single_set($set);
+    } elsif ($local_sets{$set} ne $remote_sets{$set}) {
+      print "Set $set is different remotely, must be updated.\n";
+      sync_single_set($set);
+    }
+  }
+
+  foreach $set (keys %remote_sets) {
+    if (!defined($local_set{$set})) {
+      print "Set $set does not exist locally, must be removed.\n";
+      die "Removing remote set not yet implemented.\n";
+    }
+  }
+}
+
+sub sync_single_set {
+  my $set = $_[0];
+
+  my $local_text = pdb_get_set_hash_text($set, 0);
+  print "Set $set: local text $local_text\n";
+  my $local_database = "";
+  if ($local_text =~ s/^database:\s+([^\n]*)\n//s) {
+    $local_database = $1;
+  }
+  my %local_images = ();
+  while ($local_text =~ s/^([\w-]+): (\w+)\n?//s) {
+    $local_images{$1} = $2;
+  }
+
+  my $remote_text = psync_get_set_info($set);
+  print "Set $set: remote text $remote_text\n";
+  my $remote_database = "";
+  if ($remote_text =~ s/^database:\s+([^\n]*)\n//s) {
+    $remote_database = $1;
+  }
+  my %remote_images = ();
+  while ($remote_text =~ s/^([\w-]+): (\w+)\n?//s) {
+    $remote_images{$1} = $2;
+  }
+
+  if ($local_database ne $remote_database) {
+    if ($local_database eq "") {
+      print "Set $set does not exist locally, must be removed.\n";
+      die "Removing remote set not yet implemented.\n";
+    } else {
+      psync_put_data("set", $local_database, $gl_key);
+    }
+  }
+
+  my $image;
+  foreach $image (keys %local_images) {
+    if (!defined($remote_images{$image})) {
+      print "Image $image does not exist remotely, must be added.\n";
+      psync_single_image($image);
+    } elsif ($local_images{$image} ne $remote_images{$image}) {
+      print "Image $image is different remotely, must be updated.\n";
+      psync_singe_image($image);
+    }
+  }
+  foreach $image (keys %remote_images) {
+    if (!defined($local_imags{$image})) {
+      print "Image $image does not exist locally, must be removed.\n";
+      psync_del_data("image", $image, $gl_key);
+    }
+  }
+}
+
+sub psync_single_image {
+  my $image = $_[0];
+
+  print "Updating image $image not yet implemented\n";
 }

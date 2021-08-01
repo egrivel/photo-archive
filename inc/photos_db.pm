@@ -21,22 +21,22 @@ my @image_fields = (
   "type",
 );
 my @set_fields = (
-  "setid",       "sortid",  "datetime", "title",
+  "setid", "sortid", "datetime", "title",
   "description", "comment", "category", "year",
   "copyright",
 );
 
-my $cur_image  = "";
-my $cur_set    = "";
+my $cur_image = "";
+my $cur_set = "";
 my %image_data = ();
-my %set_data   = ();
+my %set_data = ();
 
-my $cur_save_image    = "";
-my $cur_save_set      = "";
-my %save_image_data   = ();
-my %save_set_data     = ();
+my $cur_save_image = "";
+my $cur_save_set = "";
+my %save_image_data = ();
+my %save_set_data = ();
 my $cur_image_changed = 0;
-my $cur_set_changed   = 0;
+my $cur_set_changed = 0;
 
 sub pdb_init {
   return psql_init();
@@ -46,7 +46,7 @@ sub pdb_create_tables {
   return "no init" if (!pdb_init());
 
   psql_create_table("images", \@image_fields);
-  psql_create_table("sets",   \@set_fields);
+  psql_create_table("sets", \@set_fields);
 
   my $query =
     "CREATE INDEX setcat ON images (setid(8), category(3), imageid(16));";
@@ -86,7 +86,7 @@ sub pdb_image_exists {
   return 0 if (!pdb_init());
 
   my $image_exists = 1;
-  my $query        = "SELECT imageid FROM images WHERE imageid='$imageid';";
+  my $query = "SELECT imageid FROM images WHERE imageid='$imageid';";
   psql_command($query) || return 0;
   my $record = psql_next_record(psql_iterator());
   if (!defined($record)) {
@@ -103,7 +103,7 @@ sub pdb_set_exists {
   return 0 if (!pdb_init());
 
   my $set_exists = 1;
-  my $query      = "SELECT setid FROM sets WHERE setid='$setid';";
+  my $query = "SELECT setid FROM sets WHERE setid='$setid';";
   psql_command($query) || return 0;
 
   my $record = psql_next_record(psql_iterator());
@@ -125,7 +125,7 @@ sub pdb_image_info {
   return 0 if (!pdb_init());
 
   my $image_exists = 1;
-  my $query        = "SELECT * FROM images WHERE imageid='$imageid';";
+  my $query = "SELECT * FROM images WHERE imageid='$imageid';";
   psql_command($query) || return 0;
   my $record = psql_next_record(psql_iterator());
   my $i;
@@ -138,7 +138,7 @@ sub pdb_image_info {
     $image_exists = 0;
   }
 
-  for ($i = 0 ; defined($image_fields[$i]) ; $i++) {
+  for ($i = 0; defined($image_fields[$i]); $i++) {
     my $field = $image_fields[$i];
     my $value = psql_get_field($i, $field, $record);
     $image_data{$field} = $value;
@@ -166,7 +166,7 @@ sub pdb_set_info {
   if (!defined($record)) {
     $set_exists = 0;
   }
-  for ($i = 0 ; defined($set_fields[$i]) ; $i++) {
+  for ($i = 0; defined($set_fields[$i]); $i++) {
     my $field = $set_fields[$i];
     my $value = psql_get_field($i, $field, $record);
     $set_data{$field} = $value;
@@ -297,7 +297,7 @@ sub pdb_get_setcopyright {
 }
 
 sub pdb_set_contains_category {
-  my $setid    = $_[0];
+  my $setid = $_[0];
   my $category = $_[1];
 
   # Disabled this function; it makes the photos too slow
@@ -306,7 +306,7 @@ sub pdb_set_contains_category {
   return 0 if ($category eq "");
 
   my $query =
-"SELECT imageid FROM images WHERE setid='$setid' AND category='$category' LIMIT 1;";
+    "SELECT imageid FROM images WHERE setid='$setid' AND category='$category' LIMIT 1;";
   psql_command($query) || return 0;
   my $record = psql_next_record(psql_iterator());
   return defined($record);
@@ -318,16 +318,16 @@ sub pdb_open_image {
 
   pdb_image_info($imageID);
   my $i;
-  for ($i = 0 ; defined($image_fields[$i]) ; $i++) {
-    if (defined($image_data{ $image_fields[$i] })) {
-      $save_image_data{ $image_fields[$i] } = $image_data{ $image_fields[$i] };
+  for ($i = 0; defined($image_fields[$i]); $i++) {
+    if (defined($image_data{$image_fields[$i]})) {
+      $save_image_data{$image_fields[$i]} = $image_data{$image_fields[$i]};
     } else {
-      $save_image_data{ $image_fields[$i] } = "";
+      $save_image_data{$image_fields[$i]} = "";
     }
   }
-  $cur_save_image                      = $imageID;
-  $save_image_data{ $image_fields[0] } = $imageID;
-  $cur_image_changed                   = 0;
+  $cur_save_image = $imageID;
+  $save_image_data{$image_fields[0]} = $imageID;
+  $cur_image_changed = 0;
 }
 
 sub pdb_set_sortid {
@@ -395,8 +395,7 @@ sub pdb_set_location {
 
 sub pdb_set_category {
   if (defined($_[0])
-    && ($_[0] ne ""))
-  {
+    && ($_[0] ne "")) {
     if ($save_image_data{"category"} ne $_[0]) {
       $save_image_data{"category"} = $_[0];
       $cur_image_changed = 1;
@@ -449,18 +448,18 @@ sub pdb_set_type {
 sub pdb_close_image {
   if (($cur_save_image ne "") && $cur_image_changed) {
     my $query = "SELECT imageid FROM images WHERE imageid='$cur_save_image';";
-    my $end   = "";
+    my $end = "";
     psql_command($query);
     my $record = psql_next_record(psql_iterator());
     if (defined($record)) {
       $query = "UPDATE images SET ";
-      $end   = " WHERE imageid = '$cur_save_image'";
+      $end = " WHERE imageid = '$cur_save_image'";
     } else {
       $query = "INSERT INTO images SET ";
     }
-    for ($i = 0 ; defined($image_fields[$i]) ; $i++) {
+    for ($i = 0; defined($image_fields[$i]); $i++) {
       $query .= "," if ($i);
-      my $value = psql_encode($save_image_data{ $image_fields[$i] });
+      my $value = psql_encode($save_image_data{$image_fields[$i]});
       $query .= " $image_fields[$i]='$value' ";
     }
     $query .= "$end;";
@@ -469,7 +468,7 @@ sub pdb_close_image {
       $cur_image = "";
     }
   }
-  $cur_save_image    = "";
+  $cur_save_image = "";
   $cur_image_changed = 0;
 }
 
@@ -491,11 +490,11 @@ sub pdb_open_set {
 
   pdb_set_info($setid);
   my $i;
-  for ($i = 0 ; defined($set_fields[$i]) ; $i++) {
-    $save_set_data{ $set_fields[$i] } = $set_data{ $set_fields[$i] };
+  for ($i = 0; defined($set_fields[$i]); $i++) {
+    $save_set_data{$set_fields[$i]} = $set_data{$set_fields[$i]};
   }
   $cur_save_set = $setid;
-  $save_set_data{ $set_fields[0] } = $setid;
+  $save_set_data{$set_fields[0]} = $setid;
 }
 
 sub pdb_set_setsortid {
@@ -520,8 +519,7 @@ sub pdb_set_setcomment {
 
 sub pdb_set_setcategory {
   if (defined($_[0])
-    && ($_[0] ne ""))
-  {
+    && ($_[0] ne "")) {
     $save_set_data{"category"} = $_[0];
   }
 }
@@ -537,21 +535,22 @@ sub pdb_set_setyear {
 sub pdb_close_set {
   if ($cur_save_set ne "") {
     my $query = "SELECT setid FROM sets WHERE setid='$cur_save_set'";
-    my $end   = "";
+    my $end = "";
     psql_command($query);
     my $record = psql_next_record(psql_iterator());
     if (!defined($record)) {
       $query = "INSERT INTO sets SET ";
     } else {
       $query = "UPDATE sets SET ";
-      $end   = " WHERE setid = '$cur_save_set'";
+      $end = " WHERE setid = '$cur_save_set'";
     }
-    for ($i = 0 ; defined($set_fields[$i]) ; $i++) {
+    for ($i = 0; defined($set_fields[$i]); $i++) {
       $query .= "," if ($i);
-      my $value = psql_encode($save_set_data{ $set_fields[$i] });
+      my $value = psql_encode($save_set_data{$set_fields[$i]});
       if (!defined($value)) {
-          print "WARNING: Query $query, field $i ($set_fields[$i]), no defined value\n";
-          $value = '';
+        print
+          "WARNING: Query $query, field $i ($set_fields[$i]), no defined value\n";
+        $value = '';
       }
       $query .= " $set_fields[$i]='$value' ";
     }
@@ -562,9 +561,9 @@ sub pdb_close_set {
 }
 
 sub pdb_create_basesortid {
-  my $setid  = $_[0];
+  my $setid = $_[0];
   my $sortid = "";
-  my $year   = pcom_get_year($setid);
+  my $year = pcom_get_year($setid);
 
   # Start of the sort ID is the year
   $sortid = $year;
@@ -592,7 +591,7 @@ sub pdb_create_basesortid {
 }
 
 sub pdb_create_setsortid {
-  my $setid  = $_[0];
+  my $setid = $_[0];
   my $sortid = pdb_create_basesortid($setid);
   $sortid .= $setid;
 
@@ -605,24 +604,24 @@ sub pdb_create_setsortid {
 # information. This is used in the sort ID calculation only
 #
 sub pdb_fix_imageid {
-  my $imageid  = $_[0];
+  my $imageid = $_[0];
   my $timezone = $_[1];
-  my $dst      = $_[2];
+  my $dst = $_[2];
 
   if ($imageid =~ /^(\d\d\d\d)(\d\d)(\d\d)-(\d\d)(\d\d)(\d\d)(\w?)$/) {
-    my $year   = $1;
-    my $month  = $2;
-    my $day    = $3;
-    my $hour   = $4;
+    my $year = $1;
+    my $month = $2;
+    my $day = $3;
+    my $hour = $4;
     my $minute = $5;
     my $second = $6;
     my $suffix = $7;
 
     if ($timezone =~ /^\+(\d\d):(\d\d)$/) {
-      $hour   -= $1;
+      $hour -= $1;
       $minute -= $2;
     } elsif ($timezone =~ /^\-(\d\d):(\d\d)$/) {
-      $hour   += $1;
+      $hour += $1;
       $minute += $2;
     }
     if ($dst eq "Yes") {
@@ -658,8 +657,7 @@ sub pdb_fix_imageid {
       } elsif (($month == 4)
         || ($month == 6)
         || ($month == 9)
-        || ($month == 11))
-      {
+        || ($month == 11)) {
         # 30-day month
         $day -= 1;
       } elsif ($month == 0) {
@@ -687,9 +685,9 @@ sub pdb_fix_imageid {
 }
 
 sub pdb_create_sortid {
-  my $imageid  = $_[0];
+  my $imageid = $_[0];
   my $timezone = $_[1];
-  my $dst      = $_[2];
+  my $dst = $_[2];
   if (!defined($timezone)) {
     $timezone = "+00:00";
   }
@@ -711,17 +709,17 @@ sub pdb_create_sortid {
 # Implement the iterator functionality
 # ------------------------------------------------------------
 
-my @iter           = ();
-my @iter_type      = ();
-my @iter_filter    = ();
+my @iter = ();
+my @iter_type = ();
+my @iter_filter = ();
 my @iter_subfilter = ();
-my @iter_limit     = ();
-my @iter_count     = ();
-my @iter_result    = ();
+my @iter_limit = ();
+my @iter_count = ();
+my @iter_result = ();
 
 sub pdb_iter_new {
   my $imageID = $_[0];
-  my $limit   = $_[1];
+  my $limit = $_[1];
   if (!defined($limit)) {
     $limit = 1;
   }
@@ -738,10 +736,10 @@ sub pdb_iter_new {
       $sortid = pdb_create_sortid($imageID);
       if ($sortid =~ /^(\d\d\d\d\w)(\d\d\d\d)(\d\d)(\d\d)(.*)$/) {
         my $part1 = $1;
-        my $year  = $2;
+        my $year = $2;
         my $month = $3;
-        my $day   = $4;
-        my $rest  = $5;
+        my $day = $4;
+        my $rest = $5;
         $day--;
         if ($day < 1) {
           $month--;
@@ -750,8 +748,7 @@ sub pdb_iter_new {
           } elsif (($month == 4)
             || ($month == 6)
             || ($month == 9)
-            || ($month == 11))
-          {
+            || ($month == 11)) {
             $day = 30;
           } else {
             $day = 31;
@@ -774,10 +771,10 @@ sub pdb_iter_new {
     }
     $iter[$i] = $sortid;
   }
-  $iter_filter[$i]    = "";
+  $iter_filter[$i] = "";
   $iter_subfilter[$i] = "";
-  $iter_limit[$i]     = $limit;
-  $iter_count[$i]     = 0;
+  $iter_limit[$i] = $limit;
+  $iter_count[$i] = 0;
   my @result = ();
   $iter_result[$i] = [@result];
 
@@ -815,10 +812,10 @@ sub pdb_iter_set_new {
     $iter[$i] = $sortid;
     pcom_log($PCOM_DEBUG, "Set iter[$i] to $sortid");
   }
-  $iter_filter[$i]    = "";
+  $iter_filter[$i] = "";
   $iter_subfilter[$i] = "";
-  $iter_limit[$i]     = $limit;
-  $iter_count[$i]     = 0;
+  $iter_limit[$i] = $limit;
+  $iter_count[$i] = 0;
   my @result = ();
   $iter_result[$i] = [@result];
 
@@ -838,7 +835,7 @@ sub pdb_iter_set_done {
 # add a filter to only allow the selected categories. The categories
 # are given as a string, and any category matches
 sub pdb_iter_filter_category {
-  my $iter       = $_[0];
+  my $iter = $_[0];
   my $categories = $_[1];
 
   # If no categories given, we're done
@@ -864,7 +861,7 @@ sub pdb_iter_filter_category {
 }
 
 sub pdb_iter_filter_min_quality {
-  my $iter    = $_[0];
+  my $iter = $_[0];
   my $quality = $_[1];
 
   if ($iter_type[$iter] eq "set") {
@@ -883,7 +880,7 @@ sub pdb_iter_filter_min_quality {
 }
 
 sub pdb_iter_filter_max_quality {
-  my $iter    = $_[0];
+  my $iter = $_[0];
   my $quality = $_[1];
 
   if ($iter_type[$iter] eq "set") {
@@ -902,7 +899,7 @@ sub pdb_iter_filter_max_quality {
 }
 
 sub pdb_iter_filter_persons {
-  my $iter          = $_[0];
+  my $iter = $_[0];
   my $person_filter = $_[1];
   if ($person_filter =~ /^\(.*\)$/) {
     # proper SQL list format
@@ -927,7 +924,7 @@ sub pdb_iter_filter_year {
 }
 
 sub pdb_iter_filter_setid {
-  my $iter  = $_[0];
+  my $iter = $_[0];
   my $setid = $_[1];
 
   # Add logical "and" with previous filters
@@ -938,7 +935,7 @@ sub pdb_iter_filter_setid {
 }
 
 sub pdb_iter_filter_year_range {
-  my $iter  = $_[0];
+  my $iter = $_[0];
   my $year1 = $_[1];
   my $year2 = $_[2];
 
@@ -980,7 +977,7 @@ sub pdb_iter_filter_comment {
 }
 
 sub pdb_do_iter {
-  my $iter  = $_[0];
+  my $iter = $_[0];
   my $query = $_[1];
 
   my $result = "";
@@ -1007,9 +1004,9 @@ sub pdb_do_iter {
   # We don't have any results. Do the query and remember the results
   # that we get back.
   psql_command($query);
-  my $pit    = psql_iterator();
+  my $pit = psql_iterator();
   my $record = psql_next_record($pit);
-  my $count  = 0;
+  my $count = 0;
   @result = ();
   $result[0] = "";
 
@@ -1021,7 +1018,7 @@ sub pdb_do_iter {
     $record = psql_next_record($pit);
   }
   $iter_result[$iter] = [@result];
-  $iter_count[$iter]  = 1;
+  $iter_count[$iter] = 1;
 
   # Return the first result we got;
   return $result[0];
@@ -1034,7 +1031,7 @@ sub pdb_iter_debug {
     print "iter_type[$i] is $iter_type[$i]\n";
     print "iter_result[$i] is $iter_result[$i]\n";
     my $resultref = $iter_result[$i];
-    my $j         = 0;
+    my $j = 0;
     while (defined($$resultref[$j])) {
       print "  result[$j] is $$resultref[$j]\n";
       $j++;
@@ -1045,7 +1042,7 @@ sub pdb_iter_debug {
 }
 
 sub pdb_iter_next {
-  my $iter  = $_[0];
+  my $iter = $_[0];
   my $query = "";
 
   if ($iter_type[$iter] eq "image") {
@@ -1078,7 +1075,7 @@ sub pdb_iter_next {
 }
 
 sub pdb_iter_previous {
-  my $iter  = $_[0];
+  my $iter = $_[0];
   my $query = "";
 
   if ($iter_type[$iter] eq "image") {
@@ -1233,7 +1230,7 @@ sub pdb_filter_persons {
 }
 
 sub pdb_year_exists {
-  my $year  = $_[0];
+  my $year = $_[0];
   my $query = "SELECT setid FROM sets WHERE year = '$year' LIMIT 1";
   psql_command($query) || return 0;
   my $record = psql_next_record(psql_iterator());
@@ -1269,7 +1266,7 @@ sub pdb_delete_set_if_empty {
   my $setid = $_[0];
 
   my $query = "DELETE FROM sets WHERE (setid='$setid') "
-      . "AND NOT EXISTS (SELECT * FROM images WHERE setid = '$setid') ";
+    . "AND NOT EXISTS (SELECT * FROM images WHERE setid = '$setid') ";
   psql_command($query);
 }
 
@@ -1277,9 +1274,9 @@ sub pdb_delete_set_if_empty {
 # underlying images. This will allow images to still exist (albeit
 # unreachable) in the backup when they are accidentally deleted.
 sub pdb_delete_set_sync {
-    my $setid = $_[0];
-    my $query = "DELETE FROM sets WHERE setid='$setid'";
-    psql_command($query);
+  my $setid = $_[0];
+  my $query = "DELETE FROM sets WHERE setid='$setid'";
+  psql_command($query);
 }
 
 sub pdb_random_image {
@@ -1323,7 +1320,7 @@ sub pdb_latest_set {
 sub pdb_dump_tables {
   my $setid = $_[0];
   if (defined($setid)) {
-    psql_dump_table("sets",   -1, \@set_fields,   $setid);
+    psql_dump_table("sets", -1, \@set_fields, $setid);
     psql_dump_table("images", -1, \@image_fields, $setid);
   } else {
     psql_dump_table("images", 1, \@image_fields);
@@ -1338,7 +1335,7 @@ sub pdb_dump_set {
   my $setid = $_[0];
 
   psql_dump_records("images", "setid='$setid'", \@image_fields);
-  psql_dump_records("sets",   "setid='$setid'", \@set_fields);
+  psql_dump_records("sets", "setid='$setid'", \@set_fields);
 
   return "OK";
 }
@@ -1447,8 +1444,10 @@ sub pdb_get_file_item_hash {
 
   if ($do_update || $file_hash eq "") {
     my %hash = phash_get_resource($resourceid);
-    my ($dev, $ino, $mode, $nlink, $uid, $gid, $rdev, $size,
-      $atime, $mtime, $ctime, $blksize, $blocks) = stat($fname);
+    my (
+      $dev, $ino, $mode, $nlink, $uid, $gid, $rdev,
+      $size, $atime, $mtime, $ctime, $blksize, $blocks
+    ) = stat($fname);
 
     if (defined($hash{"timestamp"}) && $hash{"timestamp"} == $mtime) {
       return $file_hash;
@@ -1668,7 +1667,7 @@ sub pdb_sync_image {
         $current_hash = pdb_get_file_item_hash($fileid, $fname, 1);
         if ($current_hash eq $hash) {
           # OK, we have the file with the right hash, so done
-          return;;
+          return;
         }
       }
     }
@@ -1712,7 +1711,7 @@ sub pdb_sync_year {
   my $year = $_[0];
   my $debug = $_[1];
   if (!defined($debug)) {
-      $debug = 0;
+    $debug = 0;
   }
 
   print "Syncing year $year\n";
@@ -1737,16 +1736,16 @@ sub pdb_sync_year {
 
   my $local_sets = pdb_get_year_sets($year);
   for (my $i = 0; defined(@$local_sets[$i]); $i++) {
-      my $setid = @$local_sets[$i];
-      if (!defined($remote_sets{$setid})) {
-          print "Remove set $setid\n";
-          pdb_delete_set_sync($setid);
-      }
+    my $setid = @$local_sets[$i];
+    if (!defined($remote_sets{$setid})) {
+      print "Remove set $setid\n";
+      pdb_delete_set_sync($setid);
+    }
   }
 
   my $text = pdb_get_year_hash_text($year, 0);
   print "Local sync info:\n$text\n" if ($debug);
-  
+
   my $new_hash = phash_do_hash($text);
   phash_set_value("y-$year", "year", $new_hash);
 }
@@ -1754,7 +1753,7 @@ sub pdb_sync_year {
 sub pdb_sync_all_years {
   my $debug = $_[0];
   if (!defined($debug)) {
-      $debug = 0;
+    $debug = 0;
   }
   print "Syncing all years\n";
   my $sync_info = psync_get_all_years_info();
@@ -1772,7 +1771,7 @@ sub pdb_sync_all_years {
     }
   }
 
-  my $text = pdb_get_all_years_hash_text($year, 0);
+  my $text = pdb_get_all_years_hash_text(0);
   my $new_hash = phash_do_hash($text);
   phash_set_value("years", "years", $new_hash);
 }
