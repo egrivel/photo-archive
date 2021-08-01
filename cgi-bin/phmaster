@@ -149,6 +149,7 @@ if ($del ne "") {
     $text = pusr_sync_del_user($id);
   } elsif ($del eq "person") {
     $text = ppers_sync_del_person($id);
+    $text .= "\nSynching person $id";
   } else {
     $text = "Unknown del type: '$del'";
   }
