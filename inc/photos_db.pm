@@ -1480,6 +1480,12 @@ sub pdb_get_image_hash_text {
 
   $database = pdb_get_image_data($image);
   $text .= "database: " . $database . "\n";
+  if ($set eq "") {
+    # Didn't get the set, extract it from the database info
+    if ($database =~ /^imageid='[\w-]+', setid='(\w+)'/) {
+      $set = $1;
+    }
+  }
   my $root = local_photos_directory();
 
   $item = "tif/$image.nef";

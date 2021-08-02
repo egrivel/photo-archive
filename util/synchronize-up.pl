@@ -296,10 +296,10 @@ sub sync_single_set {
   foreach $image (keys %local_images) {
     if (!defined($remote_images{$image})) {
       print "Image $image does not exist remotely, must be added.\n";
-      psync_single_image($image);
+      psync_single_image($image, $set);
     } elsif ($local_images{$image} ne $remote_images{$image}) {
       print "Image $image is different remotely, must be updated.\n";
-      psync_singe_image($image);
+      psync_singe_image($image, $set);
     }
   }
   foreach $image (keys %remote_images) {
@@ -312,6 +312,12 @@ sub sync_single_set {
 
 sub psync_single_image {
   my $image = $_[0];
+  my $set = $_[1];
 
+  my $local_text = pdb_get_image_hash_text($image, $set, 0);
+  print "Image $image: local text $local_text\n";
+  my $
+  my $remote_text = psync_get_image_info($imageid);
+  print "Image $image: remote text $remote_text\n";
   print "Updating image $image not yet implemented\n";
 }

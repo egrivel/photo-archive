@@ -130,8 +130,12 @@ if ($put ne "") {
   } elsif ($put eq "set") {
     if ($data =~ /^setid='(\w+)'/) {
       my $setid = $1;
-      $text = psql_upsert("sets", $data);
-      pdb_get_set_hash_text($setid, 1)
+      if (psql_upsert("sets", $data)) {
+        $text = "OK";
+      } else {
+        $text = "Put set data: upsert failed.";
+      }
+      pdb_get_set_hash_text($setid, 1);
     } else {
       $text = "Put set data: no set ID: $data";
     }
@@ -172,8 +176,13 @@ if ($del ne "") {
     ppers_get_all_persons_text(1);
   } elsif ($del eq "set") {
     $text = pdb_delete_set_sync($id);
+    pdb_get_set_hash_text($id, 1);
   } elsif ($del eq "image") {
-    $text = pdb_trash_image($id);
+    pfs_trash_image($id);
+    pdb_trash_image($id);
+    ppers_delete_image($id);
+    $text = "OK";
+    pdb_get_image_hash_text($id, "", 1);
   } else {
     $text = "Unknown del type: '$del'";
   }
