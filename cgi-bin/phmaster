@@ -152,6 +152,20 @@ if ($put ne "") {
     } else {
       $text = "Put image data: not image or set ID: $data";
     }
+  } elsif ($put eq "file") {
+    if ($data =~ s/^([\w\/\.-]+):(\w+)://) {
+      my $fname = $_[0];
+      my $set = $_[1];
+      my $basedir = pfs_get_set_basedir($set);
+      make_dirs($basedir);
+      if (open(FILE, "|base64 -d > \"$basedir/$fname\"")) {
+        print FILE $data;
+        close FILE;
+        $text = "OK";
+      } else {
+        $text = "Could not write to $basedir/$fname";
+      }
+    }
   } else {
     $text = "Unknown put type: '$put'";
   }
@@ -241,4 +255,25 @@ sub do_year {
   print "content-type: text/plain\n\n";
   print $text;
   exit(0);
+}
+
+sub make_single_dir {
+  my $dir = $_[0];
+
+  if (!-d $dir) {
+    mkdir($dir);
+    system("chmod a+w \"$dir\"");
+  }
+}
+
+sub make_dirs {
+  my $basedir = $_[0];
+
+  make_single_dir($basedir);
+  make_single_dir("$basedir/custom");
+  make_single_dir("$basedir/edited");
+  make_single_dir("$basedir/large");
+  make_single_dir("$basedir/normal");
+  make_single_dir("$basedir/thumbnails");
+  make_single_dir("$basedir/tif");
 }

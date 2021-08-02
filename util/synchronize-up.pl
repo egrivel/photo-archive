@@ -367,5 +367,23 @@ sub psync_single_file {
   my $fname = $_[0];
   my $set = $_[1];
 
+  my $basedir = pfs_get_set_basedir($set);
+  my $fullname = "$basedir/$fname";
+  if (!-f $fullname) {
+    print "Cannot read '$fname'\n";
+  }
+  open(FILE, "base64 \"$fullname\"|") || die "Cannot parse $fname\n";
+  my $data = "";
+  while (<FILE>) {
+    chomp();
+    s/[\r\n]//s;
+    $data .= $_;
+  }
+  close FILE;
+
+  # print "Got for file $fname:\n$data\n";
+  psync_put_data("file", "$fname:$set:$data", $gl_key);
+  print "sent data for $fname\n";
+  exit(0);
   print "Sending files is not yet implemented.\n";
 }

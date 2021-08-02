@@ -37,7 +37,7 @@ sub pfs_get_setdir {
     return "";
   }
 
-  my $setID   = pcom_get_set($imageID);
+  my $setID = pcom_get_set($imageID);
   my $basedir = pfs_get_set_basedir($setID);
 
   # The default should work just about always
@@ -48,8 +48,7 @@ sub pfs_get_setdir {
     || (-f "$basedir/tif/$imageID.mp4")
     || (-f "$basedir/tif/$imageID.mov")
     || (-f "$basedir/tif/$imageID.JPG")
-    || (-f "$basedir/edited/$imageID.jpg"))
-  {
+    || (-f "$basedir/edited/$imageID.jpg")) {
     return "$basedir";
   }
 
@@ -63,8 +62,7 @@ sub pfs_get_setdir {
     || (-f "$basedir/tif/$imageID.mp4")
     || (-f "$basedir/tif/$imageID.mov")
     || (-f "$basedir/tif/$imageID.JPG")
-    || (-f "$basedir/edited/$imageID.jpg"))
-  {
+    || (-f "$basedir/edited/$imageID.jpg")) {
     return "$basedir";
   }
 
@@ -89,10 +87,8 @@ sub pfs_get_size {
     if (
       (-f "$setdir/jpeg/$imageID.jpg")
       && !(
-        (-f "$setdir/edited/$imageID.jpg") || (-f "$setdir/jpeg2/$imageID.jpg")
-      )
-      )
-    {
+        (-f "$setdir/edited/$imageID.jpg") || (-f "$setdir/jpeg2/$imageID.jpg"))
+    ) {
       return $PCOM_NORMAL;
     }
     return $PCOM_LARGE;
@@ -151,7 +147,7 @@ sub pfs_get_edited_location {
       # Check to see if there is a RawShooter updated file
       my $fname = "$setdir/edited/$imageID.jpg";
       my $ftime = pfs_get_time($fname);
-      my $nr    = "02";
+      my $nr = "02";
       while (-f "$setdir/edited/$imageID-$nr.jpg") {
         if (pfs_get_time("$setdir/edited/$imageID-$nr.jpg") > $ftime) {
           $fname = "$setdir/edited/$imageID-$nr.jpg";
@@ -169,7 +165,7 @@ sub pfs_get_edited_location {
 
 sub pfs_get_size_location {
   my $imageID = $_[0];
-  my $size    = $_[1];
+  my $size = $_[1];
   my $altsize = $_[2];
 
   # Note: invalid image ID gives empty $setdir
@@ -268,7 +264,7 @@ sub pfs_get_raw_location {
 
 sub pfs_get_buffer_location {
   my $imageID = $_[0];
-  my $size    = $_[1];
+  my $size = $_[1];
 
   if ( ($size ne "thumbnail")
     && ($size ne $PCOM_THUMBNAIL_SQUARE)
@@ -279,8 +275,7 @@ sub pfs_get_buffer_location {
     && ($size ne "super")
     && ($size ne "freeform")
     && ($size ne "2k")
-    && ($size ne "4k"))
-  {
+    && ($size ne "4k")) {
     # Invalid size, can't buffer
     return "";
   }
@@ -318,13 +313,13 @@ sub pfs_get_buffer_location {
 }
 
 sub pfs_get_custom_realsize_location {
-  my $imageID    = $_[0];
-  my $width      = $_[1];
-  my $height     = $_[2];
-  my $realwidth  = $_[3];
+  my $imageID = $_[0];
+  my $width = $_[1];
+  my $height = $_[2];
+  my $realwidth = $_[3];
   my $realheight = $_[4];
-  my $x_offset   = $_[5];
-  my $y_offset   = $_[6];
+  my $x_offset = $_[5];
+  my $y_offset = $_[6];
 
   if (!defined($x_offset)) {
     $x_offset = 0;
@@ -358,7 +353,7 @@ sub pfs_get_custom_realsize_location {
 
 sub pfs_get_mobile_location {
   my $imageID = $_[0];
-  my $size    = $_[1];
+  my $size = $_[1];
 
   # Note: invalid image ID gives empty $setdir
   # if (!pcom_is_valid($imageID)) {
@@ -378,9 +373,9 @@ sub pfs_get_mobile_location {
 }
 
 sub pfs_get_custom_location {
-  my $imageID  = $_[0];
-  my $width    = $_[1];
-  my $height   = $_[2];
+  my $imageID = $_[0];
+  my $width = $_[1];
+  my $height = $_[2];
   my $x_offset = $_[3];
   my $y_offset = $_[4];
 
@@ -451,7 +446,7 @@ sub pfs_get_raw_type {
 sub pfs_get_file_dimensions {
   my $fname = $_[0];
 
-  my $width  = 0;
+  my $width = 0;
   my $height = 0;
 
   # Note: use the "identify" command for JPEG files, since it seems to
@@ -461,8 +456,7 @@ sub pfs_get_file_dimensions {
       ($fname =~ /\.nef$/i)
       #	    || ($fname =~ /\.jpe?g$/i)
       || ($fname =~ /\.tiff?$/i)
-      )
-    {
+    ) {
       if (open(SIZE, "exiftool $fname|")) {
         while (<SIZE>) {
           if (/Image Width\s+:\s+(\d+)/i) {
@@ -479,7 +473,7 @@ sub pfs_get_file_dimensions {
       if (open(SIZE, "identify $fname|")) {
         while (<SIZE>) {
           if (/(\d+)x(\d+)/) {
-            $width  = $1;
+            $width = $1;
             $height = $2;
             last;
           }
@@ -494,7 +488,7 @@ sub pfs_get_file_dimensions {
 sub pfs_get_orig_dimensions {
   my $imageID = $_[0];
 
-  my $width  = 0;
+  my $width = 0;
   my $height = 0;
 
   if (pcom_is_valid($imageID)) {
@@ -515,7 +509,7 @@ sub pfs_get_orig_dimensions {
 }
 
 sub pfs_get_orig_orientation {
-  my $imageID     = $_[0];
+  my $imageID = $_[0];
   my $orientation = "";
 
   if (pcom_is_valid($imageID)) {
@@ -531,7 +525,7 @@ sub pfs_get_orig_orientation {
 }
 
 sub pfs_get_orientation {
-  my $imageID     = $_[0];
+  my $imageID = $_[0];
   my $orientation = "";
 
   my $fname = pfs_get_edited_location($imageID);
@@ -540,9 +534,9 @@ sub pfs_get_orientation {
     #        pcom_log($PCOM_DEBUG, "Get orig orientation for $imageID");
     $orientation = pfs_get_orig_orientation($imageID);
   } else {
-   #        pcom_log($PCOM_DEBUG, "Get file dimensions for $imageID at $fname");
+    #        pcom_log($PCOM_DEBUG, "Get file dimensions for $imageID at $fname");
     my ($width, $height) = pfs_get_file_dimensions($fname);
-#        pcom_log($PCOM_DEBUG, "Got file dimensions ($width,$height) for $imageID at $fname");
+    #        pcom_log($PCOM_DEBUG, "Got file dimensions ($width,$height) for $imageID at $fname");
     if ($width >= $height) {
       $orientation = $PCOM_LANDSCAPE;
     } else {
@@ -554,9 +548,9 @@ sub pfs_get_orientation {
 }
 
 sub pfs_cmd_copy_exif {
-  my $imageID    = $_[0];
+  my $imageID = $_[0];
   my $targetfile = $_[1];
-  my $origfile   = pfs_get_raw_location($imageID);
+  my $origfile = pfs_get_raw_location($imageID);
 
   my $cmd = "";
   if ($origfile =~ /\.nef$/) {
@@ -576,9 +570,9 @@ sub pfs_cmd_copy_exif {
 }
 
 sub pfs_cmd_orig {
-  my $imageID  = $_[0];
+  my $imageID = $_[0];
   my $rotation = $_[1];
-  my $outfile  = $_[2];
+  my $outfile = $_[2];
 
   # To get the original file, the only issue is to get a conversion from
   # the raw format to JPEG
@@ -592,22 +586,22 @@ sub pfs_cmd_orig {
 }
 
 sub pfs_cmd_resize {
-  my $imageID       = $_[0];
-  my $rotation      = $_[1];
-  my $outfile       = $_[2];
-  my $longval       = $_[3];
-  my $shortval      = $_[4];
-  my $use_edit      = $_[5];
-  my $fill_portrait = $_[6];     # if true, fill portrait to make it
-                                 # landscape. Also, fill freeform
-  my $realwidth     = $_[7];
-  my $realheight    = $_[8];
-  my $keep_aspect   = $_[9];
+  my $imageID = $_[0];
+  my $rotation = $_[1];
+  my $outfile = $_[2];
+  my $longval = $_[3];
+  my $shortval = $_[4];
+  my $use_edit = $_[5];
+  my $fill_portrait = $_[6];    # if true, fill portrait to make it
+                                # landscape. Also, fill freeform
+  my $realwidth = $_[7];
+  my $realheight = $_[8];
+  my $keep_aspect = $_[9];
   my $rotate_always = $_[10];    # if true, even rotate when using edited file
-  my $scale         = $_[11];    # pre-computed scale; ignores all other
+  my $scale = $_[11];            # pre-computed scale; ignores all other
                                  # size parameters
-  my $x_offset      = $_[12];    # shift image horizontally
-  my $y_offset      = $_[13];    # shift image vertically
+  my $x_offset = $_[12];         # shift image horizontally
+  my $y_offset = $_[13];         # shift image vertically
 
   if (!defined($scale) || ($scale eq "")) {
     $scale = 0;
@@ -691,7 +685,7 @@ sub pfs_cmd_resize {
     # is a landscape or freeform original)
     if (($width > $height) || $is_freeform) {
       my $temp = $width;
-      $width  = $height;
+      $width = $height;
       $height = $temp;
     } else {
       # Original is already portrait; don't rotate (except for a
@@ -706,9 +700,9 @@ sub pfs_cmd_resize {
 
   my $finalsize = "";
   my $scalesize = "";
-  my $extraval  = 2 * $shortval;
-  my $page      = "";
-  my $ratio     = $longval / $shortval;
+  my $extraval = 2 * $shortval;
+  my $page = "";
+  my $ratio = $longval / $shortval;
 
   if ($scale > 0) {
     $finalsize = int($width * $scale) . "x" . int($height * $scale);
@@ -719,7 +713,7 @@ sub pfs_cmd_resize {
       # ratio as the original
       $finalsize = "";
       $scalesize = "";
-      $page      = "";
+      $page = "";
       if ($keep_aspect) {
         my $scale = 1;
         if ($width >= $height) {
@@ -727,8 +721,7 @@ sub pfs_cmd_resize {
             $scale = $longval / $width;
           }
           if ( ($height > $shortval)
-            && ($scale > ($shortval / $height)))
-          {
+            && ($scale > ($shortval / $height))) {
             $scale = $shortval / $height;
           }
         } else {
@@ -736,8 +729,7 @@ sub pfs_cmd_resize {
             $scale = $longval / $height;
           }
           if ( ($width > $shortval)
-            && ($scale > ($shortval / $width)))
-          {
+            && ($scale > ($shortval / $width))) {
             $scale = $shortval / $width;
           }
         }
@@ -765,12 +757,12 @@ sub pfs_cmd_resize {
           # Original is portrait
           if ($fill_portrait) {
             pcom_log($PCOM_DEBUG,
-"freeform, don't keep aspect, portrait, fillportrait=$fill_portrait"
+              "freeform, don't keep aspect, portrait, fillportrait=$fill_portrait"
             );
             $finalsize = "${longval}x${shortval}";
-            $ratio     = $shortval / $height;
+            $ratio = $shortval / $height;
             my $scaleheight = $shortval;
-            my $scalewidth  = int($width * $ratio);
+            my $scalewidth = int($width * $ratio);
             $scalesize = "${scalewidth}x${scaleheight}";
             my $offset = int(($longval - $scalewidth) / 2);
             $page = "-bordercolor \"#000000\" -border ${offset}x0";
@@ -813,7 +805,7 @@ sub pfs_cmd_resize {
           # resize based on height, crop width
           $scalesize = "${extraval}x${shortval}";
           my $scalefactor = $shortval / $height;
-          my $scalewidth  = int($width * $scalefactor);
+          my $scalewidth = int($width * $scalefactor);
           if (($scalewidth - $longval) > 10) {
             $offset = int(($scalewidth - $longval) / 2);
             $x_offset += $offset;
@@ -825,7 +817,7 @@ sub pfs_cmd_resize {
         if ($fill_portrait) {
           $finalsize = "${longval}x${shortval}";
           my $scaleheight = $shortval;
-          my $scalewidth  = int($width * $shortval / $height);
+          my $scalewidth = int($width * $shortval / $height);
           $scalesize = "${scalewidth}x${scaleheight}";
           my $offset = int(($longval - $scalewidth) / 2);
           $page = "-bordercolor \"#000000\" -border ${offset}x0";
@@ -841,7 +833,7 @@ sub pfs_cmd_resize {
             # resize based on height, crop width
             $scalesize = "${longval}x${longval}";
             my $scalefactor = $longval / $height;
-            my $scalewidth  = int($width * $scalefactor);
+            my $scalewidth = int($width * $scalefactor);
             if (($scalewidth - $shortval) > 10) {
               $offset = int(($scalewidth - $shortval) / 2);
               $x_offset += $offset;
@@ -904,7 +896,7 @@ sub pfs_cmd_resize {
     $remove_profile = "+profile \"*\"";
   }
   return
-"convert -size $finalsize $fname $rotate -resize $scalesize $page -crop $finalsize $realresize $quality $sharpen $remove_profile jpg:- > $outfile; "
+    "convert -size $finalsize $fname $rotate -resize $scalesize $page -crop $finalsize $realresize $quality $sharpen $remove_profile jpg:- > $outfile; "
     . pfs_cmd_copy_exif($imageID, $outfile);
 }
 
@@ -914,15 +906,15 @@ sub pfs_cmd_large {
 
 sub pfs_cmd_large_movie {
   my $imageid = $_[0];
-  my $orig    = pfs_get_raw_location($imageid);
+  my $orig = pfs_get_raw_location($imageid);
   my $outfile = pfs_get_buffer_location($imageid, "large");
   if (($orig ne "") && ($outfile ne "")) {
-      $outfile =~ s/\.jpg$/.mp4/;
-      # add -max_muxing_queue_size 400 to handle "movies with sparse video
-      # or audio frames", see:
-      #    https://trac.ffmpeg.org/ticket/6375
+    $outfile =~ s/\.jpg$/.mp4/;
+    # add -max_muxing_queue_size 400 to handle "movies with sparse video
+    # or audio frames", see:
+    #    https://trac.ffmpeg.org/ticket/6375
     return
-"ffmpeg -i $orig -max_muxing_queue_size 400 -vcodec libx264 -acodec libvorbis -aq 5 -ac 2 -qmax 25 -vf scale=960:540 $outfile.mp4; qt-faststart $outfile.mp4 $outfile; rm $outfile.mp4; chmod a+w $outfile";
+      "ffmpeg -i $orig -max_muxing_queue_size 400 -vcodec libx264 -acodec libvorbis -aq 5 -ac 2 -qmax 25 -vf scale=960:540 $outfile.mp4; qt-faststart $outfile.mp4 $outfile; rm $outfile.mp4; chmod a+w $outfile";
   }
   return "";
 }
@@ -960,11 +952,11 @@ sub pfs_trash_image {
   # of the way.
   pfs_discard_cache($imageID);
 
-  my $setID    = pcom_get_set($imageID);
+  my $setID = pcom_get_set($imageID);
   my $trashdir = pfs_get_set_basedir($setID) . "/../trash";
 
-  my $rawfile    = pfs_get_raw_location($imageID);
-  my $origfile   = pfs_get_orig_location($imageID);
+  my $rawfile = pfs_get_raw_location($imageID);
+  my $origfile = pfs_get_orig_location($imageID);
   my $editedfile = pfs_get_edited_location($imageID);
 
   if ($rawfile ne "") {
@@ -987,9 +979,9 @@ sub pfs_trash_image {
 sub pfs_discard_cache {
   my $imageID = $_[0];
 
-  my $largefile     = pfs_get_large_location($imageID);
-  my $normalfile    = pfs_get_normal_location($imageID);
-  my $smallfile     = pfs_get_small_location($imageID);
+  my $largefile = pfs_get_large_location($imageID);
+  my $normalfile = pfs_get_normal_location($imageID);
+  my $smallfile = pfs_get_small_location($imageID);
   my $thumbnailfile = pfs_get_thumbnail_location($imageID);
 
   if ($largefile ne "") {
