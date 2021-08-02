@@ -154,8 +154,8 @@ if ($put ne "") {
     }
   } elsif ($put eq "file") {
     if ($data =~ s/^([\w\/\.-]+):(\w+)://) {
-      my $fname = $_[0];
-      my $set = $_[1];
+      my $fname = $1;
+      my $set = $2;
       my $basedir = pfs_get_set_basedir($set);
       make_dirs($basedir);
       if (open(FILE, "|base64 -d > \"$basedir/$fname\"")) {
