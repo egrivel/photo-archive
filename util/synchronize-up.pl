@@ -256,6 +256,8 @@ sub sync_single_year {
       die "Removing remote set not yet implemented.\n";
     }
   }
+
+  psync_hash_data("year", $year, $gl_key);
 }
 
 sub sync_single_set {
@@ -299,7 +301,7 @@ sub sync_single_set {
       psync_single_image($image, $set);
     } elsif ($local_images{$image} ne $remote_images{$image}) {
       print "Image $image is different remotely, must be updated.\n";
-      psync_singe_image($image, $set);
+      psync_single_image($image, $set);
     }
   }
   foreach $image (keys %remote_images) {
@@ -308,6 +310,8 @@ sub sync_single_set {
       psync_del_data("image", $image, $gl_key);
     }
   }
+
+  psync_hash_data("set", $set, $gl_key);
 }
 
 sub psync_single_image {
@@ -325,7 +329,7 @@ sub psync_single_image {
     $local_files{$1} = $2;
   }
 
-  my $remote_text = psync_get_image_info($imageid);
+  my $remote_text = psync_get_image_info($image);
   print "Image $image: remote text $remote_text\n";
   my $remote_database = "";
   if ($remote_text =~ s/^database:\s+([^\n]*)\n//s) {
@@ -361,6 +365,8 @@ sub psync_single_image {
       psync_del_data("file", $file, $gl_key);
     }
   }
+
+  psync_hash_data("image", "$set:$image", $gl_key);
 }
 
 sub psync_single_file {
@@ -384,6 +390,4 @@ sub psync_single_file {
   # print "Got for file $fname:\n$data\n";
   psync_put_data("file", "$fname:$set:$data", $gl_key);
   print "sent data for $fname\n";
-  exit(0);
-  print "Sending files is not yet implemented.\n";
 }

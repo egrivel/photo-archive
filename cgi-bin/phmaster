@@ -156,18 +156,52 @@ if ($put ne "") {
     if ($data =~ s/^([\w\/\.-]+):(\w+)://) {
       my $fname = $1;
       my $set = $2;
+      my $image = "";
+      if ($fname =~ /\w+\/([\w-]+)\.\w+/) {
+        $image = $1;
+      }
       my $basedir = pfs_get_set_basedir($set);
       make_dirs($basedir);
       if (open(FILE, "|base64 -d > \"$basedir/$fname\"")) {
         print FILE $data;
         close FILE;
         $text = "OK";
+        if ($image ne "") {
+          # update the hash to include the uploaded images
+          pdb_get_image_hash_text($image, $set, 1);
+        }
       } else {
         $text = "Could not write to $basedir/$fname";
       }
     }
   } else {
     $text = "Unknown put type: '$put'";
+  }
+  print "Content-Type: text/plain; charset=utf-8\n\n";
+  print "$text\n";
+  exit(0);
+}
+
+my $hash = parg_get("hash");
+if ($hash ne "") {
+  # Handle the requests to update a hash, at the end of an image, set,
+  # or year.
+  my $data = parg_get("data");
+  if ($hash eq "image") {
+    if ($data =~ /^(\w+):([\w-]+)$/) {
+      pdb_get_image_hash_text($2, $1, 1);
+      $text = "OK";
+    } else {
+      $text = "image hash missing data: '$data'";
+    }
+  } elsif ($hash eq "set") {
+    pdb_get_set_hash_text($data, 1);
+    $text = "OK";
+  } elsif ($hash eq "year") {
+    pdb_get_year_hash_text($data, 1);
+    $text = "OK";
+  } else {
+    $text = "Unknown hash type: '$hash'";
   }
   print "Content-Type: text/plain; charset=utf-8\n\n";
   print "$text\n";
