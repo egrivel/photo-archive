@@ -143,7 +143,11 @@ if ($put ne "") {
     if ($data =~ /^imageid='([\w-]+)', sortid='[\w-]+', setid='(\w+)'/) {
       my $imageid = $1;
       my $setid = $2;
-      $text = psql_upsert("images", $data);
+      if (psql_upsert("images", $data)) {
+        $text = "OK";
+      } else {
+        $text = "Put image data: upsert failed.";
+      }
       pdb_get_image_hash_text($imageid, $setid, 1);
     } else {
       $text = "Put image data: not image or set ID: $data";
