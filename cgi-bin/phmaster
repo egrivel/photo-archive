@@ -140,7 +140,7 @@ if ($put ne "") {
       $text = "Put set data: no set ID: $data";
     }
   } elsif ($put eq "image") {
-    if ($data =~ /^imageid='([\w-]+)', setid='(\w+)'/) {
+    if ($data =~ /^imageid='([\w-]+)', sortid='[\w-]+', setid='(\w+)'/) {
       my $imageid = $1;
       my $setid = $2;
       $text = psql_upsert("images", $data);

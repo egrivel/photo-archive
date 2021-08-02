@@ -316,8 +316,56 @@ sub psync_single_image {
 
   my $local_text = pdb_get_image_hash_text($image, $set, 0);
   print "Image $image: local text $local_text\n";
-  my $
+  my $local_database = "";
+  if ($local_text =~ s/^database:\s+([^\n]*)\n//s) {
+    $local_database = $1;
+  }
+  my %local_files = ();
+  while ($local_text =~ s/^([\w\/\.-]+): (\w+)\n?//s) {
+    $local_files{$1} = $2;
+  }
+
   my $remote_text = psync_get_image_info($imageid);
   print "Image $image: remote text $remote_text\n";
-  print "Updating image $image not yet implemented\n";
+  my $remote_database = "";
+  if ($remote_text =~ s/^database:\s+([^\n]*)\n//s) {
+    $remote_database = $1;
+  }
+  my %remote_files = ();
+  while ($remote_text =~ s/^([\w\/\.-]+): (\w+)\n?//s) {
+    $remote_files{$1} = $2;
+  }
+
+  if ($local_database ne $remote_database) {
+    if ($local_database eq "") {
+      print "Image $image does not exist locally, must be removed.\n";
+      die "Removing remote image not yet implemented.\n";
+    } else {
+      psync_put_data("image", $local_database, $gl_key);
+    }
+  }
+
+  my $file;
+  foreach $file (keys %local_files) {
+    if (!defined($remote_files{$file})) {
+      print "File $file does not exist remotely, must be added.\n";
+      psync_single_file($file, $set);
+    } elsif ($local_files{$file} ne $remote_files{$file}) {
+      print "File $file is different remotely, must be updated.\n";
+      psync_single_file($file, $set);
+    }
+  }
+  foreach $file (keys %remote_images) {
+    if (!defined($local_imags{$file})) {
+      print "Image $image does not exist locally, must be removed.\n";
+      psync_del_data("file", $file, $gl_key);
+    }
+  }
+}
+
+sub psync_single_file {
+  my $fname = $_[0];
+  my $set = $_[1];
+
+  print "Sending files is not yet implemented.\n";
 }
