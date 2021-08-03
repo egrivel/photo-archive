@@ -66,6 +66,9 @@ sub sync_all {
   if ($all_info =~ /years: (\w+)/) {
     sync_years($1);
   }
+
+  # After synchronizing everything, re-calculate the global hash.
+  psync_hash_data("all", "", $gl_key);
 }
 
 sub sync_users {
@@ -251,7 +254,7 @@ sub sync_single_year {
   }
 
   foreach $set (keys %remote_sets) {
-    if (!defined($local_set{$set})) {
+    if (!defined($local_sets{$set})) {
       print "Set $set does not exist locally, must be removed.\n";
       die "Removing remote set not yet implemented.\n";
     }
@@ -305,7 +308,7 @@ sub sync_single_set {
     }
   }
   foreach $image (keys %remote_images) {
-    if (!defined($local_imags{$image})) {
+    if (!defined($local_images{$image})) {
       print "Image $image does not exist locally, must be removed.\n";
       psync_del_data("image", $image, $gl_key);
     }

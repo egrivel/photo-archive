@@ -200,6 +200,12 @@ if ($hash ne "") {
   } elsif ($hash eq "year") {
     pdb_get_year_hash_text($data, 1);
     $text = "OK";
+  } elsif ($hash eq "all") {
+    my $text = put_get_all_hash_text(1);
+    if ($text ne "") {
+      my $hash = phash_do_hash($text);
+      phash_set_value("all", "all", $hash);
+    }
   } else {
     $text = "Unknown hash type: '$hash'";
   }

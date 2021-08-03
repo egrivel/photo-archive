@@ -223,7 +223,7 @@ sub psync_del_data {
   my $url = "$master";
   my $payloadref = {'del' => $type, 'id' => $id, 'key' => $key};
   # Note: use a 'put' to keep they key encrypted
-  my $response = psync_put_content($url, $payloadref);
+  my $response = psync_post_content($url, $payloadref);
   $response =~ s/^\s*(.*?)\s*$/$1/s;
   if ($response ne "OK") {
     die "Delete $type, $id resulted in '$response'\n";
