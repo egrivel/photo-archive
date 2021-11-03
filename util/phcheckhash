@@ -1,0 +1,110 @@
+#!/usr/bin/perl -w
+
+# Tool to check the hash of all the image files. This tool recognizes
+# any change in hash values of individual files.
+
+my $script = __FILE__;
+my $localdir = ".";
+if ($script =~ s/\/[^\/]*$//) {
+  $localdir = $script;
+}
+push @INC, "$localdir/../inc";
+
+require 'photos_util.pm';
+
+pdb_init();
+
+my $gl_verbose = 0;
+
+my $arg = shift;
+while (defined($arg)) {
+  if ($arg eq "-h" || $arg eq "--help") {
+    disp_help();
+    exit(0);
+  } else {
+    print "Unknown argument: $arg\n";
+    disp_help();
+    exit(0);
+  }
+  $arg = shift;
+}
+
+# process_id("20211031-170648");
+#exit(0);
+
+# Iterate over all the photos in the database
+my $iter = pdb_iter_new("", 500);
+my $id = pdb_iter_next($iter);
+my $count = 0;
+while (defined($id) && ($id ne "") && ($count < 1000000)) {
+    $count++;
+    
+    if (($count % 100) == 0) {
+        # Provide some output to confirm the process is still running. By
+        # only displaying every hundredth item, it doesn't overwhelm the
+        # output.
+        print "$id\n";
+    }
+    process_id($id);
+
+    # Sleep for 1/10th of a second, to prevent a denial-of-service against
+    # the databse or file system
+    usleep(100);
+    $id = pdb_iter_next($iter);
+}
+
+pdb_iter_done($iter);
+
+
+sub process_id {
+    my $id = $_[0];
+
+    my $raw = pfs_get_raw_location($id);
+    check_hash("raw", $raw, $id);
+    my $orig = pfs_get_orig_location($id);
+    check_hash("orig", $orig, $id);
+    my $edited = pfs_get_edited_location($id);
+    check_hash("edited", $edited, $id);
+}
+
+sub check_hash {
+    my $type = $_[0];
+    my $fname = $_[1];
+    my $id = $_[2];
+
+    if ($fname eq "") {
+        # no file for this type
+        return;
+    }
+
+    my $basename = "";
+    if ($fname =~ /\/(\w+\/[\w\-\.]+)$/) {
+        $basename = $1;
+    } else {
+        print "Can't parse fname $fname for ID $id\n";
+        return;
+    }
+
+    my $stored_hash = phash_get_value("f-$basename");
+    my $calculated_hash = calculate_hash($fname);
+    if ($stored_hash ne $calculated_hash) {        
+        print "File $basename\n";
+        print "      stored hash: $stored_hash\n";
+        print "  calculated hash: $calculated_hash\n";
+    }
+}
+
+sub calculate_hash {
+    my $fname = $_[0];
+
+    my $cmd = "sha256sum \"$fname\"";
+    open(PIPE, "$cmd|") || die "Cannot get hash for '$fname'\n";
+    my $text = <PIPE>;
+    $file_hash = "";
+    close(PIPE);
+    if ($text =~ /^([\w\-]+)/) {
+      $file_hash = $1;
+    }
+
+    return $file_hash;
+}
