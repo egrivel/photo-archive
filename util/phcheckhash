@@ -21,6 +21,8 @@ while (defined($arg)) {
   if ($arg eq "-h" || $arg eq "--help") {
     disp_help();
     exit(0);
+  } elsif ($arg eq "-v") {
+    $gl_verbose = 1;
   } else {
     print "Unknown argument: $arg\n";
     disp_help();
@@ -29,82 +31,108 @@ while (defined($arg)) {
   $arg = shift;
 }
 
-# process_id("20211031-170648");
-#exit(0);
+process_all();
 
-# Iterate over all the photos in the database
-my $iter = pdb_iter_new("", 500);
-my $id = pdb_iter_next($iter);
-my $count = 0;
-while (defined($id) && ($id ne "") && ($count < 1000000)) {
+sub disp_help {
+  print "phcheckhash [options]\n";
+  print "---------------------------------------------------------------\n";
+  print "Available options:\n";
+  print " -h            display this help\n";
+  print " -v            verbose (more output)\n";
+}
+
+sub process_all {
+  # Iterate over all the photos in the database
+  my $iter = pdb_iter_new("", 500);
+  my $id = pdb_iter_next($iter);
+  my $count = 0;
+  while (defined($id) && ($id ne "") && ($count < 1000000)) {
     $count++;
-    
-    if (($count % 100) == 0) {
-        # Provide some output to confirm the process is still running. By
-        # only displaying every hundredth item, it doesn't overwhelm the
-        # output.
-        print "$id\n";
+
+    if ($gl_verbose && (($count % 100) == 0)) {
+      # Provide some output to confirm the process is still running. By
+      # only displaying every hundredth item, it doesn't overwhelm the
+      # output.
+      print "$id\n";
     }
     process_id($id);
-
+    
     # Sleep for 1/10th of a second, to prevent a denial-of-service against
     # the databse or file system
     usleep(100);
     $id = pdb_iter_next($iter);
+  }
+  
+  pdb_iter_done($iter);
 }
 
-pdb_iter_done($iter);
-
-
 sub process_id {
-    my $id = $_[0];
+  my $id = $_[0];
 
-    my $raw = pfs_get_raw_location($id);
-    check_hash("raw", $raw, $id);
-    my $orig = pfs_get_orig_location($id);
-    check_hash("orig", $orig, $id);
-    my $edited = pfs_get_edited_location($id);
-    check_hash("edited", $edited, $id);
+  my $raw = pfs_get_raw_location($id);
+  process_image("raw", $raw, $id);
+  my $orig = pfs_get_orig_location($id);
+  process_image("orig", $orig, $id);
+  my $edited = pfs_get_edited_location($id);
+  process_image("edited", $edited, $id);
+}
+
+sub process_image {
+  my $type = $_[0];
+  my $fname = $_[1];
+  my $id = $_[2];
+
+  if ($fname eq "") {
+    # no file for this type
+    return;
+  }
+
+  my $basename = "";
+  if ($fname =~ /\/(\w+\/[\w\-\.]+)$/) {
+    $basename = $1;
+  } else {
+    print "Can't parse fname $fname for ID $id\n";
+    return;
+  }
+
+  check_hash($type, $basename, $fname, $id);
 }
 
 sub check_hash {
-    my $type = $_[0];
-    my $fname = $_[1];
-    my $id = $_[2];
-
-    if ($fname eq "") {
-        # no file for this type
-        return;
-    }
-
-    my $basename = "";
-    if ($fname =~ /\/(\w+\/[\w\-\.]+)$/) {
-        $basename = $1;
+  my $type = $_[0];
+  my $basename = $_[1];
+  my $fname = $_[2];
+  my $id = $_[3];
+  
+  my $stored_hash = phash_get_value("f-$basename");
+  my $calculated_hash = calculate_hash($fname);
+  if ($stored_hash ne $calculated_hash) {
+    if (($stored_hash eq "") && ($calculated_hash ne "")) {
+      # The hash for this file wasn't stored yet, add it
+      phash_set_value("f-$basename", "file", $calculated_hash);
     } else {
-        print "Can't parse fname $fname for ID $id\n";
-        return;
+      print "File $basename ($id $type)\n";
+      print "      stored hash: $stored_hash\n";
+      print "  calculated hash: $calculated_hash\n";
     }
-
-    my $stored_hash = phash_get_value("f-$basename");
-    my $calculated_hash = calculate_hash($fname);
-    if ($stored_hash ne $calculated_hash) {        
-        print "File $basename\n";
-        print "      stored hash: $stored_hash\n";
-        print "  calculated hash: $calculated_hash\n";
-    }
+  }
 }
 
 sub calculate_hash {
-    my $fname = $_[0];
+  my $fname = $_[0];
 
-    my $cmd = "sha256sum \"$fname\"";
-    open(PIPE, "$cmd|") || die "Cannot get hash for '$fname'\n";
-    my $text = <PIPE>;
-    $file_hash = "";
-    close(PIPE);
-    if ($text =~ /^([\w\-]+)/) {
-      $file_hash = $1;
-    }
-
-    return $file_hash;
+  if (! -f $fname) {
+    die "File '$fname' not found\n";
+  }
+  
+  my $cmd = "sha256sum \"$fname\"";
+  open(PIPE, "$cmd|") || die "Cannot get hash for '$fname'\n";
+  my $text = <PIPE>;
+  close(PIPE);
+  $file_hash = "";
+  if ($text =~ /^([\w\-]+)/) {
+    $file_hash = $1;
+  }
+  
+  return $file_hash;
 }

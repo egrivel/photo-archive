@@ -1,0 +1,120 @@
+#!/usr/bin/perl -w
+
+my %gl_dirs = ();
+
+my $has_read_config = 0;
+my $arg = shift;
+while (defined($arg)) {
+  if ($arg eq "-h" || $arg eq "--help") {
+    disp_help();
+    exit(0);
+  } elsif (-f $arg) {
+    if ($has_read_config) {
+      die "Only one config file can be specified\n";
+    }
+    read_config($arg);
+    $has_read_config = 1;
+  } else {
+    die "Unknown argument '$arg'\n";
+  }
+  
+  $arg = shift;
+}
+
+if (!$has_read_config) {
+  die "Must provide a config file\n";
+}
+
+process_all();
+exit(0);
+
+sub disp_help {
+  print "Usage:\n";
+  print "  phcheckbackup <configfile> < <hashlist>\n";
+  print "\n";
+  print "Go through all the hashes in the hash list and verify that the\n";
+  print "image files on the file system have that hash.\n";
+  print "A configuration file must be specified as the command line\n";
+  print "argument to define the location of the image files. The config\n";
+  print "file has the following format:\n";
+  print "  default <directory>\n";
+  print "  <set1>-<set2> <directory>\n";
+  print "  ...\n";
+  print "that is:\n";
+  print " - One entry for the 'default' root directory, for any set not\n";
+  print "   matched by any of the other lines.\n";
+  print " - Zero or more entries with a start set and an end set with a\n";
+  print "   root directory for sets in that range.\n";
+}
+
+sub read_config {
+  my $fname = $_[0];
+  open(FILE, "<$fname") || die "Cannot read '$fname'\n";
+  while (<FILE>) {
+    chomp();
+    s/\r//;
+    my $type = "";
+    my $dname = "";
+    if (/^\s*(default)\s+([\w\/\._\-]+)\s*$/) {
+      $type = $1;
+      $dname = $2;
+    } elsif (/^\s*(\w+-\w+)\s+([\w\/\._\-]+)\s*$/) {
+      $type = $1;
+      $dname = $2;
+    } else {
+      die "Config file $fname: unrecognized '$_'\n";
+    }
+    if (defined($gl_dirs{$type})) {
+      die "Config file $fname: multipe entries for '$type'\n";
+    }
+    $gl_dirs{$type} = $dname;
+  }
+  close FILE;
+
+  if (!defined($gl_dirs{"default"})) {
+    die "Config file $fname: no default entry\n";
+  }
+}
+
+sub process_all {
+  while (<>) {
+    if (/^([\w\-]+)\s+([\w\/\.\-]+)\s+(\w+)\s*$/) {
+      my $id = $1;
+      my $fname = $2;
+      my $hash = $3;
+      check_file($id, $fname, $hash);
+    } else {
+      die "Unrecognized line in input: '$_'\n";
+    }
+  }
+}
+
+sub find_rootdir {
+  my $set = $_[0];
+
+  return $gl_dirs{"default"};
+}
+
+sub check_file {
+  my $id = $_[0];
+  my $basename = $_[1];
+  my $hash = $_[2];
+
+  my $set = "";
+  if ($id =~ /^(\w\d\d)\d\d\w?$/) {
+    $set = $1;
+  } elsif ($id =~ /^(\d\d\d\d\d\d\d\d)-(\d\d\d\d\d\d\w?)$/) {
+    $set = $1;
+  } else {
+    die "Unrecognized id '$id'\n";
+  }
+
+  my $rootdir = find_rootdir($set);
+  my $fname = "$rootdir/$set/$basename";
+  if (! (-f $fname)) {
+    die "File '$fname' does not exist\n";
+    return;
+  }
+
+  print "Check hash for $fname\n";
+}
