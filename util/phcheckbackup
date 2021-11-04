@@ -1,6 +1,8 @@
 #!/usr/bin/perl -w
 
-my %gl_dirs = ();
+my @gl_setrange = ();
+my @gl_dirs = ();
+my $gl_count = 0;
 
 my $has_read_config = 0;
 my $arg = shift;
@@ -64,16 +66,11 @@ sub read_config {
     } else {
       die "Config file $fname: unrecognized '$_'\n";
     }
-    if (defined($gl_dirs{$type})) {
-      die "Config file $fname: multipe entries for '$type'\n";
-    }
-    $gl_dirs{$type} = $dname;
+    $gl_setrange[$gl_count] = $type;
+    $gl_dirs[$gl_count] = $dname;
+    $gl_count++;
   }
   close FILE;
-
-  if (!defined($gl_dirs{"default"})) {
-    die "Config file $fname: no default entry\n";
-  }
 }
 
 sub process_all {
@@ -92,7 +89,35 @@ sub process_all {
 sub find_rootdir {
   my $set = $_[0];
 
-  return $gl_dirs{"default"};
+  my $i;
+  my $default = "";
+  for ($i = 0; $i < $gl_count; $i++) {
+      if ($gl_setrange[$i] eq "default") {
+	  $default = $gl_dirs[$i];
+      } else {
+	  if ($gl_setrange[$i] =~ /^(.*?)-(.*?)$/) {
+	      my $first = $1;
+	      my $last = $2;
+	      if (length($first) == 3 && length($last) == 3) {
+		  if (length($set) == 3) {
+		      if ($set ge $first && $set le $last) {
+			  return $gl_dirs[$i];
+		      }
+		  }
+	      } elsif (length($first) == 8 && length($last) == 8) {
+		  if (length($set) == 8) {
+		      if ($set ge $first && $set le $last) {
+			  return $gl_dirs[$i];
+		      }
+		  }
+	      } else {
+		  die "Can't compare '$first-$last' to '$set'\n";
+	      }
+	  }
+      }
+  }
+
+  return $default;
 }
 
 sub check_file {
@@ -111,6 +136,7 @@ sub check_file {
 
   my $rootdir = find_rootdir($set);
   my $fname = "$rootdir/$set/$basename";
+
   if (! (-f $fname)) {
     die "File '$fname' does not exist\n";
     return;
