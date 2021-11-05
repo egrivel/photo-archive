@@ -1,38 +1,34 @@
 #!/usr/bin/perl -w
 
-my @gl_setrange = ();
-my @gl_dirs = ();
-my $gl_count = 0;
+my %gl_settings = ();
+  
+read_settings();
 
-my $has_read_config = 0;
+my $hashlist = "";
+
 my $arg = shift;
 while (defined($arg)) {
-  if ($arg eq "-h" || $arg eq "--help") {
-    disp_help();
-    exit(0);
-  } elsif (-f $arg) {
-    if ($has_read_config) {
-      die "Only one config file can be specified\n";
-    }
-    read_config($arg);
-    $has_read_config = 1;
-  } else {
-    die "Unknown argument '$arg'\n";
+  if ($hashlist ne "") {
+    die "Cannot give two arguments\n";
   }
-  
+  $hashlist = $arg;
   $arg = shift;
 }
 
-if (!$has_read_config) {
-  die "Must provide a config file\n";
+if ($hashlist eq "") {
+  die "Need to profile the hash list file as command line argument.\n";
 }
 
-process_all();
+if (! -f $hashlist) {
+  die "Argument '$hashlist' is not a file\n";
+}
+
+process_all($hashlist);
 exit(0);
 
 sub disp_help {
   print "Usage:\n";
-  print "  phcheckbackup <configfile> < <hashlist>\n";
+  print "  phcheckbackup <hashlist>\n";
   print "\n";
   print "Go through all the hashes in the hash list and verify that the\n";
   print "image files on the file system have that hash.\n";
@@ -49,32 +45,12 @@ sub disp_help {
   print "   root directory for sets in that range.\n";
 }
 
-sub read_config {
-  my $fname = $_[0];
-  open(FILE, "<$fname") || die "Cannot read '$fname'\n";
-  while (<FILE>) {
-    chomp();
-    s/\r//;
-    my $type = "";
-    my $dname = "";
-    if (/^\s*(default)\s+([\w\/\._\-]+)\s*$/) {
-      $type = $1;
-      $dname = $2;
-    } elsif (/^\s*(\w+-\w+)\s+([\w\/\._\-]+)\s*$/) {
-      $type = $1;
-      $dname = $2;
-    } else {
-      die "Config file $fname: unrecognized '$_'\n";
-    }
-    $gl_setrange[$gl_count] = $type;
-    $gl_dirs[$gl_count] = $dname;
-    $gl_count++;
-  }
-  close FILE;
-}
-
 sub process_all {
-  while (<>) {
+  my $hashlist = $_[0];
+
+  open(FILE, "<$hashlist") || die "Cannot read file '$hashlist'\n";
+  
+  while (<FILE>) {
     if (/^([\w\-]+)\s+([\w\/\.\-]+)\s+(\w+)\s*$/) {
       my $id = $1;
       my $fname = $2;
@@ -84,40 +60,28 @@ sub process_all {
       die "Unrecognized line in input: '$_'\n";
     }
   }
+  close FILE;
 }
 
 sub find_rootdir {
   my $set = $_[0];
 
-  my $i;
-  my $default = "";
-  for ($i = 0; $i < $gl_count; $i++) {
-      if ($gl_setrange[$i] eq "default") {
-	  $default = $gl_dirs[$i];
-      } else {
-	  if ($gl_setrange[$i] =~ /^(.*?)-(.*?)$/) {
-	      my $first = $1;
-	      my $last = $2;
-	      if (length($first) == 3 && length($last) == 3) {
-		  if (length($set) == 3) {
-		      if ($set ge $first && $set le $last) {
-			  return $gl_dirs[$i];
-		      }
-		  }
-	      } elsif (length($first) == 8 && length($last) == 8) {
-		  if (length($set) == 8) {
-		      if ($set ge $first && $set le $last) {
-			  return $gl_dirs[$i];
-		      }
-		  }
-	      } else {
-		  die "Can't compare '$first-$last' to '$set'\n";
-	      }
-	  }
-      }
+  my $dir = setting_get("photosdir");
+  if ($dir eq "") {
+    die "Cannot find setting 'photosdir'\n";
+  }
+  my $dir2 = setting_get("photosdir2");
+  if ($dir2 eq "") {
+    die "Cannot find setting 'photosdir'\n";
   }
 
-  return $default;
+  if ($set =~ /^(\d\d\d\d)\d\d\d\d$/) {
+    my $year = $1;
+    if ($year >= 2004) {
+      return $dir2;
+    }
+  }
+  return $dir;
 }
 
 sub check_file {
@@ -138,9 +102,46 @@ sub check_file {
   my $fname = "$rootdir/$set/$basename";
 
   if (! (-f $fname)) {
-    die "File '$fname' does not exist\n";
+    print "File '$fname' does not exist\n";
     return;
   }
 
   print "Check hash for $fname\n";
 }
+
+sub read_settings {
+  my $script = __FILE__;
+  my $localdir = ".";
+  if ($script =~ s/\/[^\/]*$//) {
+    $localdir = $script;
+  }
+  
+  if (-f "$localdir/../private/photos.ini") {
+    open(FILE, "<$localdir/../private/photos.ini");
+    while (<FILE>) {
+	    chomp;
+	    s/\r//;
+	    
+	    # Remove comments (but allow for escaped hashes)
+	    s/\\\#/&hash;/g;
+	    s/\s*\#.*$//;
+      s/&hash;/\#/g;
+	    
+	    if (/^\s*([\w\-]+)\s*=\s*(.*?)\s*$/) {
+        $gl_settings{$1} = $2;
+	    }
+    }
+    close FILE;
+  }
+}
+
+sub setting_get {
+  my $name = $_[0];
+
+  if (defined($gl_settings{$name})) {
+    return $gl_settings{$name};
+  }
+
+  return "";
+}
+
