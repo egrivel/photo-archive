@@ -1,6 +1,8 @@
 #!/usr/bin/perl -w
 
 my %gl_settings = ();
+my %gl_file_not_found = ();
+my %gl_file_done = ();
   
 read_settings();
 
@@ -61,6 +63,14 @@ sub process_all {
     }
   }
   close FILE;
+
+  foreach $key (keys %gl_file_not_found) {
+    my $fname = $key;
+    if ($fname =~ s/\.jpg$/.nef/) {
+      next if (defined($gl_file_done{$fname}));
+    }
+    print "File $key not found\n";
+  }
 }
 
 sub find_rootdir {
@@ -77,7 +87,7 @@ sub find_rootdir {
 
   if ($set =~ /^(\d\d\d\d)\d\d\d\d$/) {
     my $year = $1;
-    if ($year >= 2004) {
+    if ($year >= 2008) {
       return $dir2;
     }
   }
@@ -102,11 +112,13 @@ sub check_file {
   my $fname = "$rootdir/$set/$basename";
 
   if (! (-f $fname)) {
-    print "File '$fname' does not exist\n";
+    # File not found; 
+    $gl_file_not_found{$fname}++;
     return;
   }
 
-  print "Check hash for $fname\n";
+  # print "Check hash for $fname\n";
+  $gl_file_done{$fname}++;
 }
 
 sub read_settings {
