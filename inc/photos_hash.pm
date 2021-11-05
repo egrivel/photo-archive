@@ -123,4 +123,6 @@ sub phash_do_hash {
   return $hash;
 }
 
+require("photos_hash_tools");
+
 return 1;

@@ -1,5 +1,15 @@
 #!/usr/bin/perl -w
 
+my $script = __FILE__;
+my $localdir = ".";
+if ($script =~ s/\/[^\/]*$//) {
+  $localdir = $script;
+}
+push @INC, "$localdir/../inc";
+
+# Tools to calculate the hash of a file on the file sysstemx
+require 'photos_hash_tools.pm';
+
 my %gl_settings = ();
 my %gl_file_not_found = ();
 my %gl_file_done = ();
@@ -118,6 +128,13 @@ sub check_file {
   }
 
   # print "Check hash for $fname\n";
+  my $file_hash = phash_do_hash_file($fname);
+  if ($file_hash ne $hash) {
+    print "$id: $fname: hash mismatch:\n";
+    print "  File hash: $file_hash\n";
+    print "  Expected : $hash\n";
+  }
+  
   $gl_file_done{$fname}++;
 }
 

@@ -105,7 +105,7 @@ sub check_hash {
   my $id = $_[3];
   
   my $stored_hash = phash_get_value("f-$basename");
-  my $calculated_hash = calculate_hash($fname);
+  my $calculated_hash = phash_do_hash_file($fname);
   if ($stored_hash ne $calculated_hash) {
     if (($stored_hash eq "") && ($calculated_hash ne "")) {
       # The hash for this file wasn't stored yet, add it
@@ -116,23 +116,4 @@ sub check_hash {
       print "  calculated hash: $calculated_hash\n";
     }
   }
-}
-
-sub calculate_hash {
-  my $fname = $_[0];
-
-  if (! -f $fname) {
-    die "File '$fname' not found\n";
-  }
-  
-  my $cmd = "sha256sum \"$fname\"";
-  open(PIPE, "$cmd|") || die "Cannot get hash for '$fname'\n";
-  my $text = <PIPE>;
-  close(PIPE);
-  $file_hash = "";
-  if ($text =~ /^([\w\-]+)/) {
-    $file_hash = $1;
-  }
-  
-  return $file_hash;
 }

@@ -1455,14 +1455,8 @@ sub pdb_get_file_item_hash {
       return $file_hash;
     }
 
-    my $cmd = "sha256sum \"$fname\"";
-    open(PIPE, "$cmd|") || die "Cannot get hash for '$fname'\n";
-    my $text = <PIPE>;
-    $file_hash = "";
-    close(PIPE);
-    if ($text =~ /^([\w\-]+)/) {
-      $file_hash = $1;
-    }
+    $file_hash = phash_do_hash_file($fname);
+
     $hash_record{"hash"} = $file_hash;
     $hash_record{"type"} = "file";
     $hash_reccord{"timestamp"} = $mtime;
