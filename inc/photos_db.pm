@@ -1443,13 +1443,15 @@ sub pdb_get_file_item_hash {
   my $file_hash = phash_get_value($resourceid);
 
   if ($do_update || $file_hash eq "") {
-    my %hash = phash_get_resource($resourceid);
+    my %hash_record = phash_get_resource($resourceid);
     my (
       $dev, $ino, $mode, $nlink, $uid, $gid, $rdev,
       $size, $atime, $mtime, $ctime, $blksize, $blocks
     ) = stat($fname);
 
-    if (defined($hash{"timestamp"}) && $hash{"timestamp"} == $mtime) {
+    if (defined($hash_record{"timestamp"})
+        && $hash_record{"timestamp"} ne ""
+        && $hash_record{"timestamp"} == $mtime) {
       return $file_hash;
     }
 
@@ -1461,10 +1463,10 @@ sub pdb_get_file_item_hash {
     if ($text =~ /^([\w\-]+)/) {
       $file_hash = $1;
     }
-    $hash{"hash"} = $file_hash;
-    $hash{"type"} = "file";
-    $hash{"timestamp"} = $mtime;
-    phash_set_resource($resourceid, \%hash);
+    $hash_record{"hash"} = $file_hash;
+    $hash_record{"type"} = "file";
+    $hash_reccord{"timestamp"} = $mtime;
+    phash_set_resource($resourceid, \%hash_record);
   }
 
   return $file_hash;
