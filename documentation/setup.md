@@ -3,21 +3,23 @@
 ## Preparations
 
 Make sure the prerequisites are installed:
- - exiftool
- - convert (part of the ImageMagick suite)
- - mysql (also known as mariadb)
- - apache (http Web server)
- - Perl
- - Perl module DBI: database interface
- - Perl module Image::ExifTool to extract EXIF info from the photos
- - ffmpeg to processs video (make sure MP4 codecs are there)
+
+- exiftool
+- convert (part of the ImageMagick suite)
+- mysql (also known as mariadb)
+- apache (http Web server)
+- Perl
+- Perl module DBI: database interface
+- Perl module Image::ExifTool to extract EXIF info from the photos
+- ffmpeg to processs video (make sure MP4 codecs are there)
 
 ## Create the Database
 
 You need to think of:
- - a database name
- - the user to connect to the database
- - the password to use
+
+- a database name
+- the user to connect to the database
+- the password to use
 
 First you need to create the database. To do this, you first log into the
 database as the root user (use `-p` if you set a password for the root user,
@@ -73,7 +75,10 @@ file called `photos.ini.sample`; copy this to `photos.ini` and replace all
 the values in angular brackets with the correct values.
 
 The `photosdir` and `photos2dir` values must be the photo archive directory
-that was previously created.
+that was previously created. The `photos2dir` gives the secondary archive
+directory, if the archive is spread over two volumes; in which case, the
+`photos2start` and `photos2end` values can be added to specify the start and
+end for the sets which are found on the secondary volume.
 
 The `staticroot` is the location in the server root where the web server
 will be serving the static files. In the example above, where the static
@@ -141,6 +146,6 @@ the bottom, and both the set and individual images will become visible
 for others.
 
 Before saving, you can also choose to make individual images `private`,
-meaning they will not be visible to visitors. Photos  can also be
+meaning they will not be visible to visitors. Photos can also be
 deleted from here, by checking the `delete this image` checkbox before
 using the `Save` button.

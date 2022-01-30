@@ -13,7 +13,7 @@ require 'photos_hash_tools.pm';
 my %gl_settings = ();
 my %gl_file_not_found = ();
 my %gl_file_done = ();
-  
+
 read_settings();
 
 my $hashlist = "";
@@ -31,7 +31,7 @@ if ($hashlist eq "") {
   die "Need to profile the hash list file as command line argument.\n";
 }
 
-if (! -f $hashlist) {
+if (!-f $hashlist) {
   die "Argument '$hashlist' is not a file\n";
 }
 
@@ -61,7 +61,7 @@ sub process_all {
   my $hashlist = $_[0];
 
   open(FILE, "<$hashlist") || die "Cannot read file '$hashlist'\n";
-  
+
   while (<FILE>) {
     if (/^([\w\-]+)\s+([\w\/\.\-]+)\s+(\w+)\s*$/) {
       my $id = $1;
@@ -90,17 +90,46 @@ sub find_rootdir {
   if ($dir eq "") {
     die "Cannot find setting 'photosdir'\n";
   }
-  my $dir2 = setting_get("photosdir2");
-  if ($dir2 eq "") {
-    die "Cannot find setting 'photosdir'\n";
+
+  my $dir2 = setting_get("photos2dir");
+  if (($dir2 eq "") || ($dir2 eq $dir)) {
+    # If there is no different second dir, the directory is always the
+    # primary directory
+    return $dir;
   }
 
-  if ($set =~ /^(\d\d\d\d)\d\d\d\d$/) {
-    my $year = $1;
-    if ($year >= 2008) {
+  my $start = setting_get("photos2start");
+  my $end = setting_get("photos2end");
+  if ($start eq "" || $end eq "") {
+    # No start or end given; default to photos from 2008 onward in the
+    # alternate location
+    if ($set =~ /^(\d\d\d\d)\d\d\d\d$/) {
+      my $year = $1;
+      if ($year >= 2008) {
+        return $dir2;
+      }
+    }
+  }
+
+  if ( $start =~ /^\d\d\d\d\d\d\d\d/
+    && $end =~ /^\d\d\d\d\d\d\d\d/
+    && $set =~ /^\d\d\d\d\d\d\d\d/) {
+    # start, end and set are all digital
+    if ($set ge $start && $set le $end) {
+      # The set is in the range for the alternet directory
       return $dir2;
     }
   }
+
+  if ($start =~ /^\w\d\d$/ && $end =~ /^\w\d\d$/ && $set =~ /^\w\d\d$/) {
+    # Start, end and set are all non-digital
+    if ($set ge $start && $set le $end) {
+      # The set is in the range for the alternet directory
+      return $dir2;
+    }
+  }
+
+  # None of the exceptions apply
   return $dir;
 }
 
@@ -121,8 +150,8 @@ sub check_file {
   my $rootdir = find_rootdir($set);
   my $fname = "$rootdir/$set/$basename";
 
-  if (! (-f $fname)) {
-    # File not found; 
+  if (!(-f $fname)) {
+    # File not found;
     $gl_file_not_found{$fname}++;
     return;
   }
@@ -134,7 +163,7 @@ sub check_file {
     print "  File hash: $file_hash\n";
     print "  Expected : $hash\n";
   }
-  
+
   $gl_file_done{$fname}++;
 }
 
@@ -144,21 +173,21 @@ sub read_settings {
   if ($script =~ s/\/[^\/]*$//) {
     $localdir = $script;
   }
-  
+
   if (-f "$localdir/../private/photos.ini") {
     open(FILE, "<$localdir/../private/photos.ini");
     while (<FILE>) {
-	    chomp;
-	    s/\r//;
-	    
-	    # Remove comments (but allow for escaped hashes)
-	    s/\\\#/&hash;/g;
-	    s/\s*\#.*$//;
+      chomp;
+      s/\r//;
+
+      # Remove comments (but allow for escaped hashes)
+      s/\\\#/&hash;/g;
+      s/\s*\#.*$//;
       s/&hash;/\#/g;
-	    
-	    if (/^\s*([\w\-]+)\s*=\s*(.*?)\s*$/) {
+
+      if (/^\s*([\w\-]+)\s*=\s*(.*?)\s*$/) {
         $gl_settings{$1} = $2;
-	    }
+      }
     }
     close FILE;
   }
@@ -173,4 +202,3 @@ sub setting_get {
 
   return "";
 }
-
