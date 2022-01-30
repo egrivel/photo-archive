@@ -142,15 +142,25 @@ sub pfs_get_edited_location {
   # }
 
   my $setdir = pfs_get_setdir($imageID);
+
   if ($setdir ne "") {
-    if (-f "$setdir/edited/$imageID.jpg") {
+    my $ext = ".jpg";
+    if (pdb_get_type($imageID) eq "MOV") {
+      if (-f "$setdir/edited/$imageID.mov") {
+        $ext = ".mov";
+      } elsif (-f "$setdir/edited/$imageID.mp4") {
+        $ext = ".mp4";
+      }
+    }
+    
+    if (-f "$setdir/edited/$imageID$ext") {
       # Check to see if there is a RawShooter updated file
-      my $fname = "$setdir/edited/$imageID.jpg";
+      my $fname = "$setdir/edited/$imageID$ext";
       my $ftime = pfs_get_time($fname);
       my $nr = "02";
-      while (-f "$setdir/edited/$imageID-$nr.jpg") {
-        if (pfs_get_time("$setdir/edited/$imageID-$nr.jpg") > $ftime) {
-          $fname = "$setdir/edited/$imageID-$nr.jpg";
+      while (-f "$setdir/edited/$imageID-$nr$ext") {
+        if (pfs_get_time("$setdir/edited/$imageID-$nr$ext") > $ftime) {
+          $fname = "$setdir/edited/$imageID-$nr$ext";
           $ftime = pfs_get_time($fname);
         }
         $nr++;
@@ -906,15 +916,20 @@ sub pfs_cmd_large {
 
 sub pfs_cmd_large_movie {
   my $imageid = $_[0];
-  my $orig = pfs_get_raw_location($imageid);
+  my $src = $_[1];
+  
+  if (!defined($src) || ($src eq "")) {
+    $src = pfs_get_raw_location($imageid);
+  }
+  
   my $outfile = pfs_get_buffer_location($imageid, "large");
-  if (($orig ne "") && ($outfile ne "")) {
+  if (($src ne "") && ($outfile ne "")) {
     $outfile =~ s/\.jpg$/.mp4/;
     # add -max_muxing_queue_size 400 to handle "movies with sparse video
     # or audio frames", see:
     #    https://trac.ffmpeg.org/ticket/6375
     return
-      "ffmpeg -i $orig -max_muxing_queue_size 400 -vcodec libx264 -acodec libvorbis -aq 5 -ac 2 -qmax 25 -vf scale=960:540 $outfile.mp4; qt-faststart $outfile.mp4 $outfile; rm $outfile.mp4; chmod a+w $outfile";
+        "ffmpeg -i $src -max_muxing_queue_size 400 -vcodec libx264 -acodec libvorbis -aq 5 -ac 2 -qmax 25 -vf scale=960:540 $outfile.mp4; qt-faststart $outfile.mp4 $outfile; rm $outfile.mp4; chmod a+w $outfile";
   }
   return "";
 }

@@ -28,8 +28,9 @@ sub disp_help {
   print "Usage:\n";
   print "  phlisthash\n";
   print "\n";
-  print "Go through the database and list the stored hash of every image\n";
-  print "file in the database. The hash information is printed to stdout.\n";
+  print "Go through the database and list the stored hash of every original\n";
+  print "image file in the database. The hash information is printed to\n";
+  print "standard output.\n";
   print "Output format:\n";
   print "  <imageId> <fileName> <hash>\n";
   print "The filename is relative to the set directory, e.g. 'tif/00101.jpg'\n";
@@ -58,8 +59,12 @@ sub process_id {
 
   my $raw = pfs_get_raw_location($id);
   process_image("raw", $raw, $id);
-  my $orig = pfs_get_orig_location($id);
-  process_image("orig", $orig, $id);
+  if (~ ($raw =~ /\.nef$/)) {
+    # for .nef files, the "original" is extracted from the raw file, so
+    # it is reproducible as long as the raw file is still there
+    my $orig = pfs_get_orig_location($id);
+    process_image("orig", $orig, $id);
+  }
   my $edited = pfs_get_edited_location($id);
   process_image("edited", $edited, $id);
 }

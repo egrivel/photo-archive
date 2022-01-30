@@ -15,6 +15,10 @@ require 'photos_util.pm';
 pdb_init();
 
 my $gl_verbose = 0;
+# By default, do all; turned off when a single image or set is done
+my $gl_do_all = 1;
+# Update the value if requested
+my $gl_update = 0;
 
 my $arg = shift;
 while (defined($arg)) {
@@ -23,6 +27,14 @@ while (defined($arg)) {
     exit(0);
   } elsif ($arg eq "-v") {
     $gl_verbose = 1;
+  } elsif ($arg eq "--update") {
+    $gl_update = 1;
+  } elsif ($arg =~ /^\d\d\d\d\d\d\d\d-\d\d\d\d\d\d\w?$/) {
+    process_id($arg);
+    $gl_do_all = 0;
+  } elsif ($arg =~ /^\w\d\d\d\d\w?$/) {
+    process_id($arg);
+    $gl_do_all = 0;
   } else {
     print "Unknown argument: $arg\n";
     disp_help();
@@ -31,14 +43,17 @@ while (defined($arg)) {
   $arg = shift;
 }
 
-process_all();
+if ($gl_do_all) {
+  process_all();
+}
 
 sub disp_help {
-  print "phcheckhash [options]\n";
+  print "phcheckhash [options] [id]*\n";
   print "---------------------------------------------------------------\n";
   print "Available options:\n";
   print " -h            display this help\n";
   print " -v            verbose (more output)\n";
+  print " --update      if the hash is different, update the database\n";
 }
 
 sub process_all {
@@ -114,6 +129,10 @@ sub check_hash {
       print "File $basename ($id $type)\n";
       print "      stored hash: $stored_hash\n";
       print "  calculated hash: $calculated_hash\n";
+      if ($gl_update) {
+        phash_set_value("f-$basename", "file", $calculated_hash);
+        print "--> Updated\n";
+      }
     }
   }
 }
