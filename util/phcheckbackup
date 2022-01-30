@@ -35,7 +35,9 @@ if (! -f $hashlist) {
   die "Argument '$hashlist' is not a file\n";
 }
 
+system("echo Checking the photo backup: start `date`");
 process_all($hashlist);
+system("echo Checing the photo backup: done `date`");
 exit(0);
 
 sub disp_help {
