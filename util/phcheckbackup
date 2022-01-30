@@ -14,16 +14,30 @@ my %gl_settings = ();
 my %gl_file_not_found = ();
 my %gl_file_done = ();
 
+my $gl_quiet = 0;
+
 read_settings();
 
 my $hashlist = "";
 
 my $arg = shift;
 while (defined($arg)) {
-  if ($hashlist ne "") {
-    die "Cannot give two arguments\n";
+  if ($arg eq "-help" || $arg eq "--help") {
+    disp_help();
+    exit(0);
   }
-  $hashlist = $arg;
+  if (-f $arg) {
+    if ($hashlist ne "") {
+      die "Cannot give two arguments\n";
+    }
+    $hashlist = $arg;
+  } elsif ($arg eq "-q" || $arg eq "--quiet") {
+    $gl_quiet = 1;
+  } elsif ($arg =~ /^-/) {
+    die "Do not recognize argument '$arg'\n";
+  } else {
+    die "Argument '$arg' is not a hash list file\n";
+  }
   $arg = shift;
 }
 
@@ -31,13 +45,9 @@ if ($hashlist eq "") {
   die "Need to profile the hash list file as command line argument.\n";
 }
 
-if (!-f $hashlist) {
-  die "Argument '$hashlist' is not a file\n";
-}
-
-system("echo Checking the photo backup: start `date`");
+system("echo Checking the photo backup: start `date`") if (!$gl_quiet);
 process_all($hashlist);
-system("echo Checing the photo backup: done `date`");
+system("echo Checing the photo backup: done `date`") if (!$gl_quiet);
 exit(0);
 
 sub disp_help {
