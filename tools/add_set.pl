@@ -67,7 +67,17 @@ sub process {
     if ($fname =~ /^(($setId).+?)\.(jpg|jpeg|tif|nef|mov|mp4|gif|cr2)$/) {
       # This is a potential file
       my $imageId = $1;
-      if (pdb_image_exists($iamgeId)) {
+      if ($fname =~ /\.(tif|nef|cr2)$/) {
+        my $jpegname = $fname;
+        $jpegname =~ s/\.(tif|nef|cr2)$/.jpg/;
+        if (-f "$setdir/tif/$jpegname") {
+          # There is also a .jpg version of the file. Use the .jpg version
+          # to add the photo (the .jpg version should have the correct
+          # aspect ratio, the .tif etc. may not)
+          next;
+        }
+      }
+      if (pdb_image_exists($imageId)) {
         warn("Image $imageId already exists, skipping\n");
       } else {
         if (-f "$setdir/edited/$fname") {
