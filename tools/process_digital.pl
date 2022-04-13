@@ -23,6 +23,7 @@ my $gl_sourcedir = ".";
 my $gl_verbose = 1;
 my $gl_testmode = 0;
 my $gl_recursive = 0;
+my $gl_phone = 0;
 
 # time offset: correction for the clock in the camera being off: the offset
 # adjust the time reported by the camera to the actual clock time
@@ -69,6 +70,8 @@ while (defined($arg = shift)) {
     } else {
       die "Time zone offset must be in [+-]hh:mm format\n";
     }
+  } elsif ($arg eq "-phone") {
+    $gl_phone = 1;
   } elsif (-d $arg) {
     $gl_sourcedir = $arg;
     $gl_sourcedir =~ s/\/$//;
@@ -79,6 +82,11 @@ while (defined($arg = shift)) {
 }
 
 process($gl_sourcedir);
+exit(0);
+
+# --------------------------------------------------------------------------
+# Only subroutines below
+# --------------------------------------------------------------------------
 
 sub process {
   my $dir = $_[0];
@@ -147,6 +155,7 @@ sub process {
     }
   }
   closedir(DIR);
+  my $key;
   foreach $key (sort (keys %dirlist)) {
     process_photo($dir, $key);
   }
@@ -168,6 +177,8 @@ sub help {
   print "    Time offset must be in [+-]hh:mm:ss format\n";
   print " -tz-offset <offset>: time zone offset\n";
   print "    Time zone offset must be in [+-]hh:mm format\n";
+  print " -phone: recognize photos and videos from different phones and\n";
+  print "    apply time zone offsets automatically.\n";
   print "";
 }
 
@@ -310,6 +321,8 @@ sub process_photo {
     }
   }
 
+  my $camera_model = "";
+
   print "Process $dir/$fname\n" if ($gl_verbose);
   open(FILE, "exiftool \"$dir/$fname\"|")
     || die "Cannot process '$dir/$fname'\n";
@@ -390,6 +403,11 @@ sub process_photo {
             $is_freeform = true;
           }
         }
+      } elsif (($label eq "Camera Model Name")
+        || ($label eq "Android Model")) {
+        # This is used to recognized images and videos from Eric's and
+        # Nicoline's phone
+        $camera_model = $value;
       }
     } elsif (/./) {
       print "$dir/$fname: unknown line '$_'\n";
@@ -401,6 +419,67 @@ sub process_photo {
     # Not a valid set ID
     $setID = "";
     $targetfile = "";
+  }
+
+  if ($gl_phone) {
+    # At the moment, it seems that Eric's phone uses IMG for images, VID
+    # for videos, and has a camera model of "Nexus 5X" for both.
+    # Nicoline's phone uses PXL for both images and videos, has "Pixel 3"
+    # as the camera model for images, but _no_ camera model information in
+    # the video EXIF.
+    # Eric's phone uses local time for the file name, Nicoline's phone uses
+    # UTC for the file name.
+
+    my $is_eric;
+    if ($fname =~ /^(IMG)|(VID)_/) {
+      # Eric's phone
+      $is_eric = 1;
+    } elsif ($fname =~ /^PXL_/) {
+      $is_eric = 0;
+    } else {
+      die "Cannot determine phone owner: $fname\n";
+    }
+
+    my $testdate = "";
+    if ($fname =~ /^\w\w\w_(\d\d\d\d)(\d\d)(\d\d)_(\d\d)(\d\d)(\d\d)/) {
+      # YYYY, MM, DD, hh, mm, ss
+      $testdate = "$1-$2-${3}T$4:$5:$6";
+      if (!$is_eric) {
+        # Nicoline's phone is in UTC, so add `Z` to the date string
+        # ("Zulu time").
+        $testdate .= "Z";
+      }
+    } else {
+      die "Can't determine file date for $fname\n";
+    }
+    # Use the shell 'date' command to determine time zone, as well as convert
+    # a filename in UTC to a proper image ID.
+    open(PIPE, "date \"+\%Y\%m\%d-\%H\%M\%S \%Z\" --date=$testdate|")
+      || die "Cannot determine DST for $testdate\n";
+    while (<PIPE>) {
+      chomp();
+      if (/^((\d\d\d\d\d\d\d\d)-\d\d\d\d\d\d) (\w\w\w)$/) {
+        my $date_imageid = $1;
+        my $date_setid = $2;
+        my $date_tz = $3;
+        if ($date_tz eq "EDT") {
+          # timezone offset is "-4:00"
+          $gl_timezoneoffset = "-240";
+        } elsif ($date_tz eq "EST") {
+          # timezone offset is "-5:00"
+          $gl_timezoneoffset = "-300";
+        } else {
+          die "Cannot determine timezone offset: $_\n";
+        }
+        print
+          "Got image ID $date_imageid, time zone offset $gl_timezoneoffset\n";
+        $setID = $date_setid;
+        $targetfile = $date_imageid;
+      } else {
+        die "Unrecognized output from date: '$_'\n";
+      }
+    }
+    close PIPE;
   }
 
   if ($phoneportrait && !$do_portrait) {
@@ -420,11 +499,13 @@ sub process_photo {
     $targetfile = $targetfile2;
   }
 
-  if ($fname =~ /^VID_(\d\d\d\d\d\d\d\d)_(\d\d\d\d\d\d)\.mp4$/) {
-    # Video from Android phone, use timestamp from filename
-    $setID = $1;
-    $targetfile = "$1-$2";
-  }
+  # This is no longer needed, now handle video files in the if ($gl_phone)
+  # section above...
+  # if ($fname =~ /^VID_(\d\d\d\d\d\d\d\d)_(\d\d\d\d\d\d)\.mp4$/) {
+  #   # Video from Android phone, use timestamp from filename
+  #   $setID = $1;
+  #   $targetfile = "$1-$2";
+  # }
 
   if ($setID eq "") {
     # No set ID found, so try getting it from the filename
@@ -455,6 +536,8 @@ sub process_photo {
     }
   }
 
+  # Adjust for an incorrect camera clock; the target file name (image ID)
+  # needs to be adjusted
   if ($gl_timeoffset) {
     if ($targetfile =~ /^(\d\d\d\d)(\d\d)(\d\d)-(\d\d)(\d\d)(\d\d)(\w?)$/) {
       my $year = $1;
@@ -504,6 +587,7 @@ sub process_photo {
     }
   }
 
+  # Adjust for a time zone offset
   if ($gl_timezoneoffset) {
     if ($timezone =~ /^([+\-]?\d\d):(\d\d)$/) {
       my $minutes = 60 * $1 + $2;
