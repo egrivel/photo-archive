@@ -734,7 +734,7 @@ sub process_photo {
       move_file("$dir/$fname", "$set_directory/tif/$imageid.jpg");
       # If we also have a NEF file, move that as well
       my $nefname = lc($fname);
-      my $dngname = lc($fname);
+      my $dngname = $fname;
       $nefname =~ s/\.jpg$/\.nef/;
       $dngname =~ s/\.jpg$/\.dng/;
       print "Got dng name '$dngname'\n" if ($gl_testmode);
