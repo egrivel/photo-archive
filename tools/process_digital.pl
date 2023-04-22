@@ -741,10 +741,10 @@ sub process_photo {
 
       if (-f "$dir/$nefname") {
         # Got a ".nef" file (Nikon RAW format), copy that too
-        move_file("$dir/$neflist{$nefname}", "$set_directory/tif/$imageid.nef");
+        move_file("$dir/$nefname", "$set_directory/tif/$imageid.nef");
       } elsif (-f "$dir/$dngname") {
         # Got a ".dng" file (Google phone "RAW" format), copy that too
-        move_file("$dir/$neflist{$dngname}", "$set_directory/tif/$imageid.dng");
+        move_file("$dir/$dngname", "$set_directory/tif/$imageid.dng");
       } else {
         print "Not found in neflist: $dngname\n" if ($gl_testmode);
       }
