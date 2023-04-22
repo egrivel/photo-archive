@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+$#!/usr/bin/perl
 
 my $script = __FILE__;
 my $localdir = ".";
@@ -320,8 +320,8 @@ sub get_exif_data {
 sub get_type {
   my $data_ref = $_[0];
 
-  if (defined(%$data_ref{"Camera Model Name"} &&
-    %$data_ref{"Camera Model Name"} eq "Pixel 3") {
+  if (defined(%$data_ref{"Camera Model Name"}) &&
+    (%$data_ref{"Camera Model Name"} eq "Pixel 3")) {
     return "nicoline photo";
   }
   return "unknown";
@@ -667,7 +667,7 @@ sub process_photo {
     if (pdb_image_exists($imageid)) {
       if ( ($shuttercount > 0)
         && ($shuttercount == get_shuttercount($imageid))
-        && !$gl_testmode) {
+        ) {
         # duplicate!
         if ($fname =~ /\.nef$/i) {
           move_file("$dir/$fname", "$set_directory/tif/$imageid.nef");
@@ -684,7 +684,7 @@ sub process_photo {
       while (pdb_image_exists($imageid)) {
         if ( ($shuttercount > 0)
           && ($shuttercount == get_shuttercount($imageid))
-          && !$gl_testmode) {
+          ) {
           # duplicate!
           if ($fname =~ /\.nef$/i) {
             move_file("$dir/$fname", "$set_directory/tif/$imageid.nef");
@@ -806,8 +806,13 @@ sub create_directory {
   my $dirname = $_[0];
 
   if (!-d $dirname) {
-    mkdir($dirname);
-    system("chmod 777 \"$dirname\"");
+    if ($gl_testmode) {
+      print "mkdir($dirname)\n";
+      print "chmod 777 \"$dirname\"\n";
+    } else {
+      mkdir($dirname);
+      system("chmod 777 \"$dirname\"");
+    }
   }
 }
 
@@ -823,6 +828,11 @@ sub move_file {
     warn "Move file '$srcfile' to '$dstfile': destination already exists\n";
     return;
   }
-  system("mv \"$srcfile\" \"$dstfile\"");
-  system("chmod 444 \"$dstfile\"");
+  if ($gl_testmode) {
+    print "mv \"$srcfile\" \"$dstfile\"\n";
+    print "chmod 444 \"$dstfile\"\n";
+  } else {
+    system("mv \"$srcfile\" \"$dstfile\"");
+    system("chmod 444 \"$dstfile\"");
+  }
 }
