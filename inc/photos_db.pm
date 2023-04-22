@@ -1449,9 +1449,9 @@ sub pdb_get_file_item_hash {
       $size, $atime, $mtime, $ctime, $blksize, $blocks
     ) = stat($fname);
 
-    if (defined($hash_record{"timestamp"})
-        && $hash_record{"timestamp"} ne ""
-        && $hash_record{"timestamp"} == $mtime) {
+    if ( defined($hash_record{"timestamp"})
+      && $hash_record{"timestamp"} ne ""
+      && $hash_record{"timestamp"} == $mtime) {
       return $file_hash;
     }
 
@@ -1485,6 +1485,12 @@ sub pdb_get_image_hash_text {
   my $root = local_photos_directory();
 
   $item = "tif/$image.nef";
+  if (-f "$root/$set/$item") {
+    my $hash = pdb_get_file_item_hash($item, "$root/$set/$item", $do_update);
+    $text .= "$item: $hash\n";
+  }
+
+  $item = "tif/$image.dng";
   if (-f "$root/$set/$item") {
     my $hash = pdb_get_file_item_hash($item, "$root/$set/$item", $do_update);
     $text .= "$item: $hash\n";

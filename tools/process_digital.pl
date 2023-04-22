@@ -13,6 +13,9 @@ require film_process;
 # require localsettings;
 require process_tools;
 
+my $dir = "";
+my $fname = "";
+
 put_init();
 
 # For the new tools, it is necessary to log in. Log in as the "process"
@@ -126,6 +129,17 @@ sub process {
     } elsif ($fname =~ /^(.+?)\.gif$/i) {
       $dirlist{$fname}++;
     } elsif ($fname =~ /^(.+?)\.nef$/i) {
+      my $basename = $1;
+      if ( (-f "$dir/$basename.jpg")
+        || (-f "$dir/$basename.JPG")) {
+        # Corresponding JPEG file also exists; add NEF to the %neflist
+        $neflist{lc($fname)} = $fname;
+      } else {
+        # No corresponding JPEG file, so add NEF to the files to be
+        # processed
+        $dirlist{$fname}++;
+      }
+    } elsif ($fname =~ /^(.+?)\.dng$/i) {
       my $basename = $1;
       if ( (-f "$dir/$basename.jpg")
         || (-f "$dir/$basename.JPG")) {
@@ -276,6 +290,41 @@ sub get_indexed_image {
     return "$targetfile$index";
   }
   return $targetfile . chr($index + 96);
+}
+
+sub get_exif_data {
+  my $dir = $_[0];
+  my $fname = $_[1];
+
+  my %data;
+  $data{"_dir"} = $dir;
+  $data{"_fname"} = $fname;
+
+  open(FILE, "exiftool \"$dir/$fname\"|")
+    || die "Cannot process '$dir/$fname'\n";
+  while (<FILE>) {
+    chomp();
+    if (/^(.*?)\s*:\s*(.*?)\s*$/s) {
+      my $label = $1;
+      my $value = $2;
+      $data{$label} = $value;
+    } elsif (/./) {
+      print "$dir/$fname: unknown line '$_'\n";
+    }
+  }
+  close FILE;
+
+  return \%data;
+}
+
+sub get_type {
+  my $data_ref = $_[0];
+
+  if (defined(%$data_ref{"Camera Model Name"} &&
+    %$data_ref{"Camera Model Name"} eq "Pixel 3") {
+    return "nicoline photo";
+  }
+  return "unknown";
 }
 
 sub process_photo {
@@ -622,6 +671,8 @@ sub process_photo {
         # duplicate!
         if ($fname =~ /\.nef$/i) {
           move_file("$dir/$fname", "$set_directory/tif/$imageid.nef");
+        } elsif ($fname =~ /\.dng$/i) {
+          move_file("$dir/$fname", "$set_directory/tif/$imageid.dng");
         } else {
           print "File $fname is duplicate but not nef - ignored!\n";
         }
@@ -637,6 +688,8 @@ sub process_photo {
           # duplicate!
           if ($fname =~ /\.nef$/i) {
             move_file("$dir/$fname", "$set_directory/tif/$imageid.nef");
+          } elsif ($fname =~ /\.dng$/i) {
+            move_file("$dir/$fname", "$set_directory/tif/$imageid.dng");
           } else {
             print "File $fname is duplicate but not nef - ignored!\n";
           }
@@ -674,10 +727,15 @@ sub process_photo {
       move_file("$dir/$fname", "$set_directory/tif/$imageid.jpg");
       # If we also have a NEF file, move that as well
       my $nefname = lc($fname);
+      my $dngname = lc($fname);
       $nefname =~ s/\.jpg$/\.nef/;
+      $dngname =~ s/\.jpg$/\.dng/;
       if (defined($neflist{$nefname})) {
         # Got a ".nef" file (Nikon RAW format), copy that too
         move_file("$dir/$neflist{$nefname}", "$set_directory/tif/$imageid.nef");
+      } elsif (defined($neflist{$dngname})) {
+        # Got a ".dng" file (Google phone "RAW" format), copy that too
+        move_file("$dir/$neflist{$dngname}", "$set_directory/tif/$imageid.dng");
       }
     } elsif ($fname =~ /\.png$/i) {
       # Get the JPG first
@@ -693,6 +751,16 @@ sub process_photo {
         "exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0 -overwrite_original \"$set_directory/tif/$imageid.jpg\""
       );
       move_file("$dir/$fname", "$set_directory/tif/$imageid.nef");
+    } elsif ($fname =~ /\.dng$/i) {
+      # Extract the JPG first
+      system(
+        "exiftool -b -JpgFromRaw \"$dir/$fname\" > \"$set_directory/tif/$imageid.jpg\""
+      );
+      # Add all the EXIF information to the JPG file
+      system(
+        "exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0 -overwrite_original \"$set_directory/tif/$imageid.jpg\""
+      );
+      move_file("$dir/$fname", "$set_directory/tif/$imageid.dng");
     } elsif ($fname =~ /\.cr2$/i) {
       # Extract the JPG first
       system(

@@ -6,65 +6,66 @@
 use localsettings;
 
 # Logging levels
-$PCOM_DEBUG  = 1;
+$PCOM_DEBUG = 1;
 $PCOM_NORMAL = 2;
-$PCOM_ERROR  = 3;
+$PCOM_ERROR = 3;
 
 # Quality
-$PCOM_QUAL_DUD     = 0;
-$PCOM_QUAL_BAD     = 1;
+$PCOM_QUAL_DUD = 0;
+$PCOM_QUAL_BAD = 1;
 $PCOM_QUAL_DEFAULT = 2;
-$PCOM_QUAL_OK      = 3;
-$PCOM_QUAL_GOOD    = 4;
-$PCOM_QUAL_GREAT   = 5;
+$PCOM_QUAL_OK = 3;
+$PCOM_QUAL_GOOD = 4;
+$PCOM_QUAL_GREAT = 5;
 
 # Photo types
-$PCOM_REGULAR      = "r";
-$PCOM_PRIVATE      = "p";
+$PCOM_REGULAR = "r";
+$PCOM_PRIVATE = "p";
 $PCOM_EXPERIMENTAL = "e";
-$PCOM_NICOLINE     = "n";
-$PCOM_KIDS         = "k";
-$PCOM_THEO         = "t";
-$PCOM_PARENTS      = "d";
-$PCOM_OTHERS       = "o";
-$PCOM_NEW          = "w";
+$PCOM_NICOLINE = "n";
+$PCOM_KIDS = "k";
+$PCOM_THEO = "t";
+$PCOM_PARENTS = "d";
+$PCOM_OTHERS = "o";
+$PCOM_NEW = "w";
 
 # Photo sizes
-$PCOM_DEFAULT          = "default";
-$PCOM_THUMBNAIL        = "thumbnail";
+$PCOM_DEFAULT = "default";
+$PCOM_THUMBNAIL = "thumbnail";
 $PCOM_THUMBNAIL_SQUARE = "thsqu";
-$PCOM_SMALL            = "small";
-$PCOM_NORMAL           = "normal";
-$PCOM_GOOGLE           = "google";
-$PCOM_LARGE            = "large";
-$PCOM_SUPER            = "super";
-$PCOM_2K               = "2k";
-$PCOM_4K               = "4k";
-$PCOM_ORIG             = "orig";
-$PCOM_RAW              = "raw";
-$PCOM_CUSTOM           = "custom";
+$PCOM_SMALL = "small";
+$PCOM_NORMAL = "normal";
+$PCOM_GOOGLE = "google";
+$PCOM_LARGE = "large";
+$PCOM_SUPER = "super";
+$PCOM_2K = "2k";
+$PCOM_4K = "4k";
+$PCOM_ORIG = "orig";
+$PCOM_RAW = "raw";
+$PCOM_CUSTOM = "custom";
 
 # Raw file types
 $PCOM_TIF = "tif";
 $PCOM_NEF = "nef";
+$PCOM_DNG = "dng";
 
 # Orientation
-$PCOM_LANDSCAPE  = "landscape";
-$PCOM_PORTRAIT   = "portrait";
-$PCOM_FREEFORM   = "freeform";
+$PCOM_LANDSCAPE = "landscape";
+$PCOM_PORTRAIT = "portrait";
+$PCOM_FREEFORM = "freeform";
 $PCOM_FREEFORM_P = "freeform-p";
 $PCOM_FREEFORM_L = "freeform-l";
 
 # Mobile Sizes
-$PCOM_M1_WIDTH  = 480;
+$PCOM_M1_WIDTH = 480;
 $PCOM_M1_HEIGHT = 320;
-$PCOM_M2_WIDTH  = 640;
+$PCOM_M2_WIDTH = 640;
 $PCOM_M2_HEIGHT = 480;
-$PCOM_M3_WIDTH  = 900;
+$PCOM_M3_WIDTH = 900;
 $PCOM_M3_HEIGHT = 600;
-$PCOM_M4_WIDTH  = 1366;
+$PCOM_M4_WIDTH = 1366;
 $PCOM_M4_HEIGHT = 720;
-$PCOM_M5_WIDTH  = 1920;
+$PCOM_M5_WIDTH = 1920;
 $PCOM_M5_HEIGHT = 1080;
 
 @quicktags = ();
@@ -74,10 +75,10 @@ while ($quicktags_txt =~ s/^\s*([^, ]+)[, ]*//) {
 }
 
 my $log_level = $PCOM_DEBUG;
-my $log_file  = pcom_photo_root() . "/photos_log.txt";
+my $log_file = pcom_photo_root() . "/photos_log.txt";
 
 sub pcom_log {
-  my $level   = $_[0];
+  my $level = $_[0];
   my $message = $_[1];
 
   if ($level >= $log_level) {
@@ -110,7 +111,7 @@ sub pcom_error {
 }
 
 sub pcom_assert {
-  my $test        = $_[0];
+  my $test = $_[0];
   my $explanation = $_[1];
 
   if (!$test) {
@@ -158,8 +159,8 @@ sub pcom_is_digital {
   return ($imageid =~ /^\d\d\d\d\d\d\d\d\-\d\d\d\d\d\d\w?$/);
 }
 
-my @year_film   = ();
-my @year_year   = ();
+my @year_film = ();
+my @year_year = ();
 my %start_years = (
   "001", 1974, "007", 1975, "011", 1976, "015", 1977, "016", 1978,
   "020", 1979, "024", 1980, "030", 1981, "031", 1982, "036", 1983,
@@ -297,9 +298,9 @@ sub pcom_format_imageid {
 }
 
 sub pcom_mv {
-  my $src    = $_[0];
+  my $src = $_[0];
   my $target = $_[1];
-  my $dir    = $target;
+  my $dir = $target;
   if ($dir =~ s/\/[^\/]+$//) {
     if (!(-d $dir)) {
       mkdir($dir);

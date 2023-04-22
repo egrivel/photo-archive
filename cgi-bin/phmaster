@@ -59,6 +59,7 @@ require "photos_util.pm";
 # file exists):
 #   database: <image database spec>
 #   tif/<imageid>.nef: <file hash>
+#   tif/<imageid>.dng: <file hash>
 #   tif/<imageid>.tif: <file hash>
 #   tif/<imageid>.jpg: <file hash>
 #   edited/<imageid>.jpg: <file hash>

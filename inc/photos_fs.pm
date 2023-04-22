@@ -43,6 +43,7 @@ sub pfs_get_setdir {
   # The default should work just about always
   pcom_log($PCOM_DEBUG, "Try $basedir/tif");
   if ( (-f "$basedir/tif/$imageID.nef")
+    || (-f "$basedir/tif/$imageID.dng")
     || (-f "$basedir/tif/$imageID.jpg")
     || (-f "$basedir/tif/$imageID.tif")
     || (-f "$basedir/tif/$imageID.mp4")
@@ -57,6 +58,7 @@ sub pfs_get_setdir {
   $basedir = "$pfs_alt_basedir/$setID";
   pcom_log($PCOM_DEBUG, "Try $basedir/tif");
   if ( (-f "$basedir/tif/$imageID.nef")
+    || (-f "$basedir/tif/$imageID.dng")
     || (-f "$basedir/tif/$imageID.jpg")
     || (-f "$basedir/tif/$imageID.tif")
     || (-f "$basedir/tif/$imageID.mp4")
@@ -152,7 +154,7 @@ sub pfs_get_edited_location {
         $ext = ".mp4";
       }
     }
-    
+
     if (-f "$setdir/edited/$imageID$ext") {
       # Check to see if there is a RawShooter updated file
       my $fname = "$setdir/edited/$imageID$ext";
@@ -254,6 +256,9 @@ sub pfs_get_raw_location {
     }
     if (-f "$setdir/tif/$imageID.nef") {
       return "$setdir/tif/$imageID.nef";
+    }
+    if (-f "$setdir/tif/$imageID.dng") {
+      return "$setdir/tif/$imageID.dng";
     }
     if (-f "$setdir/tif/$imageID.mov") {
       return "$setdir/tif/$imageID.mov";
@@ -448,6 +453,9 @@ sub pfs_get_raw_type {
     if (-f "$setdir/tif/$imageID.nef") {
       return $PCOM_NEF;
     }
+    if (-f "$setdir/tif/$imageID.dng") {
+      return $PCOM_DNG;
+    }
   }
 
   return "";
@@ -464,6 +472,7 @@ sub pfs_get_file_dimensions {
   if (-f $fname) {
     if (
       ($fname =~ /\.nef$/i)
+      || ($fname =~ /\.dng$/i)
       #	    || ($fname =~ /\.jpe?g$/i)
       || ($fname =~ /\.tiff?$/i)
     ) {
@@ -608,10 +617,10 @@ sub pfs_cmd_resize {
   my $realheight = $_[8];
   my $keep_aspect = $_[9];
   my $rotate_always = $_[10];    # if true, even rotate when using edited file
-  my $scale = $_[11];            # pre-computed scale; ignores all other
-                                 # size parameters
-  my $x_offset = $_[12];         # shift image horizontally
-  my $y_offset = $_[13];         # shift image vertically
+  my $scale = $_[11];    # pre-computed scale; ignores all other
+                         # size parameters
+  my $x_offset = $_[12];    # shift image horizontally
+  my $y_offset = $_[13];    # shift image vertically
 
   if (!defined($scale) || ($scale eq "")) {
     $scale = 0;
@@ -917,11 +926,11 @@ sub pfs_cmd_large {
 sub pfs_cmd_large_movie {
   my $imageid = $_[0];
   my $src = $_[1];
-  
+
   if (!defined($src) || ($src eq "")) {
     $src = pfs_get_raw_location($imageid);
   }
-  
+
   my $outfile = pfs_get_buffer_location($imageid, "large");
   if (($src ne "") && ($outfile ne "")) {
     $outfile =~ s/\.jpg$/.mp4/;
@@ -929,7 +938,7 @@ sub pfs_cmd_large_movie {
     # or audio frames", see:
     #    https://trac.ffmpeg.org/ticket/6375
     return
-        "ffmpeg -i $src -max_muxing_queue_size 400 -vcodec libx264 -acodec libvorbis -aq 5 -ac 2 -qmax 25 -vf scale=960:540 $outfile.mp4; qt-faststart $outfile.mp4 $outfile; rm $outfile.mp4; chmod a+w $outfile";
+      "ffmpeg -i $src -max_muxing_queue_size 400 -vcodec libx264 -acodec libvorbis -aq 5 -ac 2 -qmax 25 -vf scale=960:540 $outfile.mp4; qt-faststart $outfile.mp4 $outfile; rm $outfile.mp4; chmod a+w $outfile";
   }
   return "";
 }

@@ -64,12 +64,12 @@ sub process {
   my $fname;
   while (defined($fname = readdir(DIR))) {
     next if ($fname =~ /^\./);
-    if ($fname =~ /^(($setId).+?)\.(jpg|jpeg|tif|nef|mov|mp4|gif|cr2)$/) {
+    if ($fname =~ /^(($setId).+?)\.(jpg|jpeg|tif|nef|dng|mov|mp4|gif|cr2)$/) {
       # This is a potential file
       my $imageId = $1;
-      if ($fname =~ /\.(tif|nef|cr2)$/) {
+      if ($fname =~ /\.(tif|nef|dng|cr2)$/) {
         my $jpegname = $fname;
-        $jpegname =~ s/\.(tif|nef|cr2)$/.jpg/;
+        $jpegname =~ s/\.(tif|nef|dng|cr2)$/.jpg/;
         if (-f "$setdir/tif/$jpegname") {
           # There is also a .jpg version of the file. Use the .jpg version
           # to add the photo (the .jpg version should have the correct

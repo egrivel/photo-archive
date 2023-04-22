@@ -91,6 +91,9 @@ sub process_all {
     if ($fname =~ s/\.jpg$/.nef/) {
       next if (defined($gl_file_done{$fname}));
     }
+    if ($fname =~ s/\.nef$/.dng/) {
+      next if (defined($gl_file_done{$fname}));
+    }
     print "File $key not found\n";
   }
 }

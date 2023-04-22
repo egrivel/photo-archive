@@ -13,66 +13,66 @@ put_restore_session();
 my $imageid = parg_get("imageid");
 my $do_editpage = 0;
 if (parg_get("editid") ne "") {
-    $imageid = parg_get("editid");
-    $do_editpage = 1;
+  $imageid = parg_get("editid");
+  $do_editpage = 1;
 }
 pses_set("return", "phdisp?imageid=$imageid");
 
 if (pusr_allowed($PUSR_QUICKTAGS)) {
-    my $tag = parg_get("tag");
-    if ($tag ne "") {
-        # add tag $tag
-        add_tag_to_image($imageid, $tag);
-    }
-    my $untag = parg_get("untag");;
-    if ($untag ne "") {
-        # remove tag $untag
-        remove_tag_from_image($imageid, $untag);
-    }
+  my $tag = parg_get("tag");
+  if ($tag ne "") {
+    # add tag $tag
+    add_tag_to_image($imageid, $tag);
+  }
+  my $untag = parg_get("untag");
+  if ($untag ne "") {
+    # remove tag $untag
+    remove_tag_from_image($imageid, $untag);
+  }
 }
 
 if (parg_get_button() eq "resize") {
-    disp_resize_page($imageid);
+  disp_resize_page($imageid);
 } elsif ($do_editpage) {
-    disp_edit_page($imageid);
+  disp_edit_page($imageid);
 } else {
-    disp_image_page($imageid);
+  disp_image_page($imageid);
 }
 
 sub add_tag_to_image {
-    my $imageid = $_[0];
-    my $tag = $_[1];
+  my $imageid = $_[0];
+  my $tag = $_[1];
 
-    # get the tag ID value, creating one if it doesn't exist yet
-    my $tagid = ppers_get_id($tag, 1);
-    my $idlist = ppers_get_persons_in_image($imageid);
-    if (!($idlist =~ /$tagid/)) {
-        $idlist .= ";" if ($idlist ne "");
-        $idlist .= $tagid;
-        ppers_update_ids($imageid, $idlist);
-    }
+  # get the tag ID value, creating one if it doesn't exist yet
+  my $tagid = ppers_get_id($tag, 1);
+  my $idlist = ppers_get_persons_in_image($imageid);
+  if (!($idlist =~ /$tagid/)) {
+    $idlist .= ";" if ($idlist ne "");
+    $idlist .= $tagid;
+    ppers_update_ids($imageid, $idlist);
+  }
 }
 
 sub remove_tag_from_image {
-    my $imageid = $_[0];
-    my $tag = $_[1];
+  my $imageid = $_[0];
+  my $tag = $_[1];
 
-    # get the tag ID value, creating one if it doesn't exist yet
-    my $tagid = ppers_get_id($tag, 1);
-    my $idlist = ppers_get_persons_in_image($imageid);
-    if ($idlist =~ s/$tagid//) {
-        $idlist =~ s/;;/;/g;
-        $idlist =~ s/;$//;
-        ppers_update_ids($imageid, $idlist);
-    }
+  # get the tag ID value, creating one if it doesn't exist yet
+  my $tagid = ppers_get_id($tag, 1);
+  my $idlist = ppers_get_persons_in_image($imageid);
+  if ($idlist =~ s/$tagid//) {
+    $idlist =~ s/;;/;/g;
+    $idlist =~ s/;$//;
+    ppers_update_ids($imageid, $idlist);
+  }
 }
 
 sub generate_poster_image {
   my $movieid = $_[0];
 
-  # The raw location is a TIFF, NEF, MOV or MP4 file
+  # The raw location is a TIFF, NEF, DNG, MOV or MP4 file
   my $srcname = pfs_get_raw_location($movieid);
-  if (! -f $srcname) {
+  if (!-f $srcname) {
     # No movie file exists
     return;
   }
@@ -119,7 +119,7 @@ sub disp_image_page {
   my $persons = pdb_get_persons($imageid);
   my $person_id_list = ppers_get_persons_in_image($imageid);
 
-  if (($orientation eq $PCOM_FREEFORM_P)
+  if ( ($orientation eq $PCOM_FREEFORM_P)
     || ($orientation eq $PCOM_FREEFORM_L)) {
     # for the purpose here, use freeform
     $orientation = $PCOM_FREEFORM;
@@ -301,121 +301,120 @@ sub disp_image_page {
 }
 
 sub disp_edit_page {
-    my $imageid = $_[0];
-    my $show_image = 1;
+  my $imageid = $_[0];
+  my $show_image = 1;
 
-    # If the image doesn't exist, give an error
-    if (!pdb_image_info($imageid)) {
-        $show_image = 0;
+  # If the image doesn't exist, give an error
+  if (!pdb_image_info($imageid)) {
+    $show_image = 0;
+  }
+
+  # If no category defined for the image, give an error
+  my $category = pdb_get_category($imageid);
+  if ($category eq "") {
+    $show_image = 0;
+  }
+  my $orientation = pdb_get_orientation($imageid);
+  my $size = "width='900' height='600'";
+  if ($orientation eq "portrait") {
+    $size = "width='600' height='900'";
+  }
+
+  # If the current user isn't alowed to see the image, give an error
+  if (!pusr_allowed($PUSR_SEE . $category)) {
+    $show_image = 0;
+  }
+
+  if (!pusr_allowed($PUSR_GET_ORIG)) {
+    $show_image = 0;
+  }
+
+  my $has_edited = 0;
+  if (pfs_get_edited_location($imageid) ne "") {
+    $has_edited = 1;
+  }
+
+  pht_page_start(0);
+
+  if ($show_image) {
+    pht_output "<p>Click on the photo for the full size</p>\n";
+    pht_output "<a href='phimg?edited=$imageid'>";
+    pht_output "<img src='phimg?edited=$imageid' $size />";
+    pht_output "</a>";
+    if ($has_edited) {
+      pht_output
+        "<br /><a href='phimg?orig=$imageid'>Click here</a> for the original (unedited) version.";
     }
-
-    # If no category defined for the image, give an error
-    my $category = pdb_get_category($imageid);
-    if ($category eq "") {
-        $show_image = 0;
-    }
-    my $orientation = pdb_get_orientation($imageid);
-    my $size = "width='900' height='600'";
-    if ($orientation eq "portrait") {
-        $size = "width='600' height='900'";
-    }
-
-    # If the current user isn't alowed to see the image, give an error
-    if (!pusr_allowed($PUSR_SEE . $category)) {
-        $show_image = 0;
-    }
-
-    if (!pusr_allowed($PUSR_GET_ORIG)) {
-        $show_image = 0;
-    }
-
-    my $has_edited = 0;
-    if (pfs_get_edited_location($imageid) ne "") {
-        $has_edited = 1;
-    }
-
-    pht_page_start(0);
-
-
-    if ($show_image) {
-        pht_output "<p>Click on the photo for the full size</p>\n";
-        pht_output "<a href='phimg?edited=$imageid'>";
-        pht_output "<img src='phimg?edited=$imageid' $size />";
-        pht_output "</a>";
-        if ($has_edited) {
-            pht_output "<br /><a href='phimg?orig=$imageid'>Click here</a> for the original (unedited) version.";
-        }
-    } else {
-        pht_output "<p>Image not available</p>\n";
-    }
-    pht_page_end();
+  } else {
+    pht_output "<p>Image not available</p>\n";
+  }
+  pht_page_end();
 }
 
 sub disp_error_page {
-    my $msg = $_[0];
-    put_page_start("Error");
-    pht_error_message($msg);
-    put_page_end();
+  my $msg = $_[0];
+  put_page_start("Error");
+  pht_error_message($msg);
+  put_page_end();
 }
 
 sub disp_resize_page {
-    my $imageid = $_[0];
+  my $imageid = $_[0];
 
-    pht_page_start("Resize");
-    put_form_start("phimg", "get");
-    put_form_image($imageid);
-    parg_set("type", "custom");
-    put_form_hidden("type");
-    if ($imageid eq "") {
-        put_form_text("ImageID", "imageid");
-    } else {
-        parg_set("image", $imageid);
-        put_form_protected("ImageID", "image");
-    }
-    put_form_text("Width", "width");
-    put_form_text("Height", "height");
-    if (($imageid eq "") || (pdb_get_orientation($imageid) ne $PCOM_LANDSCAPE)) {
-        put_form_checkboxes("", "makelandscape", "Force landscape format");
-    }
-    if (($imageid eq "") || (pdb_get_orientation($imageid) eq $PCOM_FREEFORM)) {
-        put_form_checkboxes("", "keepratio", "Keep original aspect ratio");
-    }
-    put_form_buttons("resize", "Resize");
-    put_form_end();
-    pht_page_end();
+  pht_page_start("Resize");
+  put_form_start("phimg", "get");
+  put_form_image($imageid);
+  parg_set("type", "custom");
+  put_form_hidden("type");
+  if ($imageid eq "") {
+    put_form_text("ImageID", "imageid");
+  } else {
+    parg_set("image", $imageid);
+    put_form_protected("ImageID", "image");
+  }
+  put_form_text("Width", "width");
+  put_form_text("Height", "height");
+  if (($imageid eq "") || (pdb_get_orientation($imageid) ne $PCOM_LANDSCAPE)) {
+    put_form_checkboxes("", "makelandscape", "Force landscape format");
+  }
+  if (($imageid eq "") || (pdb_get_orientation($imageid) eq $PCOM_FREEFORM)) {
+    put_form_checkboxes("", "keepratio", "Keep original aspect ratio");
+  }
+  put_form_buttons("resize", "Resize");
+  put_form_end();
+  pht_page_end();
 }
 
-
 sub format_comment {
-    my $comment = $_[0];
-    my $formatted = "";
-    my %userlist;
+  my $comment = $_[0];
+  my $formatted = "";
+  my %userlist;
 
-    while ($comment =~ s/<comment>(.*?)<\/comment>//s) {
-        my $item = $1;
-        my $name = "";
-        my $time = "";
-        my $text = "";
-        if ($item =~ /<name>(.*?)<\/name>/) {
-            $name = $1;
-            if (!(%userlist)) {
-                %userlist = pusr_get_user_list();
-            }
-            if ((%userlist) && defined($userlist{$name})) {
-                $name = $userlist{$name};
-            }
-        }
-        if ($item =~ /<time>(.*?)<\/time>/) {
-            $time = localtime($1);
-        }
-        if ($item =~ /<text>(.*?)<\/text>/) {
-            $text = $1;
-        }
-        $formatted .= "<br />\n" if ($formatted ne "");
-        $formatted .= "<b>$name</b> " if ($name ne "");
-        $formatted .= $time if ($time ne "");
-        $formatted .= ": " if ((($name ne "") || ($time ne "")) && ($text ne ""));
-        $formatted .= "<i>$text</i>";
+  while ($comment =~ s/<comment>(.*?)<\/comment>//s) {
+    my $item = $1;
+    my $name = "";
+    my $time = "";
+    my $text = "";
+    if ($item =~ /<name>(.*?)<\/name>/) {
+      $name = $1;
+      if (!(%userlist)) {
+        %userlist = pusr_get_user_list();
+      }
+      if ((%userlist) && defined($userlist{$name})) {
+        $name = $userlist{$name};
+      }
     }
-    return $formatted;
+    if ($item =~ /<time>(.*?)<\/time>/) {
+      $time = localtime($1);
+    }
+    if ($item =~ /<text>(.*?)<\/text>/) {
+      $text = $1;
+    }
+    $formatted .= "<br />\n" if ($formatted ne "");
+    $formatted .= "<b>$name</b> " if ($name ne "");
+    $formatted .= $time if ($time ne "");
+    $formatted .= ": " if ((($name ne "") || ($time ne "")) && ($text ne ""));
+    $formatted .= "<i>$text</i>";
+  }
+  return $formatted;
 }

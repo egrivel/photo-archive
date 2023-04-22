@@ -126,6 +126,21 @@ sub process_directory {
         $dirlist{$fname}++;
       }
     }
+    if ($fname =~ /^(.+?)\.dng$/i) {
+      my $basename = $1;
+      if ( (-f "$dir/$basename.jpg")
+        || (-f "$dir/$basename.JPG")
+        || (-f "$dir/$basename.jpeg")
+        || (-f "$dir/$basename.JPEG"))
+      {
+        # Corresponding JPEG file also exists; add DNG to the %neflist
+        $neflist{ lc($fname) } = $fname;
+      } else {
+        # No corresponding JPEG file, so add DNG to the files to be
+        # processed
+        $dirlist{$fname}++;
+      }
+    }
     if ($fname =~ /^(.+?)\.mov$/i) {
       # copy over movies (from D750)
       $dirlist{$fname}++;
@@ -391,6 +406,8 @@ sub process_photo {
         # duplicate!
         if ($fname =~ /\.nef$/i) {
           move_file("$dir/$fname", "$set_directory/tif/$imageid.nef");
+        } elsif ($fname =~ /\.dng$/i) {
+          move_file("$dir/$fname", "$set_directory/tif/$imageid.dng");
         } else {
           print "File $fname is duplicate but not nef - ignored!\n";
         }
@@ -407,6 +424,8 @@ sub process_photo {
           # duplicate!
           if ($fname =~ /\.nef$/i) {
             move_file("$dir/$fname", "$set_directory/tif/$imageid.nef");
+          } elsif ($fname =~ /\.dng$/i) {
+            move_file("$dir/$fname", "$set_directory/tif/$imageid.dng");
           } else {
             print "File $fname is duplicate but not nef - ignored!\n";
           }
@@ -447,6 +466,12 @@ sub process_photo {
         # Got a ".nef" file (Nikon RAW format), copy that too
         move_file("$dir/$neflist{$nefname}", "$set_directory/tif/$imageid.nef");
       }
+      my $dngname = lc($fname);
+      $dngname =~ s/\.jpg$/\.dng/;
+      if (defined($neflist{$nefname})) {
+        # Got a ".dng" file (Google RAW format), copy that too
+        move_file("$dir/$neflist{$nefname}", "$set_directory/tif/$imageid.dng");
+      }
     } elsif ($fname =~ /\.nef$/i) {
       # Extract the JPG first
       system(
@@ -457,6 +482,16 @@ sub process_photo {
       system("exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0 "
           . "-overwrite_original $set_directory/tif/$imageid.jpg");
       move_file("$dir/$fname", "$set_directory/tif/$imageid.nef");
+    } elsif ($fname =~ /\.dng$/i) {
+      # Extract the JPG first
+      system(
+        "exiftool -b -JpgFromRaw \"$dir/$fname\" > "
+        . "$set_directory/tif/$imageid.jpg"
+      );
+      # Add all the EXIF information to the JPG file
+      system("exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0 "
+          . "-overwrite_original $set_directory/tif/$imageid.jpg");
+      move_file("$dir/$fname", "$set_directory/tif/$imageid.dng");
     } elsif ($fname =~ /\.cr2$/i) {
       # Extract the JPG first
       system("exiftool -b -PreviewImage \"$dir/$fname\" > "
