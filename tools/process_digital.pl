@@ -145,7 +145,7 @@ sub process {
       if ( (-f "$dir/$basename.jpg")
         || (-f "$dir/$basename.JPG")) {
         # Corresponding JPEG file also exists; add NEF to the %neflist
-        print "Add to neflist\n" if ($gl_testmode);
+        print "Add $fname to neflist\n" if ($gl_testmode);
         $neflist{lc($fname)} = $fname;
       } else {
         # No corresponding JPEG file, so add NEF to the files to be
@@ -734,18 +734,19 @@ sub process_photo {
       move_file("$dir/$fname", "$set_directory/tif/$imageid.jpg");
       # If we also have a NEF file, move that as well
       my $nefname = lc($fname);
-      my $dngname = $fname;
+      my $dngname = lc($fname);
       $nefname =~ s/\.jpg$/\.nef/;
       $dngname =~ s/\.jpg$/\.dng/;
       print "Got dng name '$dngname'\n" if ($gl_testmode);
-      if (defined($neflist{$nefname})) {
+
+      if (-f "$dir/$nefname") {
         # Got a ".nef" file (Nikon RAW format), copy that too
         move_file("$dir/$neflist{$nefname}", "$set_directory/tif/$imageid.nef");
-      } elsif (defined($neflist{$dngname})) {
+      } elsif (-f "$dir/$dngname") {
         # Got a ".dng" file (Google phone "RAW" format), copy that too
         move_file("$dir/$neflist{$dngname}", "$set_directory/tif/$imageid.dng");
       } else {
-        print "Not found in neflist\n" if ($gl_testmode);
+        print "Not found in neflist: $dngname\n" if ($gl_testmode);
       }
     } elsif ($fname =~ /\.png$/i) {
       # Get the JPG first
