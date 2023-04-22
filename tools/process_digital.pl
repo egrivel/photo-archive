@@ -737,12 +737,15 @@ sub process_photo {
       my $dngname = lc($fname);
       $nefname =~ s/\.jpg$/\.nef/;
       $dngname =~ s/\.jpg$/\.dng/;
+      print "Got dng name '$dngname'\n" if ($gl_testmode);
       if (defined($neflist{$nefname})) {
         # Got a ".nef" file (Nikon RAW format), copy that too
         move_file("$dir/$neflist{$nefname}", "$set_directory/tif/$imageid.nef");
       } elsif (defined($neflist{$dngname})) {
         # Got a ".dng" file (Google phone "RAW" format), copy that too
         move_file("$dir/$neflist{$dngname}", "$set_directory/tif/$imageid.dng");
+      } else {
+        print "Not found in neflist\n" if ($gl_testmode);
       }
     } elsif ($fname =~ /\.png$/i) {
       # Get the JPG first
