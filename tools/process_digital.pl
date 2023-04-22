@@ -140,14 +140,17 @@ sub process {
         $dirlist{$fname}++;
       }
     } elsif ($fname =~ /^(.+?)\.dng$/i) {
+      print "Got $fname\n" if ($gl_testmode);
       my $basename = $1;
       if ( (-f "$dir/$basename.jpg")
         || (-f "$dir/$basename.JPG")) {
         # Corresponding JPEG file also exists; add NEF to the %neflist
+        print "Add to neflist\n" if ($gl_testmode);
         $neflist{lc($fname)} = $fname;
       } else {
         # No corresponding JPEG file, so add NEF to the files to be
         # processed
+        print "Add to dirlist\n" if ($gl_testmode);
         $dirlist{$fname}++;
       }
     } elsif ($fname =~ /^(.+?)\.cr2$/i) {
