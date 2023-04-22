@@ -350,6 +350,10 @@ sub process_photo {
   my $phoneportrait = 0;
   my $is_mov = 0;
 
+  if ($gl_testmode) {
+    print "Process photo '$fname'\n";
+  }
+
   if ($fname =~ /\.mov$/i || $fname =~ /\.mp4$/i || $fname =~ /\.gif$/i) {
     $is_mov = 1;
   }
