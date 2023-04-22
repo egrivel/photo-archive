@@ -702,7 +702,6 @@ sub process_photo {
     if ($gl_testmode) {
       my $sortid = pdb_create_sortid($imageid, $timezone, $dst);
       print "Image $fname: image ID $imageid --> sort ID $sortid\n";
-      return;
     }
 
     # Create the directories
@@ -714,10 +713,13 @@ sub process_photo {
     create_directory("$set_directory/edited");
     create_directory("$set_directory/custom");
 
-    set_database_info(
-      $imageid, $do_portrait, $newer_rotate, $latlong, $timezone,
-      $dst, $is_mov, $is_kids, $is_freeform
-    );
+    if (!$gl_testmode) {
+      set_database_info(
+        $imageid, $do_portrait, $newer_rotate,
+        $latlong, $timezone, $dst,
+        $is_mov, $is_kids, $is_freeform
+      );
+    }
 
     # Move over the files we are processing
 
@@ -737,45 +739,45 @@ sub process_photo {
       }
     } elsif ($fname =~ /\.png$/i) {
       # Get the JPG first
-      system("convert \"$dir/$fname\" \"$set_directory/tif/$imageid.jpg\"");
+      run_cmd("convert \"$dir/$fname\" \"$set_directory/tif/$imageid.jpg\"");
       move_file("$dir/$fname", "$set_directory/tif/$imageid.png");
     } elsif ($fname =~ /\.nef$/i) {
       # Extract the JPG first
-      system(
+      run_cmd(
         "exiftool -b -JpgFromRaw \"$dir/$fname\" > \"$set_directory/tif/$imageid.jpg\""
       );
       # Add all the EXIF information to the JPG file
-      system(
+      run_cmd(
         "exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0 -overwrite_original \"$set_directory/tif/$imageid.jpg\""
       );
       move_file("$dir/$fname", "$set_directory/tif/$imageid.nef");
     } elsif ($fname =~ /\.dng$/i) {
       # Extract the JPG first
-      system(
+      run_cmd(
         "exiftool -b -JpgFromRaw \"$dir/$fname\" > \"$set_directory/tif/$imageid.jpg\""
       );
       # Add all the EXIF information to the JPG file
-      system(
+      run_cmd(
         "exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0 -overwrite_original \"$set_directory/tif/$imageid.jpg\""
       );
       move_file("$dir/$fname", "$set_directory/tif/$imageid.dng");
     } elsif ($fname =~ /\.cr2$/i) {
       # Extract the JPG first
-      system(
+      run_cmd(
         "exiftool -b -PreviewImage \"$dir/$fname\" > \"$set_directory/tif/$imageid.jpg\""
       );
       # Add all the EXIF information to the JPG file
-      system(
+      run_cmd(
         "exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0 -overwrite_original \"$set_directory/tif/$imageid.jpg\""
       );
       move_file("$dir/$fname", "$set_directory/tif/$imageid.cr2");
     } elsif ($fname =~ /\.mov$/i || $fname =~ /\.mp4$/i) {
       # Extract a JPG thumbnail
-      system(
+      run_cmd(
         "ffmpeg -i \"$dir/$fname\" -vframes 1 -ss 1 \"$set_directory/tif/$imageid.jpg\""
       );
       # Add all the EXIF information to the JPG file
-      #system("exiftool -TagsFromFile $dir/$fname -q -q -SerialNumber=0 -overwrite_original $set_directory/tif/$imageid.jpg");
+      #run_cmd("exiftool -TagsFromFile $dir/$fname -q -q -SerialNumber=0 -overwrite_original $set_directory/tif/$imageid.jpg");
       if ($fname =~ /\.mov$/i) {
         move_file("$dir/$fname", "$set_directory/tif/$imageid.mov");
       } else {
@@ -783,9 +785,9 @@ sub process_photo {
       }
     } elsif ($fname =~ /\.gif$/i) {
       # Convert GIF to an MP4 file
-      system("ffmpeg -i \"$dir/$fname\" \"$set_directory/tif/$imageid.mp4\"");
+      run_cmd("ffmpeg -i \"$dir/$fname\" \"$set_directory/tif/$imageid.mp4\"");
       # Extract JPG
-      system(
+      run_cmd(
         "ffmpeg -i \"$dir/$fname\" -vframes 1 -ss 1 \"$set_directory/tif/$imageid.jpg\""
       );
       # Move the GIF to the target
@@ -832,5 +834,15 @@ sub move_file {
   } else {
     system("mv \"$srcfile\" \"$dstfile\"");
     system("chmod 444 \"$dstfile\"");
+  }
+}
+
+sub run_cmd {
+  my $cmd = $_[0];
+
+  if ($gl_testmode) {
+    print "run command $cmd\n";
+  } else {
+    system($cmd);
   }
 }
