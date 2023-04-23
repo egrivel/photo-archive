@@ -19,6 +19,8 @@ my $gl_verbose = 0;
 my $gl_do_all = 1;
 # Update the value if requested
 my $gl_update = 0;
+# Indicator that update is needed
+my $gl_need_update = 0;
 
 my $arg = shift;
 while (defined($arg)) {
@@ -47,6 +49,16 @@ if ($gl_do_all) {
   process_all();
 }
 
+if ($gl_need_update) {
+  print "---------------------------------------------------------------\n";
+  print "Hash discrepances were detected. Please check the output above.\n";
+  print "If files have become corrupted, replace them with the original\n";
+  print "from a backup. Once the only output is of files that have\n";
+  print "truly change, run this tool with\n";
+  print "   phcheckhash --update\n";
+  print "to record the new hash value in the database.\n";
+}
+
 sub disp_help {
   print "phcheckhash [options] [id]*\n";
   print "---------------------------------------------------------------\n";
@@ -61,6 +73,7 @@ sub process_all {
   my $iter = pdb_iter_new("", 500);
   my $id = pdb_iter_next($iter);
   my $count = 0;
+  # Note: have a count limit of 1 million to prevent any infinite loop
   while (defined($id) && ($id ne "") && ($count < 1000000)) {
     $count++;
 
@@ -132,6 +145,8 @@ sub check_hash {
       if ($gl_update) {
         phash_set_value("f-$basename", "file", $calculated_hash);
         print "--> Updated\n";
+      } else {
+        $gl_need_update = 1;
       }
     }
   }
