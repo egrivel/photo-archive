@@ -56,16 +56,22 @@ if ($gl_need_update) {
   print "from a backup. Once the only output is of files that have\n";
   print "truly change, run this tool with\n";
   print "   phcheckhash --update\n";
-  print "to record the new hash value in the database.\n";
+  print "to record the new hash value in the database. Note: you can\n";
+  print "specify the image ID for which to update the hash on the\n";
+  print "command line.\n";
 }
 
 sub disp_help {
-  print "phcheckhash [options] [id]*\n";
+  print "phcheckhash [options] imageId imageId ...\n";
   print "---------------------------------------------------------------\n";
+  print "Check or update the hash values for images.\n";
   print "Available options:\n";
-  print " -h            display this help\n";
-  print " -v            verbose (more output)\n";
-  print " --update      if the hash is different, update the database\n";
+  print " -h          display this help\n";
+  print " -v          verbose (more output)\n";
+  print " --update    if the hash is different, update the database\n";
+  print " imageId     only check or update the hash for a single image.\n";
+  print "             Multiple images can be specified. If no images are\n";
+  print "             specified, all images in the database are checked.\n";
 }
 
 sub process_all {
@@ -84,13 +90,13 @@ sub process_all {
       print "$id\n";
     }
     process_id($id);
-    
+
     # Sleep for 1/10th of a second, to prevent a denial-of-service against
     # the databse or file system
     usleep(100);
     $id = pdb_iter_next($iter);
   }
-  
+
   pdb_iter_done($iter);
 }
 
@@ -131,7 +137,7 @@ sub check_hash {
   my $basename = $_[1];
   my $fname = $_[2];
   my $id = $_[3];
-  
+
   my $stored_hash = phash_get_value("f-$basename");
   my $calculated_hash = phash_do_hash_file($fname);
   if ($stored_hash ne $calculated_hash) {
