@@ -650,7 +650,7 @@ sub do_roku_special {
   my $roku_total = 5;
   # $roku_image_dir is the directory where the Roku special images are. Those
   # images are named "roku-000.jpg" through "roku-nnn.jpg".
-  my $roku_image_dir = "/mnt/jefferson/d1/roku";
+  my $roku_image_dir = "/mnt/washington/d1/roku";
   # $roku_nr_images is the number of Roku special images. If the $nr is greater,
   # the regular random image is displayed
   my $roku_nr_images = 0;
