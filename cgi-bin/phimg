@@ -22,577 +22,588 @@ my $height = "";
 my $mobile_size = "";
 
 if ($type eq "custom") {
+  $width = parg_get("width");
+  $height = parg_get("height");
+} elsif ($type eq "") {
+  # No explicit type=<type> attribute; there must be an implicit
+  # type in an <type>=<imageid> form
+  if ($imageid ne "") {
+    $type = "image";
+  } elsif (parg_get("default") ne "") {
+    $imageid = parg_get("default");
+    $type = "image";
+  } elsif (parg_get("orig") ne "") {
+    $imageid = parg_get("orig");
+    $type = $PCOM_ORIG;
+  } elsif (parg_get("edited") ne "") {
+    $imageid = parg_get("edited");
+    $type = "edited";
+  } elsif (parg_get("super") ne "") {
+    $imageid = parg_get("super");
+    $type = $PCOM_SUPER;
+  } elsif (parg_get("2k") ne "") {
+    $imageid = parg_get("2k");
+    $type = $PCOM_2K;
+  } elsif (parg_get("4k") ne "") {
+    $imageid = parg_get("4k");
+    $type = $PCOM_4K;
+  } elsif (parg_get("large") ne "") {
+    $imageid = parg_get("large");
+    $type = $PCOM_LARGE;
+  } elsif (parg_get("normal") ne "") {
+    $imageid = parg_get("normal");
+    $type = $PCOM_NORMAL;
+  } elsif (parg_get("google") ne "") {
+    $imageid = parg_get("google");
+    $type = $PCOM_GOOGLE;
+  } elsif (parg_get("small") ne "") {
+    $imageid = parg_get("small");
+    $type = $PCOM_SMALL;
+  } elsif (parg_get("thumbnail") ne "") {
+    $imageid = parg_get("thumbnail");
+    $type = $PCOM_THUMBNAIL;
+  } elsif (parg_get("thsqu") ne "") {
+    $imageid = parg_get("thsqu");
+    $type = $PCOM_THUMBNAIL_SQUARE;
+  } elsif (parg_get("raw") ne "") {
+    $imageid = parg_get("raw");
+    $type = $PCOM_RAW;
+  } elsif (parg_get("custom") ne "") {
+    $imageid = parg_get("custom");
+    $type = $PCOM_CUSTOM;
     $width = parg_get("width");
     $height = parg_get("height");
-} elsif ($type eq "") {
-    # No explicit type=<type> attribute; there must be an implicit
-    # type in an <type>=<imageid> form
-    if ($imageid ne "") {
-        $type = "image";
-    } elsif (parg_get("default") ne "") {
-        $imageid = parg_get("default");
-        $type = "image";
-    } elsif (parg_get("orig") ne "") {
-        $imageid = parg_get("orig");
-        $type = $PCOM_ORIG;
-    } elsif (parg_get("edited") ne "") {
-        $imageid = parg_get("edited");
-        $type = "edited";
-    } elsif (parg_get("super") ne "") {
-        $imageid = parg_get("super");
-        $type = $PCOM_SUPER;
-    } elsif (parg_get("2k") ne "") {
-        $imageid = parg_get("2k");
-        $type = $PCOM_2K;
-    } elsif (parg_get("4k") ne "") {
-        $imageid = parg_get("4k");
-        $type = $PCOM_4K;
-    } elsif (parg_get("large") ne "") {
-        $imageid = parg_get("large");
-        $type = $PCOM_LARGE;
-    } elsif (parg_get("normal") ne "") {
-        $imageid = parg_get("normal");
-        $type = $PCOM_NORMAL;
-    } elsif (parg_get("google") ne "") {
-        $imageid = parg_get("google");
-        $type = $PCOM_GOOGLE;
-    } elsif (parg_get("small") ne "") {
-        $imageid = parg_get("small");
-        $type = $PCOM_SMALL;
-    } elsif (parg_get("thumbnail") ne "") {
-        $imageid = parg_get("thumbnail");
-        $type = $PCOM_THUMBNAIL;
-    } elsif (parg_get("thsqu") ne "") {
-        $imageid = parg_get("thsqu");
-        $type = $PCOM_THUMBNAIL_SQUARE;
-    } elsif (parg_get("raw") ne "") {
-        $imageid = parg_get("raw");
-        $type = $PCOM_RAW;
-    } elsif (parg_get("custom") ne "") {
-        $imageid = parg_get("custom");
-        $type = $PCOM_CUSTOM;
-        $width = parg_get("width");
-        $height = parg_get("height");
-    } elsif (parg_get("freeform") ne "") {
-        $imageid = parg_get("freeform");
-        $type = $PCOM_FREEFORM;
-    } elsif (parg_get("m1") ne "") {
-        $imageid = parg_get("m1");
-        $width = $PCOM_M1_WIDTH;
-        $height = $PCOM_M1_HEIGHT;
-        $type = "mobile";
-        $mobile_size = "m1";
-    } elsif (parg_get("m2") ne "") {
-        $imageid = parg_get("m2");
-        $width = $PCOM_M2_WIDTH;
-        $height = $PCOM_M2_HEIGHT;
-        $type = "mobile";
-        $mobile_size = "m2";
-    } elsif (parg_get("m3") ne "") {
-        $imageid = parg_get("m3");
-        $width = $PCOM_M3_WIDTH;
-        $height = $PCOM_M3_HEIGHT;
-        $type = "mobile";
-        $mobile_size = "m3";
-    } elsif (parg_get("m4") ne "") {
-        $imageid = parg_get("m4");
-        $width = $PCOM_M4_WIDTH;
-        $height = $PCOM_M4_HEIGHT;
-        $type = "mobile";
-        $mobile_size = "m4";
-    } elsif (parg_get("m5") ne "") {
-        $imageid = parg_get("m5");
-        $width = $PCOM_M5_WIDTH;
-        $height = $PCOM_M5_HEIGHT;
-        $type = "mobile";
-        $mobile_size = "m5";
-    } elsif (parg_get("mov") ne "") {
-        $imageid = parg_get("mov");
-        $width = 960;
-        $height = 540;
-        $type = "custom";
-    }
+  } elsif (parg_get("freeform") ne "") {
+    $imageid = parg_get("freeform");
+    $type = $PCOM_FREEFORM;
+  } elsif (parg_get("m1") ne "") {
+    $imageid = parg_get("m1");
+    $width = $PCOM_M1_WIDTH;
+    $height = $PCOM_M1_HEIGHT;
+    $type = "mobile";
+    $mobile_size = "m1";
+  } elsif (parg_get("m2") ne "") {
+    $imageid = parg_get("m2");
+    $width = $PCOM_M2_WIDTH;
+    $height = $PCOM_M2_HEIGHT;
+    $type = "mobile";
+    $mobile_size = "m2";
+  } elsif (parg_get("m3") ne "") {
+    $imageid = parg_get("m3");
+    $width = $PCOM_M3_WIDTH;
+    $height = $PCOM_M3_HEIGHT;
+    $type = "mobile";
+    $mobile_size = "m3";
+  } elsif (parg_get("m4") ne "") {
+    $imageid = parg_get("m4");
+    $width = $PCOM_M4_WIDTH;
+    $height = $PCOM_M4_HEIGHT;
+    $type = "mobile";
+    $mobile_size = "m4";
+  } elsif (parg_get("m5") ne "") {
+    $imageid = parg_get("m5");
+    $width = $PCOM_M5_WIDTH;
+    $height = $PCOM_M5_HEIGHT;
+    $type = "mobile";
+    $mobile_size = "m5";
+  } elsif (parg_get("mov") ne "") {
+    $imageid = parg_get("mov");
+    $width = 960;
+    $height = 540;
+    $type = "custom";
+  }
 }
 
 if ($imageid eq "roku") {
-    # do_roku($width, $height);
-    # exit(0);
+  if (do_roku_special()) {
+    # Roku already handled
+    exit(0);
+  }
+  # do_roku($width, $height);
+  # exit(0);
 }
 
 if (($imageid eq "random") || ($imageid eq "roku")) {
-    my $effective_user = $imageid;
+  my $effective_user = $imageid;
 
-    # Set the filters appropriately
-    my $types = get_types($effective_user);
-    my $min_quality = get_min_quality($effective_user);
-    my $max_quality = get_max_quality($effective_user);
+  # Set the filters appropriately
+  my $types = get_types($effective_user);
+  my $min_quality = get_min_quality($effective_user);
+  my $max_quality = get_max_quality($effective_user);
 
-    pdb_filter_category($types);
-    pdb_filter_min_quality($min_quality);
-    pdb_filter_max_quality($max_quality);
+  pdb_filter_category($types);
+  pdb_filter_min_quality($min_quality);
+  pdb_filter_max_quality($max_quality);
 
-    # Always load the tags from the user, so we can use the user editing
-    # to change preference on the fly
-    my $tags = get_tags($effective_user);
-    if (!defined($tags) || ($tags eq "")) {
-        # If no user tags are specified, see if they can come from the URL
-        $tags = parg_get("tags");
-    }
-    if (defined($tags) && ($tags ne "")) {
-        my $idlist = ppers_names_to_ids($tags);
-        my $filter = ppers_get_filter($idlist);
-        pdb_filter_persons($filter);
-    }
+  # Always load the tags from the user, so we can use the user editing
+  # to change preference on the fly
+  my $tags = get_tags($effective_user);
+  if (!defined($tags) || ($tags eq "")) {
+    # If no user tags are specified, see if they can come from the URL
+    $tags = parg_get("tags");
+  }
+  if (defined($tags) && ($tags ne "")) {
+    my $idlist = ppers_names_to_ids($tags);
+    my $filter = ppers_get_filter($idlist);
+    pdb_filter_persons($filter);
+  }
 
-    # Get the next random image
-    my $image = pdb_random_image();
-    my $set = pcom_get_set($image);
-    my $setcategory = pdb_get_setcategory($set);
-    while (! ($types =~ /$setcategory/)) {
-        $image = pdb_random_image();
-        $set = pcom_get_set($image);
-        $setcategory = pdb_get_setcategory($set);
-    }
+  # Get the next random image
+  my $image = pdb_random_image();
+  my $set = pcom_get_set($image);
+  my $setcategory = pdb_get_setcategory($set);
+  while (!($types =~ /$setcategory/)) {
+    $image = pdb_random_image();
+    $set = pcom_get_set($image);
+    $setcategory = pdb_get_setcategory($set);
+  }
 
-    $imageid = $image;
+  $imageid = $image;
 }
 
 sub get_min_quality {
-    my $effective_user = $_[0];
+  my $effective_user = $_[0];
 
-    if ($effective_user ne "") {
-        # Use the edit function to retrieve the settings for the
-        # "random" user
-        pusr_load($effective_user);
-    }
+  if ($effective_user ne "") {
+    # Use the edit function to retrieve the settings for the
+    # "random" user
+    pusr_load($effective_user);
+  }
 
-    my $quality = put_quality();
+  my $quality = put_quality();
 
-    return $quality;
+  return $quality;
 }
 
 sub get_max_quality {
-    my $effective_user = $_[0];
+  my $effective_user = $_[0];
 
-    if ($effective_user ne "") {
-        # Use the edit function to retrieve the settings for the
-        # "random" user
-        pusr_load($effective_user);
-    }
+  if ($effective_user ne "") {
+    # Use the edit function to retrieve the settings for the
+    # "random" user
+    pusr_load($effective_user);
+  }
 
-    my $quality = put_max_quality();
+  my $quality = put_max_quality();
 
-    return $quality;
+  return $quality;
 }
 
 sub get_types {
-    my $effective_user = $_[0];
+  my $effective_user = $_[0];
 
-    if ($effective_user ne "") {
-        # Use the edit function to retrieve the settings for the
-        # "random" user
-        pusr_load($effective_user);
-    }
+  if ($effective_user ne "") {
+    # Use the edit function to retrieve the settings for the
+    # "random" user
+    pusr_load($effective_user);
+  }
 
-    my $types = put_types();
+  my $types = put_types();
 
-    return $types;
+  return $types;
 }
 
 sub get_tags {
-    my $effective_user = $_[0];
+  my $effective_user = $_[0];
 
-    if ($effective_user ne "") {
-        # Use the edit function to retrieve the settings for the
-        # "random" user
-        pusr_load($effective_user);
-    }
+  if ($effective_user ne "") {
+    # Use the edit function to retrieve the settings for the
+    # "random" user
+    pusr_load($effective_user);
+  }
 
-    my $tags = put_tags();
+  my $tags = put_tags();
 
-    return $tags;
+  return $tags;
 }
 
 if ($type eq $PCOM_CUSTOM) {
-    my $orientation = parg_get("orientation");
-    if ($orientation eq "") {
-        $orientation = parg_get("makelandscape");
-        if ($orientation > 0) {
-            $orientation = $PCOM_LANDSCAPE;
-        }
+  my $orientation = parg_get("orientation");
+  if ($orientation eq "") {
+    $orientation = parg_get("makelandscape");
+    if ($orientation > 0) {
+      $orientation = $PCOM_LANDSCAPE;
     }
-    my $img_origentation = pdb_get_orientation($imageid);
-    if (($img_orientation eq $PCOM_FREEFORM)
-        || ($img_orientation eq $PCOM_FREEFORM_P)
-        || ($img_orientation eq $PCOM_FREEFORM_L)) {
-        if (parg_get("keepratio")) {
-            my ($realwidth, $realheight) = pfs_get_orig_dimensions($imageid);
-            if ((($width * $realheight) / $realwidth) > $height) {
-                $width = ($height * $realwidth) / $realheight;
-            } else {
-                $height = ($width * $realheight) / $realwidth;
-            }
-        }
+  }
+  my $img_origentation = pdb_get_orientation($imageid);
+  if ( ($img_orientation eq $PCOM_FREEFORM)
+    || ($img_orientation eq $PCOM_FREEFORM_P)
+    || ($img_orientation eq $PCOM_FREEFORM_L)) {
+    if (parg_get("keepratio")) {
+      my ($realwidth, $realheight) = pfs_get_orig_dimensions($imageid);
+      if ((($width * $realheight) / $realwidth) > $height) {
+        $width = ($height * $realwidth) / $realheight;
+      } else {
+        $height = ($width * $realheight) / $realwidth;
+      }
     }
-    my $x_offset = parg_get("x_offset");
-    if ($x_offset eq "") {
-        $x_offset = 0;
-    }
-    my $y_offset = parg_get("y_offset");
-    if ($y_offset eq "") {
-        $y_offset = 0;
-    }
-    display_custom($imageid, $width, $height, $orientation, $x_offset, $y_offset);
+  }
+  my $x_offset = parg_get("x_offset");
+  if ($x_offset eq "") {
+    $x_offset = 0;
+  }
+  my $y_offset = parg_get("y_offset");
+  if ($y_offset eq "") {
+    $y_offset = 0;
+  }
+  display_custom($imageid, $width, $height, $orientation, $x_offset, $y_offset);
 } elsif ($type eq "raw") {
-    display_raw($imageid);
+  display_raw($imageid);
 } elsif ($type eq "mobile") {
-    display_mobile($imageid, $mobile_size, $width, $height);
+  display_mobile($imageid, $mobile_size, $width, $height);
 } elsif ($imageid ne "") {
-    display($imageid, $type);
+  display($imageid, $type);
 } else {
-    return_error("Unrecognized arguments in phimg");
+  return_error("Unrecognized arguments in phimg");
 }
 
 sub display_mobile {
-    my $imageid = $_[0];
-    my $size = $_[1];
-    my $width = $_[2];
-    my $height = $_[3];
+  my $imageid = $_[0];
+  my $size = $_[1];
+  my $width = $_[2];
+  my $height = $_[3];
 
-    # This is used to support mobile devices. For these, the given
-    # width and height are always landscape
-    my $edited_fname = pfs_get_edited_location($imageid);
-    my $rotation = 0;
-    my ($realwidth, $realhight);
+  # This is used to support mobile devices. For these, the given
+  # width and height are always landscape
+  my $edited_fname = pfs_get_edited_location($imageid);
+  my $rotation = 0;
+  my ($realwidth, $realhight);
+  if ($edited_fname eq "") {
+    ($realwidth, $realheight) = pfs_get_orig_dimensions($imageid);
+    # use the indicated rotation only if the file hasn't been edited;
+    # if the file was edited, assume rotation is not needed
+    $rotation = pdb_get_rotation($imageid);
+  } else {
+    ($realwidth, $realheight) = pfs_get_file_dimensions($edited_fname);
+  }
+  if ($realheight > $realwidth) {
+    my $temp = $realheight;
+    $realheight = $realwidth;
+    $realwidth = $temp;
+  }
+
+  # Determine the scale ratio, and then match width and height to that
+  # matches or exceeds the other dimension
+  my $s1 = (1.0 * $width / $realwidth);
+  my $s2 = (1.0 * $height / $realheight);
+  my $ratio = $s1;
+  if ($s1 < $s2) {
+    $ratio = $s2;
+  }
+  my $finalwidth = int($realwidth * $ratio);
+  my $finalheight = int($realheight * $ratio);
+  if ($finalwidth < $width) {
+    $finalwidth = $width;
+  }
+  if ($finalheight < $height) {
+    $finalheight = $height;
+  }
+
+  my $outfile = pfs_get_mobile_location($imageid, $size);
+  my $has_tempfile = 0;
+  if ($outfile eq "") {
+    (undef, $outfile) = tempfile();
+    $has_tempfile = 1;
+  }
+
+  #print "content-type: text/plain\n\noutfile=$outfile\nrealwidth=$realwidth, realheight=$realheight\n";
+  #return;
+
+  my $did_generate = 0;
+  my $cmd = pfs_cmd_resize($imageid, $rotation, $outfile,
+    $finalwidth, $finalheight, 1, 0, 0, 0, 1, 0, $ratio);
+  if (-f $outfile) {
+    # File exists, but check if it needs to be re-generated
+    my $edittime = 0;
     if ($edited_fname eq "") {
-        ($realwidth, $realheight) = pfs_get_orig_dimensions($imageid);
-        # use the indicated rotation only if the file hasn't been edited;
-        # if the file was edited, assume rotation is not needed
-        $rotation = pdb_get_rotation($imageid);
+      $edittime = pfs_get_time(pfs_get_orig_location($imageid));
     } else {
-        ($realwidth, $realheight) = pfs_get_file_dimensions($edited_fname);
+      $edittime = pfs_get_time($edited_fname);
     }
-    if ($realheight > $realwidth) {
-        my $temp = $realheight;
-        $realheight = $realwidth;
-        $realwidth = $temp;
+    if (pfs_get_time($outfile) < $edittime) {
+      # Cached file exists, but is older than the edited file, so
+      # it needs to be overwritten
+      system($cmd);
+      $did_generate = 1;
     }
+  } else {
+    # File doesn't exist yet, create it
+    system($cmd);
+    $did_generate = 1;
+  }
+  return_file($outfile, "$imageID.jpg");
 
-    # Determine the scale ratio, and then match width and height to that
-    # matches or exceeds the other dimension
-    my $s1 = (1.0 * $width / $realwidth);
-    my $s2 = (1.0 * $height / $realheight);
-    my $ratio = $s1;
-    if ($s1 < $s2) {
-        $ratio = $s2;
-    }
-    my $finalwidth = int($realwidth * $ratio);
-    my $finalheight = int($realheight * $ratio);
-    if ($finalwidth < $width) {
-        $finalwidth = $width;
-    }
-    if ($finalheight < $height) {
-        $finalheight = $height;
-    }
-
-    my $outfile = pfs_get_mobile_location($imageid, $size);
-    my $has_tempfile = 0;
-    if ($outfile eq "") {
-        (undef, $outfile) = tempfile();
-        $has_tempfile = 1;
-    }
-
-    #print "content-type: text/plain\n\noutfile=$outfile\nrealwidth=$realwidth, realheight=$realheight\n";
-    #return;
-
-    my $did_generate = 0;
-    my $cmd = pfs_cmd_resize($imageid, $rotation, $outfile,
-                             $finalwidth, $finalheight,
-                             1, 0, 0, 0, 1, 0, $ratio);
-    if (-f $outfile) {
-        # File exists, but check if it needs to be re-generated
-        my $edittime = 0;
-        if ($edited_fname eq "") {
-            $edittime = pfs_get_time(pfs_get_orig_location($imageid));
-        } else {
-            $edittime = pfs_get_time($edited_fname);
-        }
-        if (pfs_get_time($outfile) < $edittime) {
-            # Cached file exists, but is older than the edited file, so
-            # it needs to be overwritten
-            system($cmd);
-            $did_generate = 1;
-        }
-    } else {
-        # File doesn't exist yet, create it
-        system($cmd);
-        $did_generate = 1;
-    }
-    return_file($outfile, "$imageID.jpg");
-
-    if ($has_tempfile) {
-        # Done with the output file, discard it
-        unlink($outfile);
-    } elsif ($did_generate) {
-        # Permanent; make auto-generated file writable.
-        system("chmod a+w $outfile");
-    }
+  if ($has_tempfile) {
+    # Done with the output file, discard it
+    unlink($outfile);
+  } elsif ($did_generate) {
+    # Permanent; make auto-generated file writable.
+    system("chmod a+w $outfile");
+  }
 }
 
 sub display {
-    my $imageID = $_[0];
-    my $size = $_[1];
+  my $imageID = $_[0];
+  my $size = $_[1];
 
-    if (!pcom_is_valid($imageID)) {
-        if ($imageID eq "") {
-            return_error("No image specified");
-        } else {
-            return_error("Invalid image '$imageID'");
-        }
-        return;
-    }
-
-    my $fname = "";
-    if ($size eq "image") {
-        $fname = pfs_get_image_location($imageID);
-    } elsif ($size eq $PCOM_ORIG) {
-        $fname = pfs_get_orig_location($imageID);
-        if ($fname eq "") {
-            if (pfs_get_raw_location($imageID) eq "") {
-                # Ask for original, but not there, and no RAW either;
-                # get from edited
-                $fname = pfs_get_edited_location($imageID);
-            }
-        }
-    } elsif ($size eq "edited") {
-        # Try to get the actual edited image if present; otherwise,
-        # fall back on the original version
-        $fname = pfs_get_edited_location($imageID);
-        if ($fname eq "") {
-            # If there is no edited version, we're getting the original,
-            # so make the size variable reflect that. This handles the
-            # situation that there is no buffered version of the original
-            # available, and a version of the original must be
-            # generated.
-            $fname = pfs_get_orig_location($imageID);
-            $size = $PCOM_ORIG;
-        }
-    } elsif ($size eq $PCOM_LARGE) {
-        $fname = pfs_get_large_location($imageID);
-    } elsif ($size eq $PCOM_NORMAL) {
-        $fname = pfs_get_normal_location($imageID);
-    } elsif ($size eq $PCOM_SMALL) {
-        $fname = pfs_get_small_location($imageID);
-    } elsif ($size eq $PCOM_THUMBNAIL) {
-        $fname = pfs_get_thumbnail_location($imageID);
-    } elsif ($size eq $PCOM_THUMBNAIL_SQUARE) {
-        $fname = pfs_get_thumbnail_square_location($imageID);
-    } elsif ($size eq $PCOM_FREEFORM) {
-        $fname = pfs_get_freeform_location($imageID);
-    }
-
-    if ($fname ne "") {
-        # Got a file to return; return it and be done
-        return_file($fname, "$imageID.jpg");
-        return;
-    }
-
-    # Requested format file is not present. Try and generate it.
-    # Ideally, we get the appropriate buffer location for the requested
-    # size, so that the file can be kept and next time we can just
-    # return it (this works for standard sizes like "thumbnail",
-    # "large" etc.). If there is no buffered location available for
-    # the size, create an actual temporary file, which can later
-    # be deleted. We need an actual temporary file so that the image
-    # size can be calculated and sent to the browser. This may
-    # improve browser performance.
-    my $outfile = pfs_get_buffer_location($imageID, $size);
-    my $has_tempfile = 0;
-    if ($outfile eq "") {
-        (undef, $outfile) = tempfile();
-        $has_tempfile = 1;
-    }
-
-    my $rotation = pdb_get_rotation($imageID);
-    my $cmd = "";
-    if ($size eq $PCOM_ORIG) {
-        $cmd = pfs_cmd_orig($imageID, $rotation, $outfile);
-    } elsif ($size eq $PCOM_SUPER) {
-        $cmd = pfs_cmd_resize($imageID, $rotation, $outfile, 1200, 800, 1);
-    } elsif ($size eq $PCOM_2K) {
-        $cmd = pfs_cmd_resize($imageID, $rotation, $outfile, 1920, 1080, 1);
-    } elsif ($size eq $PCOM_4K) {
-        $cmd = pfs_cmd_resize($imageID, $rotation, $outfile, 3840, 2160, 1);
-    } elsif (($size eq $PCOM_LARGE) || ($size eq "image")) {
-        $cmd = pfs_cmd_large($imageID, $rotation, $outfile);
-    } elsif ($size eq $PCOM_NORMAL) {
-        $cmd = pfs_cmd_normal($imageID, $rotation, $outfile);
-    } elsif ($size eq $PCOM_GOOGLE) {
-        $cmd = pfs_cmd_google($imageID, $rotation, $outfile);
-    } elsif ($size eq $PCOM_SMALL) {
-        $cmd = pfs_cmd_small($imageID, $rotation, $outfile);
-    } elsif ($size eq $PCOM_THUMBNAIL) {
-        $cmd = pfs_cmd_thumbnail($imageID, $rotation, $outfile);
-    } elsif ($size eq $PCOM_THUMBNAIL_SQUARE) {
-        $cmd = pfs_cmd_thumbnail_square($imageID, $rotation, $outfile);
-    } elsif ($size eq $PCOM_FREEFORM) {
-        $cmd = pfs_cmd_freeform($imageID, $rotation, $outfile);
-    }
-    if ($cmd eq "") {
-        return_error("Cannot generate image $imageID in size $size");
-        return;
-    }
-
-    pcom_log($PCOM_DEBUG, "Resize command: $cmd\n");
-    system($cmd);
-    return_file($outfile, "$imageID.jpg");
-
-    if ($has_tempfile) {
-        # Done with the output file, discard it
-        unlink($outfile);
+  if (!pcom_is_valid($imageID)) {
+    if ($imageID eq "") {
+      return_error("No image specified");
     } else {
-        # Permanent; make auto-generated file writable.
-        system("chmod a+w $outfile");
+      return_error("Invalid image '$imageID'");
     }
+    return;
+  }
+
+  my $fname = "";
+  if ($size eq "image") {
+    $fname = pfs_get_image_location($imageID);
+  } elsif ($size eq $PCOM_ORIG) {
+    $fname = pfs_get_orig_location($imageID);
+    if ($fname eq "") {
+      if (pfs_get_raw_location($imageID) eq "") {
+        # Ask for original, but not there, and no RAW either;
+        # get from edited
+        $fname = pfs_get_edited_location($imageID);
+      }
+    }
+  } elsif ($size eq "edited") {
+    # Try to get the actual edited image if present; otherwise,
+    # fall back on the original version
+    $fname = pfs_get_edited_location($imageID);
+    if ($fname eq "") {
+      # If there is no edited version, we're getting the original,
+      # so make the size variable reflect that. This handles the
+      # situation that there is no buffered version of the original
+      # available, and a version of the original must be
+      # generated.
+      $fname = pfs_get_orig_location($imageID);
+      $size = $PCOM_ORIG;
+    }
+  } elsif ($size eq $PCOM_LARGE) {
+    $fname = pfs_get_large_location($imageID);
+  } elsif ($size eq $PCOM_NORMAL) {
+    $fname = pfs_get_normal_location($imageID);
+  } elsif ($size eq $PCOM_SMALL) {
+    $fname = pfs_get_small_location($imageID);
+  } elsif ($size eq $PCOM_THUMBNAIL) {
+    $fname = pfs_get_thumbnail_location($imageID);
+  } elsif ($size eq $PCOM_THUMBNAIL_SQUARE) {
+    $fname = pfs_get_thumbnail_square_location($imageID);
+  } elsif ($size eq $PCOM_FREEFORM) {
+    $fname = pfs_get_freeform_location($imageID);
+  }
+
+  if ($fname ne "") {
+    # Got a file to return; return it and be done
+    return_file($fname, "$imageID.jpg");
+    return;
+  }
+
+  # Requested format file is not present. Try and generate it.
+  # Ideally, we get the appropriate buffer location for the requested
+  # size, so that the file can be kept and next time we can just
+  # return it (this works for standard sizes like "thumbnail",
+  # "large" etc.). If there is no buffered location available for
+  # the size, create an actual temporary file, which can later
+  # be deleted. We need an actual temporary file so that the image
+  # size can be calculated and sent to the browser. This may
+  # improve browser performance.
+  my $outfile = pfs_get_buffer_location($imageID, $size);
+  my $has_tempfile = 0;
+  if ($outfile eq "") {
+    (undef, $outfile) = tempfile();
+    $has_tempfile = 1;
+  }
+
+  my $rotation = pdb_get_rotation($imageID);
+  my $cmd = "";
+  if ($size eq $PCOM_ORIG) {
+    $cmd = pfs_cmd_orig($imageID, $rotation, $outfile);
+  } elsif ($size eq $PCOM_SUPER) {
+    $cmd = pfs_cmd_resize($imageID, $rotation, $outfile, 1200, 800, 1);
+  } elsif ($size eq $PCOM_2K) {
+    $cmd = pfs_cmd_resize($imageID, $rotation, $outfile, 1920, 1080, 1);
+  } elsif ($size eq $PCOM_4K) {
+    $cmd = pfs_cmd_resize($imageID, $rotation, $outfile, 3840, 2160, 1);
+  } elsif (($size eq $PCOM_LARGE) || ($size eq "image")) {
+    $cmd = pfs_cmd_large($imageID, $rotation, $outfile);
+  } elsif ($size eq $PCOM_NORMAL) {
+    $cmd = pfs_cmd_normal($imageID, $rotation, $outfile);
+  } elsif ($size eq $PCOM_GOOGLE) {
+    $cmd = pfs_cmd_google($imageID, $rotation, $outfile);
+  } elsif ($size eq $PCOM_SMALL) {
+    $cmd = pfs_cmd_small($imageID, $rotation, $outfile);
+  } elsif ($size eq $PCOM_THUMBNAIL) {
+    $cmd = pfs_cmd_thumbnail($imageID, $rotation, $outfile);
+  } elsif ($size eq $PCOM_THUMBNAIL_SQUARE) {
+    $cmd = pfs_cmd_thumbnail_square($imageID, $rotation, $outfile);
+  } elsif ($size eq $PCOM_FREEFORM) {
+    $cmd = pfs_cmd_freeform($imageID, $rotation, $outfile);
+  }
+  if ($cmd eq "") {
+    return_error("Cannot generate image $imageID in size $size");
+    return;
+  }
+
+  pcom_log($PCOM_DEBUG, "Resize command: $cmd\n");
+  system($cmd);
+  return_file($outfile, "$imageID.jpg");
+
+  if ($has_tempfile) {
+    # Done with the output file, discard it
+    unlink($outfile);
+  } else {
+    # Permanent; make auto-generated file writable.
+    system("chmod a+w $outfile");
+  }
 }
 
 sub display_custom {
-    my $imageID = $_[0];
-    my $width = $_[1];
-    my $height = $_[2];
-    my $orientation = $_[3];
-    my $x_offset = $_[4];
-    my $y_offset = $_[5];
+  my $imageID = $_[0];
+  my $width = $_[1];
+  my $height = $_[2];
+  my $orientation = $_[3];
+  my $x_offset = $_[4];
+  my $y_offset = $_[5];
 
-    if (!pcom_is_valid($imageID)) {
-        if ($imageID eq "") {
-            return_error("No image ID given");
-        } else {
-            return_error("Invalid image '$imageID'");
-        }
-        return;
-    }
-
-    my $realwidth = parg_get("realwidth");
-    my $realheight = parg_get("realheight");
-
-    my $outfile;
-
-    if (($realwidth ne "") && ($realheight ne "")) {
-        # After generating, resize to the "real" values
-        $outfile = pfs_get_custom_realsize_location($imageID, $width, $height, $realwidth, $realheight, $x_offset, $y_offset);
+  if (!pcom_is_valid($imageID)) {
+    if ($imageID eq "") {
+      return_error("No image ID given");
     } else {
-        $outfile = pfs_get_custom_location($imageID, $width, $height, $x_offset, $y_offset);
+      return_error("Invalid image '$imageID'");
     }
+    return;
+  }
 
-    # Requested format file is not present. Try and generate it.
-    # Use a temporary file so that the image size can be calculated
-    # and sent to the browser. This may improve browser performance.
-    if ($orientation eq $PCOM_LANDSCAPE) {
-        $outfile =~ s/\.jpg$/-l.jpg/;
-    }
-    my $is_tempfile = 0;
-    if ($outfile eq "") {
-        (undef, $outfile) = tempfile();
-        $is_tempfile = 1;
-    } elsif (-f $outfile) {
-        # File already exists; make sure it isn't outdated
-        my $edittime = 0;
-        if (pfs_get_edited_location($imageID) ne "") {
-            $edittime = pfs_get_time(pfs_get_edited_location($imageID));
-        } elsif (pfs_get_orig_location($imageID) ne "") {
-            $edittime = pfs_get_time(pfs_get_orig_location($imageID));
-        }
-        if (pfs_get_time($outfile) >= $edittime) {
-            return_file($outfile, "$imageID.jpg");
-            return;
-        }
-    }
-    my $rotation = pdb_get_rotation($imageID);
+  my $realwidth = parg_get("realwidth");
+  my $realheight = parg_get("realheight");
+
+  my $outfile;
+
+  if (($realwidth ne "") && ($realheight ne "")) {
+    # After generating, resize to the "real" values
+    $outfile =
+      pfs_get_custom_realsize_location($imageID, $width, $height, $realwidth,
+      $realheight, $x_offset, $y_offset);
+  } else {
+    $outfile =
+      pfs_get_custom_location($imageID, $width, $height, $x_offset, $y_offset);
+  }
+
+  # Requested format file is not present. Try and generate it.
+  # Use a temporary file so that the image size can be calculated
+  # and sent to the browser. This may improve browser performance.
+  if ($orientation eq $PCOM_LANDSCAPE) {
+    $outfile =~ s/\.jpg$/-l.jpg/;
+  }
+  my $is_tempfile = 0;
+  if ($outfile eq "") {
+    (undef, $outfile) = tempfile();
+    $is_tempfile = 1;
+  } elsif (-f $outfile) {
+    # File already exists; make sure it isn't outdated
+    my $edittime = 0;
     if (pfs_get_edited_location($imageID) ne "") {
-        # source is an edited file, so no rotation is needed
-        $rotation = 0;
+      $edittime = pfs_get_time(pfs_get_edited_location($imageID));
+    } elsif (pfs_get_orig_location($imageID) ne "") {
+      $edittime = pfs_get_time(pfs_get_orig_location($imageID));
     }
-    my $cmd = "";
-    pcom_log($PCOM_DEBUG, "pfs_cmd_resize($imageID, $rotation, $outfile, $width, $height, 1, ($orientation eq $PCOM_LANDSCAPE), $realwidth, $realheight, 0, false, 0, $x_offset, $y_offset)");;
-    $cmd = pfs_cmd_resize($imageID, $rotation, $outfile, $width, $height, 1, ($orientation eq $PCOM_LANDSCAPE), $realwidth, $realheight, 0, false, 0, $x_offset, $y_offset);
-    pcom_log($PCOM_DEBUG, "$cmd");
-    if ($cmd eq "") {
-        return_error("Cannot generate image $imageID in size ${width}x$height");
-        return;
+    if (pfs_get_time($outfile) >= $edittime) {
+      return_file($outfile, "$imageID.jpg");
+      return;
     }
+  }
+  my $rotation = pdb_get_rotation($imageID);
+  if (pfs_get_edited_location($imageID) ne "") {
+    # source is an edited file, so no rotation is needed
+    $rotation = 0;
+  }
+  my $cmd = "";
+  pcom_log($PCOM_DEBUG,
+    "pfs_cmd_resize($imageID, $rotation, $outfile, $width, $height, 1, ($orientation eq $PCOM_LANDSCAPE), $realwidth, $realheight, 0, false, 0, $x_offset, $y_offset)"
+  );
+  $cmd =
+    pfs_cmd_resize($imageID, $rotation, $outfile, $width, $height, 1,
+    ($orientation eq $PCOM_LANDSCAPE),
+    $realwidth, $realheight, 0, false, 0, $x_offset, $y_offset);
+  pcom_log($PCOM_DEBUG, "$cmd");
+  if ($cmd eq "") {
+    return_error("Cannot generate image $imageID in size ${width}x$height");
+    return;
+  }
 
-    system($cmd);
-    return_file($outfile, "$imageID.jpg");
+  system($cmd);
+  return_file($outfile, "$imageID.jpg");
 
-    # Done with the output file, discard it
-    if ($is_tempfile) {
-        unlink($outfile);
-    } else {
-        system("chmod a+w $outfile");
-    }
+  # Done with the output file, discard it
+  if ($is_tempfile) {
+    unlink($outfile);
+  } else {
+    system("chmod a+w $outfile");
+  }
 }
 
 sub display_raw {
-    my $imageID = $_[0];
+  my $imageID = $_[0];
 
-    if (!pcom_is_valid($imageID)) {
-        return_error("Invalid image");
-        return;
+  if (!pcom_is_valid($imageID)) {
+    return_error("Invalid image");
+    return;
+  }
+
+  my $fname = pfs_get_raw_location($imageID);
+  if ($fname eq "") {
+    return_error("Cannot return RAW file for '$imageID'");
+  }
+
+  if ($fname =~ /\.(\w+)$/) {
+    my $extension = $1;
+    my $type = $extension;
+    if ($type eq "tif") {
+      $type = "tiff";
     }
+    my $size = get_filesize($fname);
+    binmode(stdout);
+    $| = 1;
 
-    my $fname = pfs_get_raw_location($imageID);
-    if ($fname eq "") {
-        return_error("Cannot return RAW file for '$imageID'");
+    print "content-type: image/$1\n";
+    print "content-disposition: attachment; filename=$imageID.$extension\n";
+    if ($size) {
+      print "content-length: $size\n";
     }
-
-    if ($fname =~ /\.(\w+)$/) {
-        my $extension = $1;
-        my $type = $extension;
-        if ($type eq "tif") {
-            $type = "tiff";
-        }
-        my $size = get_filesize($fname);
-        binmode(stdout);
-        $|=1;
-
-        print "content-type: image/$1\n";
-        print "content-disposition: attachment; filename=$imageID.$extension\n";
-        if ($size) {
-            print "content-length: $size\n";
-        }
-        print "\n";
-        system("cat $fname");
-    }
+    print "\n";
+    system("cat $fname");
+  }
 }
 
 sub get_filesize {
-    my @stat = stat($_[0]);
-    return $stat[7];
+  my @stat = stat($_[0]);
+  return $stat[7];
 }
 
 sub return_file {
-    my $fname = $_[0];
-    my $dispname = $_[1];
+  my $fname = $_[0];
+  my $dispname = $_[1];
 
-    binmode(stdout);
-    $|=1;
+  binmode(stdout);
+  $| = 1;
 
-    print "content-type: image/jpeg\n";
-    my $size = get_filesize($fname);
-    if ($size) {
-        print "content-length: $size\n";
-    }
-    print "cache-control: max-age=3600\n";
-    print "\n";
+  print "content-type: image/jpeg\n";
+  my $size = get_filesize($fname);
+  if ($size) {
+    print "content-length: $size\n";
+  }
+  print "cache-control: max-age=3600\n";
+  print "\n";
 
-    system("cat $fname");
+  system("cat $fname");
 }
 
 sub return_error {
-    my $msg = $_[0];
+  my $msg = $_[0];
 
-    print "content-type: text/plain\n\n$msg\n";
+  print "content-type: text/plain\n\n$msg\n";
 }
 
 #
@@ -601,32 +612,80 @@ sub return_error {
 # photo archive.
 #
 sub do_roku {
-    my $width = $_[0];
-    my $height = $_[1];
+  my $width = $_[0];
+  my $height = $_[1];
 
-    my $dir = "/mnt/washington/d1/httpd/html/archives/spotlight/annotated";
-    opendir(DIR, $dir) || die "Cannot scan '$dir'\n";
-    my $fname;
-    my @files = [];
-    my $count = 0;
-    while (defined($fname = readdir(DIR))) {
-        $files[$count++] = $fname;
-    }
-    closedir(DIR);
+  my $dir = "/mnt/washington/d1/httpd/html/archives/spotlight/annotated";
+  opendir(DIR, $dir) || die "Cannot scan '$dir'\n";
+  my $fname;
+  my @files = [];
+  my $count = 0;
+  while (defined($fname = readdir(DIR))) {
+    $files[$count++] = $fname;
+  }
+  closedir(DIR);
 
-    my $random = int(rand($count));
+  my $random = int(rand($count));
 
-    open(FILE, "convert $dir/$files[$random] -resize ${width}x${height} -|");
-    local $/;
-    my $data = <FILE>;
-    close FILE;
+  open(FILE, "convert $dir/$files[$random] -resize ${width}x${height} -|");
+  local $/;
+  my $data = <FILE>;
+  close FILE;
 
-    print "content-type: image/jpeg\n";
-    my $size = length($data);
-    if ($size) {
-        print "content-length: $size\n";
-    }
-    print "cache-control: max-age=3600\n";
-    print "\n";
-    print $data;
+  print "content-type: image/jpeg\n";
+  my $size = length($data);
+  if ($size) {
+    print "content-length: $size\n";
+  }
+  print "cache-control: max-age=3600\n";
+  print "\n";
+  print $data;
+}
+
+# For the Roku device, check for the special Roku images. If a special Roku
+# image is returned, return 1 to indicate that the image was done.
+sub do_roku_special {
+  # $roku_total is the total number of images after which the Roku special
+  # images start repeating.
+  my $roku_total = 5;
+  # $roku_image_dir is the directory where the Roku special images are. Those
+  # images are named "roku-000.jpg" through "roku-nnn.jpg".
+  my $roku_image_dir = "/mnt/jefferson/d1/roku";
+  # $roku_nr_images is the number of Roku special images. If the $nr is greater,
+  # the regular random image is displayed
+  my $roku_nr_images = 0;
+
+  # Count the images, if any
+  my $img = $roku_nr_images;
+  my $img;
+  $img = "0" . $img while (length($img) < 3);
+  while (-f "$roku_image_dir/roku-$img.jpg") {
+    $roku_nr_images++;
+    $img = $roku_nr_images;
+    $img = "0" . $img while (length($img) < 3);
+  }
+
+  if ($roku_nr_images < 1) {
+    # If there are no Roku images, just do random
+    return 0;
+  }
+
+  # The Roku device sends an ever-increasing counter, to ensure that URLs
+  # are unique.
+  $counter = parg_get("foo");
+  if ($counter eq "") {
+    $counter = 1;
+  }
+
+  $nr = $counter % $roku_total;
+  if ($nr >= $roku_nr_images) {
+    return 0;
+  }
+
+  # Return an actual Roku image.
+  $img = $nr;
+  $img = "0" . $img while (length($img) < 3);
+
+  return_file("$roku_image_dir/roku-$img.jpg");
+  return 1;
 }
