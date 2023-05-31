@@ -642,27 +642,34 @@ sub do_roku {
   print $data;
 }
 
+sub get_roku_file_name {
+  my $nr = $_[0];
+  $nr = "" . $nr;
+  while (length($nr) < 3) {
+    $nr = "0$nr";
+  }
+  return "roku-$nr.jpg";
+}
+
 # For the Roku device, check for the special Roku images. If a special Roku
 # image is returned, return 1 to indicate that the image was done.
 sub do_roku_special {
   # $roku_total is the total number of images after which the Roku special
   # images start repeating.
-  my $roku_total = 5;
+  my $roku_total = setting_get("roku-total");
   # $roku_image_dir is the directory where the Roku special images are. Those
   # images are named "roku-000.jpg" through "roku-nnn.jpg".
-  my $roku_image_dir = "/mnt/washington/d1/roku";
+  my $roku_image_dir = setting_get("roku-image-dir");
   # $roku_nr_images is the number of Roku special images. If the $nr is greater,
   # the regular random image is displayed
   my $roku_nr_images = 0;
 
   # Count the images, if any
   my $img = $roku_nr_images;
-  my $img;
-  $img = "0" . $img while (length($img) < 3);
-  while (-f "$roku_image_dir/roku-$img.jpg") {
+  my $img = get_roku_file_name($roku_nr_images);
+  while (-f "$roku_image_dir/$img") {
     $roku_nr_images++;
-    $img = $roku_nr_images;
-    $img = "0" . $img while (length($img) < 3);
+    $img = get_roku_file_name($roku_nr_images);
   }
 
   if ($roku_nr_images < 1) {
@@ -683,9 +690,8 @@ sub do_roku_special {
   }
 
   # Return an actual Roku image.
-  $img = $nr;
-  $img = "0" . $img while (length($img) < 3);
+  $img = get_roku_file_name($nr);
 
-  return_file("$roku_image_dir/roku-$img.jpg");
+  return_file("$roku_image_dir/$img");
   return 1;
 }
