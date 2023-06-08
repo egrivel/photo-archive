@@ -652,7 +652,8 @@ sub get_roku_file_name {
 }
 
 # For the Roku device, check for the special Roku images. If a special Roku
-# image is returned, return 1 to indicate that the image was done.
+# image is returned, return 1 to indicate that the image was done. If the image
+# wasn't done, return 0 and the caller will produce a random image.
 sub do_roku_special {
   # $roku_total is the total number of images after which the Roku special
   # images start repeating.
@@ -660,38 +661,43 @@ sub do_roku_special {
   # $roku_image_dir is the directory where the Roku special images are. Those
   # images are named "roku-000.jpg" through "roku-nnn.jpg".
   my $roku_image_dir = setting_get("roku-image-dir");
-  # $roku_nr_images is the number of Roku special images. If the $nr is greater,
-  # the regular random image is displayed
-  my $roku_nr_images = 0;
 
-  # Count the images, if any
-  my $img = $roku_nr_images;
-  my $img = get_roku_file_name($roku_nr_images);
-  while (-f "$roku_image_dir/$img") {
-    $roku_nr_images++;
-    $img = get_roku_file_name($roku_nr_images);
-  }
-
-  if ($roku_nr_images < 1) {
-    # If there are no Roku images, just do random
+  if ($roku_total eq "" || $roku_image_dir eq "") {
+    # if the roku variables aren't set, return false
     return 0;
   }
 
   # The Roku device sends an ever-increasing counter, to ensure that URLs
   # are unique.
-  $counter = parg_get("foo");
+  my $counter = parg_get("foo");
   if ($counter eq "") {
     $counter = 1;
   }
 
-  $nr = $counter % $roku_total;
-  if ($nr >= $roku_nr_images) {
-    return 0;
+  # $counter is the how-manyth image is to be retured
+  $counter = $counter % $roku_total;
+
+  # load @list a sorted list of files in the directory
+  opendir(DIR, $roku_image_dir);
+  my @list = sort grep !/^\.\.?$/, readdir(DIR);
+  closedir(DIR);
+
+  # Walk through the list, counting off the .jpg files. If a .jpg file is
+  # found, check if it should be returned
+  my $imageNr = 0;
+  for (my $i = 0; defined($list[$i]); $i++) {
+    if ($list[$i] =~ /\.jpg$/) {
+      # list entry is an image file, so it is a possible
+      # print "consider $i: $list[$i]<br/>\n";
+      if ($imageNr == $counter) {
+        # Yes, this is the image to be returned
+        return_file("$roku_image_dir/$list[$i]");
+        return 1;
+      }
+      $imageNr++;
+    }
   }
 
-  # Return an actual Roku image.
-  $img = get_roku_file_name($nr);
-
-  return_file("$roku_image_dir/$img");
-  return 1;
+  # The desired images comes after the counter, so return the random image
+  return 0;
 }
