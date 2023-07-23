@@ -7,7 +7,7 @@ my $pht_copyright = "";
 my $pht_refresh = "";
 my $pht_pagetype = "default";
 my $pht_extra_header = "";
-my $pht_css_file = "photos.css";
+my $pht_css_file = "photos.css?new=20230723";
 my $pht_systemmessage = "";
 
 sub pht_init {
