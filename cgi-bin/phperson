@@ -119,7 +119,7 @@ sub disp_all {
     pht_tabs_start();
     pht_prev_tab("");
     pht_next_tab("");
-    pht_tab("Overview", "<a href='phbrowse'>");
+    pht_tab("Overview", "<a href='phbrowse'>", "overview");
     pht_tab("Edit", "");
     if (pusr_get_userid() eq $PUSR_GUEST_ACCOUNT) {
         pht_tab("Search", "");

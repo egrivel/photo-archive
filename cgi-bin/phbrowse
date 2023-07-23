@@ -79,7 +79,7 @@ sub disp_person {
   pht_tabs_start();
   pht_prev_tab("");
   pht_next_tab("");
-  pht_tab("Overview", "<a href='phbrowse'>");
+  pht_tab("Overview", "<a href='phbrowse'>", "overview");
   pht_tab("Edit",     "");
   if (pusr_get_userid() eq $PUSR_GUEST_ACCOUNT) {
     pht_tab("Search", "");
@@ -235,7 +235,7 @@ sub disp_set {
   pht_tabs_start();
   pht_prev_tab($prevlink);
   pht_next_tab($nextlink);
-  pht_tab("Overview", "<a href='phbrowse?year=$year'>");
+  pht_tab("Overview", "<a href='phbrowse?year=$year'>", "overview");
   pht_tab("Edit",     $editlink);
   if (pusr_get_userid() eq $PUSR_GUEST_ACCOUNT) {
     pht_tab("Search", "");
@@ -429,7 +429,7 @@ sub disp_year {
   pht_tabs_start();
   pht_prev_tab($prevlink);
   pht_next_tab($nextlink);
-  pht_tab("Overview", "<a href='phbrowse'>");
+  pht_tab("Overview", "<a href='phbrowse'>", "overview");
   pht_tab("Edit",     "");
   if (pusr_get_userid() eq $PUSR_GUEST_ACCOUNT) {
     pht_tab("Search", "");
@@ -583,7 +583,7 @@ sub disp_all {
   pht_tabs_start();
   pht_prev_tab("");
   pht_next_tab("");
-  pht_tab("Home", "<a href='/index.php'>");
+  pht_tab("Home", "<a href='/index.php'>", "overview");
   pht_tab("Edit", "");
   if (pusr_get_userid() eq $PUSR_GUEST_ACCOUNT) {
     pht_tab("Search", "");
@@ -644,7 +644,7 @@ sub disp_type {
   pht_set_pagetype("setlist");
   pht_page_start(0);
   pht_tabs_start();
-  pht_tab("Overview", "<a href='phbrowse'>");
+  pht_tab("Overview", "<a href='phbrowse'>", "overview");
   pht_tab("Edit",     "");
   if (pusr_get_userid() eq $PUSR_GUEST_ACCOUNT) {
     pht_tab("Search", "");

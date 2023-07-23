@@ -13,35 +13,36 @@ put_restore_session();
 disp_page();
 
 sub disp_page {
-    $aboutroot = get_static_root() . "/images/phabout";
-    pht_set_pagetype("about");
-    pht_page_start(0);
-    pht_tabs_start();
-    pht_prev_tab("");
-    pht_next_tab("");
-    pht_tab("Overview", "<a href='phbrowse'>");
-    pht_tab("Edit", "");
-    if (pusr_get_userid() eq $PUSR_GUEST_ACCOUNT) {
-        pht_tab("Search", "");
-        pht_tab("Login", "<a href='phlogin'>");
-    } else {
-        pht_tab("Search", "<a href='phsearch'>");
-        pht_tab("Logout", "<a href='phlogin?do.logout=1'>");
-    }
-    pht_tab("Preferences", "<a href='phpref'>");
-    pht_tab("About", "<a href='phabout'>");
-    pht_tabs_end();
+  $aboutroot = get_static_root() . "/images/phabout";
+  pht_set_pagetype("about");
+  pht_page_start(0);
+  pht_tabs_start();
+  pht_prev_tab("");
+  pht_next_tab("");
+  pht_tab("Overview", "<a href='phbrowse'>", "overview");
+  pht_tab("Edit", "");
 
-    $version = psys_version();
-    $db_version = psys_db_version();
-    print "<p>Version $version (database $db_version).</p>\n";
-    $about = "../templates/about.tpl";
-    if (-f $about) {
-      open(FILE, "<$about");
-      while (<FILE>) {
-        pht_output($_);
-      }
-      close FILE;
+  if (pusr_get_userid() eq $PUSR_GUEST_ACCOUNT) {
+    pht_tab("Search", "");
+    pht_tab("Login", "<a href='phlogin'>");
+  } else {
+    pht_tab("Search", "<a href='phsearch'>");
+    pht_tab("Logout", "<a href='phlogin?do.logout=1'>");
+  }
+  pht_tab("Preferences", "<a href='phpref'>");
+  pht_tab("About", "<a href='phabout'>");
+  pht_tabs_end();
+
+  $version = psys_version();
+  $db_version = psys_db_version();
+  print "<p>Version $version (database $db_version).</p>\n";
+  $about = "../templates/about.tpl";
+  if (-f $about) {
+    open(FILE, "<$about");
+    while (<FILE>) {
+      pht_output($_);
     }
-    pht_page_end();
+    close FILE;
+  }
+  pht_page_end();
 }

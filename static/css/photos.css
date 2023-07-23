@@ -175,6 +175,20 @@ img.largeportrait {
   height: 900px;
 }
 
+@media screen and (max-width: 900px) {
+  img.largelandscape {
+    width: 100%;
+    height: auto;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  img.largeportrait {
+    width: 100%;
+    height: auto;
+  }
+}
+
 img.normallandscape {
   width: 580px;
   height: 390px;
@@ -243,7 +257,7 @@ div.persons {
 /* Tab display.                                                 */
 /* ------------------------------------------------------------ */
 
-div.tabs {
+div.tabs, div.narrowtabs {
   margin: 0;
   padding: 0;
   text-align: left;
@@ -251,6 +265,19 @@ div.tabs {
   /* font-size: 80%; */
   /*  x-margin-bottom: 0.3em; */
   padding-bottom: 2px;
+}
+
+div.narrowtabs {
+  display: none;
+}
+
+@media screen and (max-width: 900px) {
+  div.tabs {
+    display: none;
+  }
+  div.narrowtabs {
+    display: block;
+  }
 }
 
 span.tab {

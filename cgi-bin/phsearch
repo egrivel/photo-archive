@@ -105,7 +105,7 @@ pht_page_start(0);
 pht_tabs_start();
 pht_prev_tab("");
 pht_next_tab("");
-pht_tab("Overview", "<a href='phbrowse'>");
+pht_tab("Overview", "<a href='phbrowse'>", "overview");
 if (pusr_get_userid() eq $PUSR_GUEST_ACCOUNT) {
   pht_tab("Search", "");
   pht_tab("Login", "<a href='phlogin'>");

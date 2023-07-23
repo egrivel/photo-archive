@@ -1,0 +1,700 @@
+#!/usr/bin/perl
+
+my $script = __FILE__;
+my $localdir = ".";
+if ($script =~ s/\/[^\/]*$//) {
+  $localdir = $script;
+}
+push @INC, "$localdir/../inc";
+
+require "photos_util.pm";
+
+put_init();
+put_restore_session();
+
+# Indicate that the session is used by a random display series
+pses_type("random");
+
+if (defined($ENV{"REMOTE_ADDR"} && ($ENV{"REMOTE_ADDR"} ne ""))) {
+  pses_set("client", $ENV{"REMOTE_ADDR"});
+}
+
+if (parg_get("startpage") ne "") {
+  display_selector_page();
+  exit(0);
+}
+
+sub get_value {
+  my $varname = $_[0];
+  my $value = "";
+
+  if (parg_exists($varname)) {
+    $value = parg_get($varname);
+    # Specific value specified; save it in the session
+    pses_set($varname, $value);
+  } else {
+    # No value specified; get one from the session
+    $value = pses_get($varname);
+  }
+  return $value;
+}
+
+sub set_value {
+  my $varname = $_[0];
+  my $value = $_[1];
+  pses_set($varname, $value);
+  return $value;
+}
+
+# Retrieve the information from the arguments.
+
+my $refresh = int(get_value("refresh"));
+if ($refresh < 1) {
+  $refresh = 10;
+}
+
+# If the "use_random_user" flag is set, the category and quality settings
+# of the user "random" are used, otherwise the category and quality settings
+# of the current user are used.
+my $use_random_user = int(get_value("use_random_user"));
+my $use_private_user = int(get_value("use_private_user"));
+my $do_disp_toolbar = get_value("disp_toolbar");
+my $do_disp_title = get_value("disp_title");
+my $do_disp_date = get_value("disp_date");
+my $do_disp_number = get_value("disp_number");
+my $do_disp_descr = get_value("disp_descr");
+my $do_disp_copyright = get_value("disp_copyright");
+
+if (parg_get("decoration") eq "none") {
+  # Link with decoration setting used; initialize the three
+  # display settings accordingly
+  $do_disp_toolbar = set_value("disp_toolbar", "no");
+  $do_disp_title = set_value("disp_title", "no");
+  $do_disp_date = set_value("disp_date", "no");
+  $do_disp_number = set_value("disp_number", "no");
+  $do_disp_descr = set_value("disp_descr", "no");
+  $do_disp_copyright = set_value("disp_copyright", "no");
+}
+
+my $range_start = get_value("range_start");
+my $range_end = get_value("range_end");
+
+# Use the current user's user ID, unless private or random is specified
+my $effective_user = pusr_get_userid();
+if ($use_private_user && pusr_allowed($PUSR_SEE_PRIVATE)) {
+  # only allow for private pictures if user has access
+  $effective_user = "private";
+} elsif ($use_random_user) {
+  $effective_user = "random";
+}
+
+my $scrnsize = get_value("scrnsize");
+if ($scrnsize eq "") {
+  display_selector_page();
+  exit(0);
+}
+
+# Determine image to display, as well as mode. Assume sequential
+# mode, unless no "sequential" parameter is given
+my $img = parg_get("sequential");
+my $do_sequential = 1;
+my $gl_series = "";
+if ($img ne "") {
+  # Only look for a series (album) if no specific sequential starting
+  # point is given.
+  $gl_series = get_value("series");
+}
+my $no_next_image = 0;
+
+if ($gl_series ne "") {
+  pcom_log($PCOM_DEBUG, "Use series '$gl_series'");
+  $img = parg_get("next");
+} else {
+  if ($img eq "1") {
+    # Special situation: sequential mode, but start at random point
+    pcom_log($PCOM_DEBUG, "Use sequential with random starting point");
+    $img = get_random_image($effective_user);
+    $do_sequential = 1;
+  } elsif ($img eq "") {
+    # No sequential mode, use random. Check if the next random image
+    # was already set. If not, get a random image.
+    pcom_log($PCOM_DEBUG, "Use random mode");
+    $do_sequential = 0;
+    $img = parg_get("next");
+    if ($img eq "none") {
+      $no_next_image = 1;
+      $img = get_random_image($effective_user);
+    } elsif ($img eq "") {
+      $img = get_random_image($effective_user);
+    }
+  }
+}
+
+my $do_autostart = int(parg_get("autostart"));
+my $stop = int(parg_get("stop"));
+
+if ($do_autostart) {
+  autostart();
+  exit(0);
+}
+
+my $nextimg = "";
+my $seriestitle = "";
+my $seriesyear = "";
+if ($no_next_image) {
+  $nextimg = "none";
+} elsif ($gl_series ne "") {
+  my $fname = pcom_slideshow_filename($gl_series);
+  open(FILE, "<$fname");
+  my $previmg = "";
+  while (<FILE>) {
+    my $fileimg = "";
+    my $filetitle = "";
+    my $fileyear = "";
+    # See if the line contains a valid photo reference
+    if (/^([\w\-]+)\s*$/) {
+      $fileimg = $1;
+    } elsif (/^([\w\-]+)\s+\-\s+(\d\d\d\d(\/\d\d)?)[\s\-]+(.*)$/) {
+      $fileimg = $1;
+      $fileyear = $2;
+      $filetitle = $4;
+    } elsif (/^([\w\-]+)[\s\-]*(.*)$/) {
+      $fileimg = $1;
+      $filetitle = $2;
+    }
+    if ($fileimg ne "") {
+      if ($img eq "") {
+        # No image yet -- start at first
+        $img = $fileimg;
+      } elsif ($nextimg eq "") {
+        # Start back over if we're not finding it
+        $nextimg = $fileimg;
+      }
+      if ($img eq $fileimg) {
+        $seriestitle = $filetitle;
+        $seriesyear = $fileyear;
+      }
+      if ($previmg eq $img) {
+        $nextimg = $fileimg;
+        last;
+      } else {
+        $previmg = $fileimg;
+      }
+    }
+  }
+  close FILE;
+} else {
+  if ($do_sequential) {
+    $nextimg = get_next_image($img, $effective_user);
+    if ($nextimg eq "") {
+      $stop = 1;
+    }
+  } else {
+    $nextimg = get_random_image($effective_user);
+  }
+}
+
+my $self = "./phrandom2";
+my $arg = "";
+if ($do_sequential) {
+  $arg .= "&sequential=$nextimg";
+} else {
+  $arg .= "&next=$nextimg";
+}
+if ($stop) {
+  $arg .= "&stop=1";
+}
+if ($gl_series ne "") {
+  $arg .= "&series=$gl_series&next=$nextimg";
+}
+
+if ($img eq "") {
+  $img = get_random_image();
+}
+
+#
+# s1 is size for title
+# s2 is size for date/number and description
+# s3 is size for copyright
+#
+if ($screensize eq "640x480") {
+  $s1 = " size-1";
+  $s2 = " size-2";
+  $s3 = " size-5";
+  $bgsize = "width=640&height=480&custom";
+} elsif ($scrnsize eq "800x600") {
+  $s1 = "";
+  $s2 = " size-1";
+  $s3 = " size-4";
+  # This size is optimized for how Netscape 4 displays on a Win98
+  # system
+  # $bgsize = "width=796&height=549&custom";
+  # Now updated to how Netscape 6 displays on the big TV in the living
+  # room
+  $bgsize = "width=800&height=600&custom";
+} elsif ($scrnsize eq "1024x768") {
+  $s1 = "";
+  $s2 = " size-1";
+  $s3 = " size-4";
+  # $bgsize = "width=1014&height=708&custom";
+  # Now updated to how Netscape 6 displays on the big TV in the living
+  # room
+  $bgsize = "width=1024&height=768&custom";
+} elsif ($scrnsize eq "1366x768") {
+  $s1 = "";
+  $s2 = " size-1";
+  $s3 = " size-4";
+  $bgsize = "width=1366&height=768&custom";
+} elsif ($scrnsize eq "tv") {
+  $s1 = "";
+  $s2 = " size-1";
+  $s3 = " size-4";
+  $bgsize = "width=1366&height=768&realwidth=1024&realheight=768&custom";
+} elsif ($scrnsize eq "1378x768") {
+  $s1 = "";
+  $s2 = " size-1";
+  $s3 = " size-4";
+  $bgsize = "width=1378&height=768&custom";
+} elsif ($scrnsize eq "1152x864") {
+  $s1 = "";
+  $s2 = " size-1";
+  $s3 = " size-4";
+  $bgsize = "width=1152&height=864&custom";
+} elsif ($scrnsize eq "1280x800") {
+  $s1 = " size1";
+  $s2 = "";
+  $s3 = " size-2";
+  $bgsize = "width=1280&height=800&custom";
+} elsif ($scrnsize eq "1280x1024") {
+  $s1 = " size1";
+  $s2 = "";
+  $s3 = " size-2";
+  $bgsize = "width=1280&height=1024&custom";
+} elsif ($scrnsize eq "1600x1200") {
+  $s1 = " size2";
+  $s2 = " size1";
+  $s3 = " size-1";
+  $bgsize = "width=1600&height=1200&custom";
+} elsif ($scrnsize eq "1680x1050") {
+  $s1 = " size2";
+  $s2 = " size1";
+  $s3 = " size-1";
+  $bgsize = "width=1680&height=1050&custom";
+} elsif ($scrnsize eq "2560x1600") {
+  $s1 = " size2";
+  $s2 = " size1";
+  $s3 = " size-1";
+  $bgsize = "width=2560&height=1600&custom";
+} elsif ($scrnsize eq "3840x2160") {
+  $s1 = " size2";
+  $s2 = " size1";
+  $s3 = " size-1";
+  $bgsize = "width=3840&height=2160&custom";
+} elsif ($scrnsize =~ /^(\d+)x(\d+)$/) {
+  $s1 = " size-1";
+  $s2 = " size-2";
+  $s3 = " size-5";
+  $bgsize = "width=$1&height=$2&custom";
+} else {
+  $s1 = "";
+  $s2 = " size-1";
+  $s3 = " size-4";
+  $bgsize = "large";
+}
+
+my $title = get_title($img);
+if ($seriestitle ne "") {
+  $title = $seriestitle;
+}
+pht_set_title($title);
+if (!$stop) {
+  pht_set_refresh("$refresh; URL=$self?$arg");
+  #    pht_add_header("   <meta http-equiv='refresh' content='$refresh; URL=$self?$arg'>\n");
+}
+pht_set_css("randomphoto.css");
+pht_add_header("   <script language='javascript'>function replaceCursor() {\n");
+pht_add_header("      element = document.getElementById('BodyTag');\n");
+pht_add_header("      if (element != null) {\n");
+pht_add_header("         element.style.cursor=\"crosshair\";\n");
+pht_add_header("      }\n");
+pht_add_header("   }</script>\n");
+
+pht_page_start(0, 0);
+
+print
+  "<body id='BodyTag' onload='replaceCursor()' background='phimg?$bgsize=$img&orientation=landscape'>\n";
+if ($do_disp_toolbar ne "no") {
+  print "<div class='toolbar'>";
+  print_toolbar($img, $nextimg);
+  print "</div>\n";
+}
+# Use a table to force the copyright to the bottom
+# print "<table width='100%' height='100%' cellspacing='0' cellpadding='0'>\n";
+# print "<tr height='20' valign='top'><td align='center'>\n";
+print_title($img, $s1, $s2, $seriestitle, $seriesyear);
+
+# print "</td></tr>\n";
+if (!$no_next_image) {
+  #     print "<tr valign='top'><td>";
+  print_next_image($nextimg, $bgsize);
+  #     print "</td></tr>\n";
+}
+# print "<tr height='1' valign='bottom'><td align='center' style='padding: 5px;'>";
+print_footer($img, $s2, $s3);
+
+# print "</td></tr>";
+
+# print "</table>\n";
+
+pht_page_end(0);
+
+sub get_image {
+  return
+    "<img src='/photos/images/randompage/$_[0].png' border='0' title='$_[1]' />";
+}
+
+sub print_toolbar {
+  my $img = $_[0];
+  my $nextimg = $_[1];
+
+  my $newrefresh;
+
+  print "<a href='$self?"
+    . build_arg($img, int($refresh * 2), $do_sequential, $stop) . "'>"
+    . get_image("btn-slower", "Slower (now: $refresh sec.)")
+    . "</a><br />";
+
+  if ($stop) {
+    print "<a href='$self?"
+      . build_arg($img, 0, $do_sequential, 0) . "'>"
+      . get_image("btn-play", "Play")
+      . "</a><br />";
+  } else {
+    print "<a href='$self?"
+      . build_arg($img, 0, $do_sequential, 1) . "'>"
+      . get_image("btn-stop", "Stop")
+      . "</a><br />";
+  }
+
+  print "<a href='$self?"
+    . build_arg($nextimg, 0, $do_sequential, $stop) . "'>"
+    . get_image("btn-next", "Next")
+    . "</a><br />";
+
+  $newrefresh = int($refresh / 2);
+  if ($newrefresh > 0) {
+    print "<a href='$self?"
+      . build_arg($img, $newrefresh, $do_sequential, $stop) . "'>"
+      . get_image("btn-faster", "Faster (now: $refresh sec.)")
+      . "</a><br />";
+  } else {
+    print get_image("btn-faster_disabled", "Cannot go faster"), "<br />";
+  }
+
+  if ($do_sequential) {
+    print "<a href='$self?"
+      . build_arg($img, 0, 0, $stop) . "'>"
+      . get_image("btn-rnd", "Change to random order")
+      . "</a><br />";
+  } else {
+    print "<a href='$self?"
+      . build_arg($img, 0, 1, $stop) . "'>"
+      . get_image("btn-seq", "Change to sequential order")
+      . "</a><br />";
+  }
+
+  print "<a href='phdisp?imageid=$img' target='_new'>"
+    . get_image("btn-view", "View this photo the normal way") . "</a>";
+}
+
+sub build_arg {
+  my $img = $_[0];
+  my $refresh = $_[1];
+  my $sequential = $_[2];
+  my $stop = $_[3];
+
+  my $arg = "";
+  if ($refresh > 0) {
+    $arg .= "refresh=$refresh";
+  }
+  if ($sequential && ($gl_series eq "")) {
+    $arg .= "&sequential=$img";
+  } else {
+    $arg .= "&next=$img";
+  }
+  if ($stop) {
+    $arg .= "&stop=1";
+  }
+  if ($gl_series ne "") {
+    $arg .= "&series=$gl_series";
+  }
+  return $arg;
+}
+
+sub get_title {
+  my $img = $_[0];
+
+  my $title = pdb_get_title($img);
+  my $date = pdb_get_datetime($img);
+  my $descr = pdb_get_description($img);
+
+  if (($title ne "") && ($date ne "")) {
+    $title .= " :: $date";
+  }
+  if (($title ne "") && ($descr ne "")) {
+    $title .= " :: $descr";
+  }
+  if ($title eq "") {
+    $title = "Random Photo";
+  }
+  return $title;
+}
+
+sub print_title {
+  my $img = $_[0];
+  my $titlesize = $_[1];
+  my $subtitlesize = $_[2];
+  my $seriestitle = $_[3];
+  my $seriesyear = $_[4];
+
+  my $title = "";
+  if ($do_disp_title ne "no") {
+    if ($seriestitle ne "") {
+      $title = $seriestitle;
+    } else {
+      $title = pdb_get_title($img);
+    }
+  }
+  my $date = "";
+  if ($do_disp_date ne "no") {
+    if ($seriesyear ne "") {
+      $date = $seriesyear;
+    } else {
+      $date = pdb_get_datetime($img);
+    }
+  }
+  my $number = "";
+  if ($do_disp_number ne "no") {
+    $number = "\[" . pcom_format_imageid($img) . "\]";
+  }
+
+  if ($title ne "") {
+    $out .= "<div class='title'><span class='grayback $titlesize'>";
+    $out .= "$title</span></div>\n";
+  }
+
+  if (($date ne "") || ($number ne "")) {
+    $out .= "<div class='grayback'><span class='grayback $subtitlesize'>";
+    $out .= "$date $number";
+    $out .= "</span></div>\n";
+  }
+
+  if ($out ne "") {
+    print "<div class='header'>";
+    print $out;
+    print "</div>\n";
+  }
+}
+
+sub print_footer {
+  my $img = $_[0];
+  my $size1 = $_[1];
+  my $size2 = $_[2];
+
+  my $descr = "";
+  if ($do_disp_descr ne "no") {
+    $descr = pdb_get_description($img);
+  }
+  my $copyright = "";
+  if ($do_disp_copyright ne "no") {
+    $copyright = pdb_get_copyright($img);
+    if ($copyright eq "") {
+      $copyright = put_default_copyright($img);
+    }
+  }
+
+  my $out = "";
+  if ($descr ne "") {
+    $out .= "<div>";
+    $out .= "<span class='grayback $size1'>";
+    $out .= $descr;
+    $out .= "</span></div>";
+  }
+
+  if ($copyright ne "") {
+    $out .= "<span class='grayback $size2'>";
+    $out .= "Copyright &copy;$copyright.";
+    $out .= " All rights reserved.</span>";
+  }
+
+  if ($out ne "") {
+    print "<div class='footer'>";
+    print $out;
+    print "</div>\n";
+  }
+}
+
+sub print_next_image {
+  my $nextimg = $_[0];
+  my $size = $_[1];
+  print "<img src='./phimg?$size=$nextimg&orientation=landscape' width='1' ";
+  print " height='1' border='0'>";
+}
+
+sub print_copyright {
+  my $img = $_[0];
+  my $size = $_[1];
+
+  my $copyright = pdb_get_copyright($img);
+  if ($copyright eq "") {
+    $copyright = put_default_copyright($img);
+  }
+
+  print "<span class='grayback $size'>";
+  print "Copyright &copy;$copyright";
+  print " All rights reserved.</span>";
+}
+
+# The autostart parameter will cause the 'randomimg.html' page to be
+# displayed, but with javascript that causes it to launch the image window.
+sub autostart {
+  print "Content-type: text/html\n\n";
+  my $link = "./phrandom2?";
+  $link .= "scrnsize=$scrnsize";
+  $link .= "&refresh=$refresh";
+  #    if ($use_random_user) {
+  #        $link .= "&use_random_user=1";
+  #    } elsif ($use_private_user) {
+  #        $link .= "&use_private_user=1";
+  #    }
+  my $heightwidth = "height=740,width=1016";
+  if ($scrnsize =~ /(\d+)x(\d+)/) {
+    my $width = $1;
+    my $height = $2;
+    $width -= 8;
+    $height -= 28;
+    $heightwidth = "height=$height,width=$width";
+  }
+  my $command =
+    "open('$link', '_image', 'alwaysRaised,$heightwidth,,resizable,screenX=0,screenY=0,left=0,top=0,status=no')";
+  print
+    "<html><head><script>$command</script></head><body>this should have launched the window</body></html>\n";
+}
+
+sub get_random_image {
+  my $effective_user = $_[0];
+
+  # Set the filters appropriately
+  my $types = get_types($effective_user);
+  my $min_quality = get_value("min_quality");
+  if ($min_quality eq "") {
+    $min_quality = get_quality($effective_user);
+  }
+
+  pdb_filter_category($types);
+  pdb_filter_min_quality($min_quality);
+  if ($range_start ne "") {
+    pdb_filter_range_start($range_start);
+  }
+  if ($range_end ne "") {
+    pdb_filter_range_end($range_end);
+  }
+
+  # Get the next random image
+  my $image = pdb_random_image();
+  my $set = pcom_get_set($image);
+  my $setcategory = pdb_get_setcategory($set);
+  while (!($types =~ /$setcategory/)) {
+    $image = pdb_random_image();
+    $set = pcom_get_set($image);
+    $setcategory = pdb_get_setcategory($set);
+  }
+  return $image;
+}
+
+sub get_next_image {
+  my $imageid = $_[0];
+  my $effective_user = $_[1];
+  pcom_log($PCOM_DEBUG, "get_next_image($imageid, $effective_user)");
+
+  # Set the filters appropriately
+  my $types = get_types($effective_user);
+  my $min_quality = get_value("min_quality");
+  if ($min_quality eq "") {
+    $min_quality = get_quality($effective_user);
+  }
+
+  # Determine the next image
+
+  my $class = put_get_class($imageid);
+
+  my $iter = pdb_iter_new($imageid);
+  pdb_iter_filter_category($iter, $types);
+  pdb_iter_filter_min_quality($iter, $min_quality);
+
+  my $next = pdb_iter_next($iter);
+  if ($next eq $imageid) {
+    $next = pdb_iter_next($iter);
+  }
+  pdb_iter_done($iter);
+
+  if (put_get_class($next) ne $class) {
+    # different class, so do not walk over into it
+    $next = "";
+  }
+  return $next;
+}
+
+sub get_types {
+  my $effective_user = $_[0];
+
+  if ($effective_user ne "") {
+    # Use the edit function to retrieve the settings for the
+    # "random" user
+    pusr_load($effective_user);
+  }
+
+  my $types = put_types();
+
+  return $types;
+}
+
+sub get_quality {
+  my $effective_user = $_[0];
+
+  if ($effective_user ne "") {
+    # Use the edit function to retrieve the settings for the
+    # "random" user
+    pusr_load($effective_user);
+  }
+
+  my $quality = put_quality();
+
+  return $quality;
+}
+
+sub display_selector_page {
+  pht_page_start(0, 0);
+  put_form_start("phrandom2", "get");
+  put_form_text("Refresh rate", "refresh");
+  put_form_dropdown(
+    "Screen size", "scrnsize",
+    "640x480" => "640x480",
+    "800x600" => "800x600",
+    "1024x768" => "1024x768",
+    "1366x768" => "1366x768",
+    "tv" => "tv",
+    "1152x864" => "1152x864",
+    "1280x800" => "1280x800",
+    "1280x1024" => "1280x1024",
+    "1600x1200" => "1600x1200",
+    "1680x1050" => "1680x1050",
+    "2560x1600" => "2560x1600",
+    "3840x2160" => "3840x2160"
+  );
+  put_form_checkboxes("", "use_random_user", "use random user");
+  put_form_checkboxes("", "use_private_user", "use private user");
+  put_form_buttons("OK", "OK");
+  put_form_end();
+  pht_page_end();
+}
