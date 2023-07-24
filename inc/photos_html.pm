@@ -7,6 +7,9 @@ my $pht_copyright = "";
 my $pht_refresh = "";
 my $pht_pagetype = "default";
 my $pht_extra_header = "";
+# Update the query string whenever the CSS is updated, but before pushing the
+# update, to force browsers to reload the CSS. Otherwise recent visitors to
+# the site may not get the updated CSS.
 my $pht_css_file = "photos.css?new=20230723";
 my $pht_systemmessage = "";
 
@@ -235,6 +238,9 @@ sub pht_tab {
   if ($link ne "") {
     $link =~ s/[^<>]*<\/a>$//;
     $global_tabs .= "$link$label</a>";
+    # Remove access key from the narrow tab; no access keys on phone and having
+    # the same access key in two links confuses Firefox.
+    $link =~ s/ accesskey=['"]\w['"]//;
     $global_narrow_tabs .= "$link$label</a>" if ($isNarrow);
   } else {
     $global_tabs .= $label;
