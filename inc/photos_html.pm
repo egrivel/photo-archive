@@ -141,6 +141,7 @@ sub pht_page_start {
 
   if ($do_body) {
     print "<body class='$pht_pagetype'>\n";
+    print "<div id='swipable'>\n";
     print "<div class='banner'>$pht_banner</div>\n" if ($pht_banner ne "");
     print "<h1>$title</h1>\n" if ($do_title);
   }
@@ -181,6 +182,7 @@ sub pht_page_end {
     #        print "<hr />\n";
     print "<div class='footer'><hr />$copyright</div>\n";
   }
+  print "</div>\n";
   print "</body>\n";
   print "</html>\n";
 }

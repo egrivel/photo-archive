@@ -170,7 +170,8 @@ sub disp_image_page {
   pht_next_tab($nextlink);
   pht_prev_tab($prevlink);
   my $setid = pcom_get_set($imageid);
-  pht_tab("Overview", "<a href='phbrowse?setid=$setid' accesskey='o'>", "overview");
+  pht_tab("Overview", "<a href='phbrowse?setid=$setid' accesskey='o'>",
+    "overview");
   pht_tab("Edit", $editlink);
 
   if (pusr_get_userid() eq $PUSR_GUEST_ACCOUNT) {
