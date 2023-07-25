@@ -134,7 +134,8 @@ sub pht_page_start {
   print
     "   <link rel='shortcut icon' href='$staticroot/images/photo_favicon.ico'/>\n";
   print "   <script type='text/javascript' \n";
-  print "           src='$staticroot/js/photos.js'></script>\n";
+  # Add an identifier to the link to make sure browsers pick up the new version
+  print "           src='$staticroot/js/photos.js?new=20230724'></script>\n";
   print $pht_extra_header;
   print "</head>\n";
   print "\n";
