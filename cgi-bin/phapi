@@ -1,0 +1,47 @@
+#!/usr/bin/perl -w -I .
+
+# Provide an API to get information from the photo archive
+use inc_all;
+
+print "Content-type: application/json\n\n";
+
+put_init();
+my $action = parg_get("action");
+if ($action eq "set") {
+  my $setid = parg_get("setid");
+
+  my $iter = pdb_iter_new($setid, 40);
+  pdb_iter_filter_setid($iter, $setid);
+  pdb_iter_filter_category($iter, put_types());
+  pdb_iter_filter_min_quality($iter, put_quality());
+  my $imageid = pdb_iter_next($iter);
+  my $imagecount = 0;
+
+  print "{\"photos\":[";
+  my $isFirst = 1;
+  while (pcom_get_set($imageid) le $setid) {
+    # Note: Because the sort ID uses GMT, it is possible to get images
+    # from the previous day when iterating through the sets. Skip
+    # those.
+    if (pcom_get_set($imageid) lt $setid) {
+      if (pcom_is_digital($imageid)) {
+        $imageid = pdb_iter_next($iter);
+        next;
+      } else {
+        # if not a digital photo, break out of the loop
+        last;
+      }
+    }
+
+    if (!$isFirst) {
+      print ",";
+    }
+    print "\"$imageid\"";
+    $isFirst = 0;
+    $imageid = pdb_iter_next($iter);
+  }
+  print "]}\n";
+  exit(0);
+}
+
+print "{error:\"No Action or unrecognized action\"}"
