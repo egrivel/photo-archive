@@ -10,7 +10,7 @@ my $pht_extra_header = "";
 # Update the query string whenever the CSS is updated, but before pushing the
 # update, to force browsers to reload the CSS. Otherwise recent visitors to
 # the site may not get the updated CSS.
-my $pht_css_file = "photos.css?new=20230723";
+my $pht_css_file = "photos.css?new=20230728";
 my $pht_systemmessage = "";
 
 sub pht_init {
