@@ -47,7 +47,7 @@ sub json_out {
   my $name = $_[0];
   my $value = $_[1];
 
-  $out = "";
+  my $out = "";
   $out .= "\"$name\":\"";
   $value =~ s/"/&quot;/g;
   $out .= "$value\"";
@@ -56,7 +56,7 @@ sub json_out {
 }
 
 sub get_all_info {
-  $out = "";
+  my $out = "";
 
   $out .= "{\n";
 
@@ -68,19 +68,19 @@ sub get_all_info {
       $out .= ",\n";
     }
     $out .= "{\n";
-    $out .= "\"year\":\"$i\",\n";
-    $out .= "\"description\":\"$i\"\n";
+    $out .= json_out("year", $i) . ",\n";
+    $out .= json_out("description", $i) . "\n";
     $out .= "}";
   }
   $out .= "],\n";
 
   $out .= "\"specials\":[\n";
   $out .= "{\n";
-  $out .= "\"year\":\"9999\",\n";
-  $out .= "\"description\":\"Special Photos\"\n";
+  $out .= json_out("year", "9999") . ",\n";
+  $out .= json_out("description", "Special Photos") . "\n";
   $out .= "},{\n";
-  $out .= "\"type\":\"d\",\n";
-  $out .= "\"description\":\"Photos and Slides by my Parents\"\n";
+  $out .= json_out("type", "d") . ",\n";
+  $out .= json_out("description", "Photos and Slides by my Parents") . "\n";
   $out .= "}\n";
   $out .= "]\n";
   $out .= "}\n";
@@ -93,7 +93,7 @@ sub get_year_info {
   my $out = "";
 
   $out .= "{\n";
-  $out .= "\"year\":\"$year\",\n";
+  $out .= json_out("year", $year) . ",\n";
 
   $out .= "\"sets\":[\n";
   my $iter = pdb_iter_set_new();
@@ -114,10 +114,10 @@ sub get_year_info {
       $out .= ",\n";
     }
     $out .= "{\n";
-    $out .= "\"setid\":\"$setid\",\n";
-    $out .= "\"title\":\"$title\",\n";
-    $out .= "\"datetime\":\"$datetime\",\n";
-    $out .= "\"description\":\"$descr\"\n";
+    $out .= json_out("setid", $setid) . ",\n";
+    $out .= json_out("title", $title) . ",\n";
+    $out .= json_out("datetime", $datetime) . ",\n";
+    $out .= json_out("description", $descr) . ",\n";
     $out .= "}";
     $isFirst = 0;
     $setid = pdb_iter_next($iter);
@@ -154,9 +154,9 @@ sub get_type_info {
       $out .= ",\n";
     }
     $out .= "{\n";
-    $out .= "\"setid\":\"$setid\",\n";
+    $out .= json_out("setid", $setid) . ",\n";
     $out .= json_out("title", $title) . ",\n";
-    $out .= "\"datetime\":\"$datetime\",\n";
+    $out .= json_out("datetime", $datetime) . ",\n";
     $out .= json_out("description", $descr) . "\n";
     $out .= "}";
     $isFirst = 0;
@@ -171,7 +171,7 @@ sub get_type_info {
 
 sub get_set_info {
   my $setid = $_[0];
-  $out = "";
+  my $out = "";
 
   my $category = pdb_get_setcategory($setid);
   if (!pdb_set_exists($setid)
@@ -181,18 +181,18 @@ sub get_set_info {
 
   $out .= "{";
 
-  my $settitle = pdb_get_settitle($setid);
+  my $title = pdb_get_settitle($setid);
   my $datetime = pdb_get_setdatetime($setid);
   my $description = pdb_get_setdescription($setid);
   my $comment = pdb_get_setcomment($setid);
   my $copyright = pdb_get_setcopyright($setid);
   my $year = pdb_get_setyear($setid);
 
-  $out .= "\"title\":\"$settitle\",\n";
-  $out .= "\"datetime\":\"$datetime\",\n";
-  $out .= "\"description\":\"$description\",\n";
-  $out .= "\"copyright\":\"$copyright\",\n";
-  $out .= "\"year\":\"$year\",\n";
+  $out .= json_out("title", $title) . ",\n";
+  $out .= json_out("datetime", $datetime) . ",\n";
+  $out .= json_out("description", $description) . ",\n";
+  $out .= json_out("copyright", $copyright) . ",\n";
+  $out .= json_out("year", $year) . "\n";
 
   my $iter = pdb_iter_new($setid, 40);
   pdb_iter_filter_setid($iter, $setid);
@@ -232,7 +232,7 @@ sub get_set_info {
 
 sub get_image_info {
   my $imageid = $_[0];
-  $out = "";
+  my $out = "";
 
   my $category = pdb_get_category($imageid);
   if (!pdb_image_exists($imageid)
@@ -254,18 +254,18 @@ sub get_image_info {
   my $year = pdb_get_year($imageid);
 
   $out .= "{\n";
-  $out .= "\"category\":\"$category\",\n";
-  $out .= "\"copyright\":\"$copyright\",\n";
-  $out .= "\"datetime\":\"$datetime\",\n";
-  $out .= "\"description\":\"$description\",\n";
-  $out .= "\"latlong\":\"$latlong\",\n";
-  $out .= "\"location\":\"$location\",\n";
-  $out .= "\"orientation\":\"$orientation\",\n";
-  $out .= "\"persons\":\"$persons\",\n";
-  $out .= "\"person_id_list\":\"$person_id_list\",\n";
-  $out .= "\"quality\":\"$quality\",\n";
-  $out .= "\"title\":\"$title\",\n";
-  $out .= "\"year\":\"$year\"\n";
+  $out .= json_out("category", $category) . ",\n";
+  $out .= json_out("copyright", $copyright) . ",\n";
+  $out .= json_out("datetime", $datetime) . ",\n";
+  $out .= json_out("description", $description) . ",\n";
+  $out .= json_out("latlong", $latlong) . ",\n";
+  $out .= json_out("location", $location) . ",\n";
+  $out .= json_out("orientation", $orientation) . ",\n";
+  $out .= json_out("persons", $persons) . ",\n";
+  $out .= json_out("person_id_list", $person_id_list) . ",\n";
+  $out .= json_out("quality", $quality) . ",\n";
+  $out .= json_out("title", $title) . ",\n";
+  $out .= json_out("year", $year) . "\n";
 
   $out .= "}\n";
 
