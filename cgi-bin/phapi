@@ -4,11 +4,182 @@
 use inc_all;
 
 print "Content-type: application/json\n\n";
+$data = "";
 
 put_init();
+pusr_logout();
 my $action = parg_get("action");
-if ($action eq "set") {
+if ($action eq "all") {
+  $data = get_all_info();
+} elsif ($action eq "year") {
+  my $year = parg_get("year");
+  if ($year ne "") {
+    $data = get_year_info($year);
+  }
+} elsif ($action eq "type") {
+  my $type = parg_get("type");
+  if ($type ne "") {
+    $data = get_type_info($type);
+  }
+} elsif ($action eq "set") {
   my $setid = parg_get("setid");
+  if ($setid ne "") {
+    $data = get_set_info($setid);
+  }
+} elsif ($action eq "image") {
+  my $imageid = parg_get("imageid");
+  if ($imageid ne "") {
+    $data = get_image_info($imageid);
+  }
+}
+
+if ($data eq "") {
+  print "{\"error\":\"No Action or unrecognized action\"}";
+} else {
+  print $data;
+}
+
+exit(0);
+
+sub get_all_info {
+  $out = "";
+
+  $out .= "{\n";
+
+  $out .= "\"years\":[\n";
+  my $first_year = pcom_first_year();
+  my $last_year = pcom_last_year();
+  for (my $i = $first_year; $i <= $last_year; $i++) {
+    if ($i != $first_year) {
+      $out .= ",\n";
+    }
+    $out .= "{\n";
+    $out .= "\"year\":\"$i\",\n";
+    $out .= "\"description\":\"$i\"\n";
+    $out .= "}";
+  }
+  $out .= "],\n";
+
+  $out .= "\"specials\":[\n";
+  $out .= "{\n";
+  $out .= "\"year\":\"9999\",\n";
+  $out .= "\"description\":\"Special Photos\"\n";
+  $out .= "},{\n";
+  $out .= "\"type\":\"d\",\n";
+  $out .= "\"description\":\"Photos and Slides by my Parents\"\n";
+  $out .= "}\n";
+  $out .= "]\n";
+  $out .= "}\n";
+
+  return $out;
+}
+
+sub get_year_info {
+  my $year = $_[0];
+  my $out = "";
+
+  $out .= "{\n";
+  $out .= "\"year\":\"$year\",\n";
+
+  $out .= "\"sets\":[\n";
+  my $iter = pdb_iter_set_new();
+  pdb_iter_filter_category($iter, put_types());
+  pdb_iter_filter_year($iter, $year);
+  my $setid = "";
+  $setid = pdb_iter_prev($iter);
+  my $isFirst = 1;
+  while ($setid ne "") {
+    my $title = pdb_get_settitle($setid);
+    if ($title eq "") {
+      $title = "Film $setid";
+    }
+    my $datetime = pdb_get_setdatetime($setid);
+    my $descr = pdb_get_setdescription($setid);
+
+    if (!$isFirst) {
+      $out .= ",\n";
+    }
+    $out .= "{\n";
+    $out .= "\"setid\":\"$setid\",\n";
+    $out .= "\"title\":\"$title\",\n";
+    $out .= "\"datetime\":\"$datetime\",\n";
+    $out .= "\"description\":\"$descr\"\n";
+    $out .= "}";
+    $isFirst = 0;
+    $setid = pdb_iter_next($iter);
+  }
+  $out .= "]\n";
+
+  $out .= "}\n";
+
+  return $out;
+}
+
+sub get_type_info {
+  my $type = $_[0];
+  my $out = "";
+
+  $out .= "{\n";
+  $out .= "\"type\":\"$type\",\n";
+
+  $out .= "\"sets\":[\n";
+  my $iter = pdb_iter_set_new();
+  pdb_iter_filter_category($iter, $type);
+  my $setid = pdb_iter_previous($iter);
+
+  $setid = pdb_iter_next($iter);
+  my $isFirst = 1;
+  while ($setid ne "") {
+    my $title = pdb_get_settitle($setid);
+    if ($title eq "") {
+      $title = "Film $setid";
+    }
+    my $datetime = pdb_get_setdatetime($setid);
+    my $descr = pdb_get_setdescription($setid);
+
+    if (!$isFirst) {
+      $out .= ",\n";
+    }
+    $out .= "{\n";
+    $out .= "\"setid\":\"$setid\",\n";
+    $out .= "\"title\":\"$title\",\n";
+    $out .= "\"datetime\":\"$datetime\",\n";
+    $out .= "\"description\":\"$descr\"\n";
+    $out .= "}";
+    $isFirst = 0;
+    $setid = pdb_iter_next($iter);
+  }
+  $out .= "]\n";
+
+  $out .= "}\n";
+
+  return $out;
+}
+
+sub get_set_info {
+  my $setid = $_[0];
+  $out = "";
+
+  my $category = pdb_get_setcategory($setid);
+  if (!pdb_set_exists($setid)
+    || (($category ne "") && !pusr_allowed($category))) {
+    return "{\"error\":\"Not found\"}\n";
+  }
+
+  $out .= "{";
+
+  my $settitle = pdb_get_settitle($setid);
+  my $datetime = pdb_get_setdatetime($setid);
+  my $description = pdb_get_setdescription($setid);
+  my $comment = pdb_get_setcomment($setid);
+  my $copyright = pdb_get_setcopyright($setid);
+  my $year = pdb_get_setyear($setid);
+
+  $out .= "\"title\":\"$settitle\",\n";
+  $out .= "\"datetime\":\"$datetime\",\n";
+  $out .= "\"description\":\"$description\",\n";
+  $out .= "\"copyright\":\"$copyright\",\n";
+  $out .= "\"year\":\"$year\",\n";
 
   my $iter = pdb_iter_new($setid, 40);
   pdb_iter_filter_setid($iter, $setid);
@@ -17,7 +188,7 @@ if ($action eq "set") {
   my $imageid = pdb_iter_next($iter);
   my $imagecount = 0;
 
-  print "{\"photos\":[";
+  $out .= "\"photos\":[";
   my $isFirst = 1;
   while (pcom_get_set($imageid) le $setid) {
     # Note: Because the sort ID uses GMT, it is possible to get images
@@ -34,14 +205,56 @@ if ($action eq "set") {
     }
 
     if (!$isFirst) {
-      print ",";
+      $out .= ",";
     }
-    print "\"$imageid\"";
+    $out .= "\"$imageid\"";
     $isFirst = 0;
     $imageid = pdb_iter_next($iter);
   }
-  print "]}\n";
-  exit(0);
+  $out .= "]\n";
+  $out .= "}\n";
+
+  return $out;
 }
 
-print "{error:\"No Action or unrecognized action\"}"
+sub get_image_info {
+  my $imageid = $_[0];
+  $out = "";
+
+  my $category = pdb_get_category($imageid);
+  if (!pdb_image_exists($imageid)
+    || (($category ne "") && !pusr_allowed($category))) {
+    return "{\"error\":\"Not found\"}\n";
+  }
+
+  my $category = pdb_get_category($imageid);
+  my $copyright = pdb_get_copyright($imageid);
+  my $datetime = pdb_get_datetime($imageid);
+  my $description = pdb_get_description($imageid);
+  my $latlong = pdb_get_latlong($imageid);
+  my $location = pdb_get_location($imageid);
+  my $orientation = pdb_get_orientation($imageid);
+  my $persons = pdb_get_persons($imageid);
+  my $person_id_list = ppers_get_persons_in_image($imageid);
+  my $quality = pdb_get_quality($imageid);
+  my $title = pdb_get_title($imageid);
+  my $year = pdb_get_year($imageid);
+
+  $out .= "{\n";
+  $out .= "\"category\":\"$category\",\n";
+  $out .= "\"copyright\":\"$copyright\",\n";
+  $out .= "\"datetime\":\"$datetime\",\n";
+  $out .= "\"description\":\"$description\",\n";
+  $out .= "\"latlong\":\"$latlong\",\n";
+  $out .= "\"location\":\"$location\",\n";
+  $out .= "\"orientation\":\"$orientation\",\n";
+  $out .= "\"persons\":\"$persons\",\n";
+  $out .= "\"person_id_list\":\"$person_id_list\",\n";
+  $out .= "\"quality\":\"$quality\",\n";
+  $out .= "\"title\":\"$title\",\n";
+  $out .= "\"year\":\"$year\"\n";
+
+  $out .= "}\n";
+
+  return $out;
+}
