@@ -7,7 +7,9 @@ print "Content-type: application/json\n\n";
 $data = "";
 
 put_init();
+# The logout function effectively "logs in" the guest user
 pusr_logout();
+
 my $action = parg_get("action");
 if ($action eq "all") {
   $data = get_all_info();
@@ -40,6 +42,18 @@ if ($data eq "") {
 }
 
 exit(0);
+
+sub json_out ($name, $value) {
+  my $name = $_[0];
+  my $value = $_[1];
+
+  $out = "";
+  $out .= "\"$name\":\"";
+  $value =~ s/"/&quot;/g;
+  $out .= "$value\"";
+
+  return $out;
+}
 
 sub get_all_info {
   $out = "";
@@ -125,9 +139,8 @@ sub get_type_info {
   $out .= "\"sets\":[\n";
   my $iter = pdb_iter_set_new();
   pdb_iter_filter_category($iter, $type);
-  my $setid = pdb_iter_previous($iter);
+  my $setid = pdb_iter_next($iter);
 
-  $setid = pdb_iter_next($iter);
   my $isFirst = 1;
   while ($setid ne "") {
     my $title = pdb_get_settitle($setid);
@@ -144,7 +157,7 @@ sub get_type_info {
     $out .= "\"setid\":\"$setid\",\n";
     $out .= "\"title\":\"$title\",\n";
     $out .= "\"datetime\":\"$datetime\",\n";
-    $out .= "\"description\":\"$descr\"\n";
+    $out .= json_out("description", $descr) . "\n";
     $out .= "}";
     $isFirst = 0;
     $setid = pdb_iter_next($iter);
