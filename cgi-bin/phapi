@@ -43,7 +43,7 @@ if ($data eq "") {
 
 exit(0);
 
-sub json_out ($name, $value) {
+sub json_out {
   my $name = $_[0];
   my $value = $_[1];
 
