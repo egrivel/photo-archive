@@ -155,7 +155,7 @@ sub get_type_info {
     }
     $out .= "{\n";
     $out .= "\"setid\":\"$setid\",\n";
-    $out .= "\"title\":\"$title\",\n";
+    $out .= json_out("title", $title) . ",\n";
     $out .= "\"datetime\":\"$datetime\",\n";
     $out .= json_out("description", $descr) . "\n";
     $out .= "}";
