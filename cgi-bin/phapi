@@ -192,7 +192,7 @@ sub get_set_info {
   $out .= json_out("datetime", $datetime) . ",\n";
   $out .= json_out("description", $description) . ",\n";
   $out .= json_out("copyright", $copyright) . ",\n";
-  $out .= json_out("year", $year) . "\n";
+  $out .= json_out("year", $year) . ",\n";
 
   my $iter = pdb_iter_new($setid, 40);
   pdb_iter_filter_setid($iter, $setid);
