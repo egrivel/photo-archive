@@ -269,11 +269,21 @@ sub get_image_info {
   my $title = pdb_get_title($imageid);
   my $year = pdb_get_year($imageid);
 
+  my $fname = pfs_get_edited_location($imageid);
+  if ($fname eq "") {
+    $fname = pfs_get_orig_location($imageid);
+  }
+
+  # Get the (original) width and height of the image, to calculate display
+  # size for "freeform" images.
+  my ($width, $height) = pfs_get_file_dimensions($fname);
+
   $out .= "{\n";
   $out .= json_out("category", $category) . ",\n";
   $out .= json_out("copyright", $copyright) . ",\n";
   $out .= json_out("datetime", $datetime) . ",\n";
   $out .= json_out("description", $description) . ",\n";
+  $out .= json_out("height", $height) . ",\n";
   $out .= json_out("latlong", $latlong) . ",\n";
   $out .= json_out("location", $location) . ",\n";
   $out .= json_out("orientation", $orientation) . ",\n";
@@ -281,6 +291,7 @@ sub get_image_info {
   $out .= json_out("person_id_list", $person_id_list) . ",\n";
   $out .= json_out("quality", $quality) . ",\n";
   $out .= json_out("title", $title) . ",\n";
+  $out .= json_out("width", $width) . ",\n";
   $out .= json_out("year", $year) . "\n";
 
   $out .= "}\n";
