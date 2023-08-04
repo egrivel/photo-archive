@@ -226,7 +226,7 @@ sub get_set_info {
 
     my $orientation = pdb_get_orientation($imageid);
     my $title = pdb_get_title($imageid);
-    my $descr = pdb_get_description($imageId);
+    my $descr = pdb_get_description($imageid);
 
     $photoInfo .= "{\n";
     $photoInfo .= json_out("imageId", $imageid) . ",\n";
