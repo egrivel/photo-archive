@@ -202,6 +202,7 @@ sub get_set_info {
   my $imagecount = 0;
 
   $out .= "\"photos\":[";
+  my $photoInfo = "\"photoInfo\":[";
   my $isFirst = 1;
   while (pcom_get_set($imageid) le $setid) {
     # Note: Because the sort ID uses GMT, it is possible to get images
@@ -219,12 +220,27 @@ sub get_set_info {
 
     if (!$isFirst) {
       $out .= ",";
+      $photoInfo .= ",\n";
     }
     $out .= "\"$imageid\"";
+
+    my $orientation = pdb_get_orientation($imageid);
+    my $title = pdb_get_title($imageid);
+    my $descr = pdb_get_description($imageId);
+
+    $photoInfo .= "{\n";
+    $photoInfo .= json_out("imageId", $imageid) . ",\n";
+    $photoInfo .= json_out("title", $title) . ",\n";
+    $photoInfo .= json_out("description", $description) . ",\n";
+    $photoInfo .= json_out("orientation", $orientation) . "\n";
+    $photoInfo .= "}";
     $isFirst = 0;
     $imageid = pdb_iter_next($iter);
   }
-  $out .= "]\n";
+  $out .= "],\n";
+
+  $photoInfo .= "]\n";
+  $out .= $photoInfo;
   $out .= "}\n";
 
   return $out;
