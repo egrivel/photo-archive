@@ -100,7 +100,7 @@ sub get_year_info {
   pdb_iter_filter_category($iter, put_types());
   pdb_iter_filter_year($iter, $year);
   my $setid = "";
-  $setid = pdb_iter_prev($iter);
+  $setid = pdb_iter_previous($iter);
   my $isFirst = 1;
   while ($setid ne "") {
     my $title = pdb_get_settitle($setid);
@@ -117,7 +117,7 @@ sub get_year_info {
     $out .= json_out("setid", $setid) . ",\n";
     $out .= json_out("title", $title) . ",\n";
     $out .= json_out("datetime", $datetime) . ",\n";
-    $out .= json_out("description", $descr) . ",\n";
+    $out .= json_out("description", $descr) . "\n";
     $out .= "}";
     $isFirst = 0;
     $setid = pdb_iter_next($iter);
