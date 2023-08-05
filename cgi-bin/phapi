@@ -187,12 +187,16 @@ sub get_set_info {
   my $comment = pdb_get_setcomment($setid);
   my $copyright = pdb_get_setcopyright($setid);
   my $year = pdb_get_setyear($setid);
+  my $next = put_get_next_set($setid);
+  my $prev = put_get_prev_set($setid);
 
   $out .= json_out("title", $title) . ",\n";
   $out .= json_out("datetime", $datetime) . ",\n";
   $out .= json_out("description", $description) . ",\n";
   $out .= json_out("copyright", $copyright) . ",\n";
   $out .= json_out("year", $year) . ",\n";
+  $out .= json_out("next", $next) . ",\n";
+  $out .= json_out("prev", $prev) . ",\n";
 
   my $iter = pdb_iter_new($setid, 40);
   pdb_iter_filter_setid($iter, $setid);
@@ -268,6 +272,8 @@ sub get_image_info {
   my $quality = pdb_get_quality($imageid);
   my $title = pdb_get_title($imageid);
   my $year = pdb_get_year($imageid);
+  my $next = put_get_next($imageid);
+  my $prev = put_get_prev($imageid);
 
   my $fname = pfs_get_edited_location($imageid);
   if ($fname eq "") {
@@ -292,6 +298,8 @@ sub get_image_info {
   $out .= json_out("quality", $quality) . ",\n";
   $out .= json_out("title", $title) . ",\n";
   $out .= json_out("width", $width) . ",\n";
+  $out .= json_out("next", $next) . ",\n";
+  $out .= json_out("prev", $prev) . ",\n";
   $out .= json_out("year", $year) . "\n";
 
   $out .= "}\n";
