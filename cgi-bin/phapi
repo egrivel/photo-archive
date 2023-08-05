@@ -100,7 +100,7 @@ sub get_year_info {
   pdb_iter_filter_category($iter, put_types());
   pdb_iter_filter_year($iter, $year);
   my $setid = "";
-  $setid = pdb_iter_previous($iter);
+  $setid = pdb_iter_next($iter);
   my $isFirst = 1;
   while ($setid ne "") {
     my $title = pdb_get_settitle($setid);
