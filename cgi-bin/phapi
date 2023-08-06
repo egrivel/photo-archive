@@ -214,7 +214,7 @@ sub get_set_info {
   $out .= json_out("prev", $prev) . ",\n";
 
   my $iter = pdb_iter_new($setId, 40);
-  pdb_iter_filter_setId($iter, $setId);
+  pdb_iter_filter_setid($iter, $setId);
   pdb_iter_filter_category($iter, put_types());
   pdb_iter_filter_min_quality($iter, put_quality());
   my $imageId = pdb_iter_next($iter);
