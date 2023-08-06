@@ -982,18 +982,6 @@ sub pdb_iter_filter_comment {
   $iter_filter[$iter] .= "comment like '\%$text\%' ";
 }
 
-# Allows the iteration to start with a particular sort ID. This is
-# used to get the last of the _normal_ sets, by setting the sortid
-# to "2199";
-sub pdb_iter_filter_sortid {
-  my $iter = $_[0];
-  my $sortid = $_[1];
-
-  if (defined($iter_sortid[$iter])) {
-    $iter_sortid[$iter] = $sortid;
-  }
-}
-
 sub pdb_do_iter {
   my $iter = $_[0];
   my $query = $_[1];
