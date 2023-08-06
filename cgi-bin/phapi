@@ -281,14 +281,15 @@ sub get_image_info {
   my $description = pdb_get_description($imageId);
   my $latlong = pdb_get_latlong($imageId);
   my $location = pdb_get_location($imageId);
+  my $next = put_get_next($imageId);
   my $orientation = pdb_get_orientation($imageId);
+  my $personIdList = ppers_get_persons_in_image($imageId);
   my $persons = pdb_get_persons($imageId);
-  my $person_id_list = ppers_get_persons_in_image($imageId);
+  my $prev = put_get_prev($imageId);
   my $quality = pdb_get_quality($imageId);
+  my $setId = pdb_get_setid($imageId);
   my $title = pdb_get_title($imageId);
   my $year = pdb_get_year($imageId);
-  my $next = put_get_next($imageId);
-  my $prev = put_get_prev($imageId);
 
   my $fname = pfs_get_edited_location($imageId);
   if ($fname eq "") {
@@ -307,14 +308,15 @@ sub get_image_info {
   $out .= json_out("height", $height) . ",\n";
   $out .= json_out("latlong", $latlong) . ",\n";
   $out .= json_out("location", $location) . ",\n";
+  $out .= json_out("next", $next) . ",\n";
   $out .= json_out("orientation", $orientation) . ",\n";
+  $out .= json_out("personIdList", $personIdList) . ",\n";
   $out .= json_out("persons", $persons) . ",\n";
-  $out .= json_out("person_id_list", $person_id_list) . ",\n";
+  $out .= json_out("prev", $prev) . ",\n";
   $out .= json_out("quality", $quality) . ",\n";
+  $out .= json_out("setId", $setId) . ",\n";
   $out .= json_out("title", $title) . ",\n";
   $out .= json_out("width", $width) . ",\n";
-  $out .= json_out("next", $next) . ",\n";
-  $out .= json_out("prev", $prev) . ",\n";
   $out .= json_out("year", $year) . "\n";
 
   $out .= "}\n";
