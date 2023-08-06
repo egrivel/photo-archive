@@ -419,7 +419,7 @@ sub put_form_focus {
 # walked through in 'prev' and 'next' steps. There are three special
 # classes:
 #  - the "specials" starting with an "x"
-#  - dad's photos, starting with a "d", "p" or "q"
+#  - dad's photos, starting with an "a", "d", "p" or "q"
 #  - Theo's photos, starting with a "t"
 #
 sub put_get_class {

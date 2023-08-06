@@ -300,6 +300,7 @@ sub pcom_last_set {
   my $iter = pdb_iter_set_new();
   # was put_types()
   pdb_iter_filter_category($iter, $PUSR_SEE_REGULAR);
+  pdb_iter_filter_sortid($iter, "2199");
   $setId = pdb_iter_previous($iter);
   pdb_iter_set_done($iter);
 
