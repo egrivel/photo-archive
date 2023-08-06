@@ -709,7 +709,7 @@ sub pdb_create_sortid {
 # Implement the iterator functionality
 # ------------------------------------------------------------
 
-my @iter = ();
+my @iter_sortid = ();
 my @iter_type = ();
 my @iter_filter = ();
 my @iter_subfilter = ();
@@ -730,6 +730,8 @@ sub pdb_iter_new {
   }
 
   $iter_type[$i] = "image";
+  $iter_sortid[$i] = "";
+
   if (defined($imageID)) {
     my $sortid = pdb_get_sortid($imageID);
     if ($sortid eq "") {
@@ -769,7 +771,7 @@ sub pdb_iter_new {
       }
       pcom_log($PCOM_DEBUG, "Created sortid $sortid for imageid $imageID");
     }
-    $iter[$i] = $sortid;
+    $iter_sortid[$i] = $sortid;
   }
   $iter_filter[$i] = "";
   $iter_subfilter[$i] = "";
@@ -787,6 +789,7 @@ sub pdb_iter_done {
     $iter_type[$iter] = "free";
     my @result = ();
     $iter_result[$iter] = [@result];
+    $iter_sortid[$iter] = "";
   }
 }
 
@@ -803,13 +806,15 @@ sub pdb_iter_set_new {
   }
 
   $iter_type[$i] = "set";
+  $iter_sortid[$i] = "";
+
   if (defined($setid)) {
     my $sortid = pdb_get_setsortid($setid);
     if ($sortid eq "") {
       $sortid = pdb_create_setsortid($setid);
       pcom_log($PCOM_DEBUG, "Created sortid $sortid for setid $setid");
     }
-    $iter[$i] = $sortid;
+    $iter_sortid[$i] = $sortid;
     pcom_log($PCOM_DEBUG, "Set iter[$i] to $sortid");
   }
   $iter_filter[$i] = "";
@@ -829,6 +834,7 @@ sub pdb_iter_set_done {
     $iter_type[$iter] = "free";
     my @result = ();
     $iter_result[$iter] = [@result];
+    $iter_sortid[$iter] = "";
   }
 }
 
@@ -1014,7 +1020,7 @@ sub pdb_do_iter {
     my $value = psql_get_field(0, $field, $record);
     last if (!defined($value));
     $result[$count++] = $value;
-    $iter[$iter] = psql_get_field(1, "sortid", $record);
+    $iter_sortid[$iter] = psql_get_field(1, "sortid", $record);
     $record = psql_next_record($pit);
   }
   $iter_result[$iter] = [@result];
@@ -1051,15 +1057,15 @@ sub pdb_iter_next {
     $query = "SELECT setid, sortid FROM sets ";
   }
 
-  if (defined($iter[$iter])) {
+  if (defined($iter_sortid[$iter]) && $iter_sortid[$iter] ne "") {
     if ($iter_count[$iter] > 0) {
       # We already have results; next result should be
       # AFTER current one
-      $query .= "WHERE sortid > '$iter[$iter]' ";
+      $query .= "WHERE sortid > '$iter_sortid[$iter]' ";
     } else {
       # We don't have results yet; next result should
       # include the starting position
-      $query .= "WHERE sortid >= '$iter[$iter]' ";
+      $query .= "WHERE sortid >= '$iter_sortid[$iter]' ";
     }
     if ($iter_filter[$iter] ne "") {
       $query .= "AND $iter_filter[$iter] ";
@@ -1083,8 +1089,8 @@ sub pdb_iter_previous {
   } else {
     $query = "SELECT setid, sortid FROM sets ";
   }
-  if (defined($iter[$iter])) {
-    $query .= "WHERE sortid < '$iter[$iter]' ";
+  if (defined($iter_sortid[$iter]) && $iter_sortid[$iter] ne "") {
+    $query .= "WHERE sortid < '$iter_sortid[$iter]' ";
     if ($iter_filter[$iter] ne "") {
       $query .= "AND $iter_filter[$iter] ";
     }

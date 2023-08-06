@@ -284,6 +284,28 @@ sub pcom_has_photos_in_year {
   return pdb_year_exists($year);
 }
 
+# First set is the first _regular_ set, not including special sets
+sub pcom_first_set {
+  my $iter = pdb_iter_set_new();
+  # was put_types()
+  pdb_iter_filter_category($iter, $PUSR_SEE_REGULAR);
+  $setId = pdb_iter_next($iter);
+  pdb_iter_set_done($iter);
+
+  return $setId;
+}
+
+# First set is the first _regular_ set, not including special sets
+sub pcom_last_set {
+  my $iter = pdb_iter_set_new();
+  # was put_types()
+  pdb_iter_filter_category($iter, $PUSR_SEE_REGULAR);
+  $setId = pdb_iter_previous($iter);
+  pdb_iter_set_done($iter);
+
+  return $setId;
+}
+
 # return a formatted version of the image ID
 sub pcom_format_imageid {
   my $imageid = $_[0];

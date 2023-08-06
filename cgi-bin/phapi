@@ -24,14 +24,14 @@ if ($action eq "all") {
     $data = get_type_info($type);
   }
 } elsif ($action eq "set") {
-  my $setid = parg_get("setid");
-  if ($setid ne "") {
-    $data = get_set_info($setid);
+  my $setId = parg_get("setId");
+  if ($setId ne "") {
+    $data = get_set_info($setId);
   }
 } elsif ($action eq "image") {
-  my $imageid = parg_get("imageid");
-  if ($imageid ne "") {
-    $data = get_image_info($imageid);
+  my $imageId = parg_get("imageId");
+  if ($imageId ne "") {
+    $data = get_image_info($imageId);
   }
 }
 
@@ -74,6 +74,7 @@ sub get_all_info {
   }
   $out .= "],\n";
 
+  # Specials are hard-coded
   $out .= "\"specials\":[\n";
   $out .= "{\n";
   $out .= json_out("year", "9999") . ",\n";
@@ -82,7 +83,21 @@ sub get_all_info {
   $out .= json_out("type", "d") . ",\n";
   $out .= json_out("description", "Photos and Slides by my Parents") . "\n";
   $out .= "}\n";
-  $out .= "]\n";
+  $out .= "],\n";
+
+  my $firstYear = pcom_first_year();
+  my $lastYear = pcom_last_year();
+  $out .= json_out("firstYear", $firstYear) . ",\n";
+  $out .= json_out("lastYear", $lastYear) . ",\n";
+
+  my $firstSet = pcom_first_set();
+  my $lastSet = pcom_last_set();
+  $out .= json_out("firstSet", $firstSet) . ",\n";
+  $out .= json_out("lastSet", $lastSet) . ",\n";
+
+  my $total = pdb_image_count();
+  $out .= json_out("total", $total) . "\n";
+
   $out .= "}\n";
 
   return $out;
@@ -99,28 +114,28 @@ sub get_year_info {
   my $iter = pdb_iter_set_new();
   pdb_iter_filter_category($iter, put_types());
   pdb_iter_filter_year($iter, $year);
-  my $setid = "";
-  $setid = pdb_iter_next($iter);
+  my $setId = "";
+  $setId = pdb_iter_next($iter);
   my $isFirst = 1;
-  while ($setid ne "") {
-    my $title = pdb_get_settitle($setid);
+  while ($setId ne "") {
+    my $title = pdb_get_settitle($setId);
     if ($title eq "") {
-      $title = "Film $setid";
+      $title = "Film $setId";
     }
-    my $datetime = pdb_get_setdatetime($setid);
-    my $descr = pdb_get_setdescription($setid);
+    my $datetime = pdb_get_setdatetime($setId);
+    my $descr = pdb_get_setdescription($setId);
 
     if (!$isFirst) {
       $out .= ",\n";
     }
     $out .= "{\n";
-    $out .= json_out("setid", $setid) . ",\n";
+    $out .= json_out("setId", $setId) . ",\n";
     $out .= json_out("title", $title) . ",\n";
     $out .= json_out("datetime", $datetime) . ",\n";
     $out .= json_out("description", $descr) . "\n";
     $out .= "}";
     $isFirst = 0;
-    $setid = pdb_iter_next($iter);
+    $setId = pdb_iter_next($iter);
   }
   $out .= "]\n";
 
@@ -139,28 +154,28 @@ sub get_type_info {
   $out .= "\"sets\":[\n";
   my $iter = pdb_iter_set_new();
   pdb_iter_filter_category($iter, $type);
-  my $setid = pdb_iter_next($iter);
+  my $setId = pdb_iter_next($iter);
 
   my $isFirst = 1;
-  while ($setid ne "") {
-    my $title = pdb_get_settitle($setid);
+  while ($setId ne "") {
+    my $title = pdb_get_settitle($setId);
     if ($title eq "") {
-      $title = "Film $setid";
+      $title = "Film $setId";
     }
-    my $datetime = pdb_get_setdatetime($setid);
-    my $descr = pdb_get_setdescription($setid);
+    my $datetime = pdb_get_setdatetime($setId);
+    my $descr = pdb_get_setdescription($setId);
 
     if (!$isFirst) {
       $out .= ",\n";
     }
     $out .= "{\n";
-    $out .= json_out("setid", $setid) . ",\n";
+    $out .= json_out("setId", $setId) . ",\n";
     $out .= json_out("title", $title) . ",\n";
     $out .= json_out("datetime", $datetime) . ",\n";
     $out .= json_out("description", $descr) . "\n";
     $out .= "}";
     $isFirst = 0;
-    $setid = pdb_iter_next($iter);
+    $setId = pdb_iter_next($iter);
   }
   $out .= "]\n";
 
@@ -170,25 +185,25 @@ sub get_type_info {
 }
 
 sub get_set_info {
-  my $setid = $_[0];
+  my $setId = $_[0];
   my $out = "";
 
-  my $category = pdb_get_setcategory($setid);
-  if (!pdb_set_exists($setid)
+  my $category = pdb_get_setcategory($setId);
+  if (!pdb_set_exists($setId)
     || (($category ne "") && !pusr_allowed($category))) {
     return "{\"error\":\"Not found\"}\n";
   }
 
   $out .= "{";
 
-  my $title = pdb_get_settitle($setid);
-  my $datetime = pdb_get_setdatetime($setid);
-  my $description = pdb_get_setdescription($setid);
-  my $comment = pdb_get_setcomment($setid);
-  my $copyright = pdb_get_setcopyright($setid);
-  my $year = pdb_get_setyear($setid);
-  my $next = put_get_next_set($setid);
-  my $prev = put_get_prev_set($setid);
+  my $title = pdb_get_settitle($setId);
+  my $datetime = pdb_get_setdatetime($setId);
+  my $description = pdb_get_setdescription($setId);
+  my $comment = pdb_get_setcomment($setId);
+  my $copyright = pdb_get_setcopyright($setId);
+  my $year = pdb_get_setyear($setId);
+  my $next = put_get_next_set($setId);
+  my $prev = put_get_prev_set($setId);
 
   $out .= json_out("title", $title) . ",\n";
   $out .= json_out("datetime", $datetime) . ",\n";
@@ -198,23 +213,23 @@ sub get_set_info {
   $out .= json_out("next", $next) . ",\n";
   $out .= json_out("prev", $prev) . ",\n";
 
-  my $iter = pdb_iter_new($setid, 40);
-  pdb_iter_filter_setid($iter, $setid);
+  my $iter = pdb_iter_new($setId, 40);
+  pdb_iter_filter_setId($iter, $setId);
   pdb_iter_filter_category($iter, put_types());
   pdb_iter_filter_min_quality($iter, put_quality());
-  my $imageid = pdb_iter_next($iter);
+  my $imageId = pdb_iter_next($iter);
   my $imagecount = 0;
 
   $out .= "\"photos\":[";
   my $photoInfo = "\"photoInfo\":[";
   my $isFirst = 1;
-  while (pcom_get_set($imageid) le $setid) {
+  while (pcom_get_set($imageId) le $setId) {
     # Note: Because the sort ID uses GMT, it is possible to get images
     # from the previous day when iterating through the sets. Skip
     # those.
-    if (pcom_get_set($imageid) lt $setid) {
-      if (pcom_is_digital($imageid)) {
-        $imageid = pdb_iter_next($iter);
+    if (pcom_get_set($imageId) lt $setId) {
+      if (pcom_is_digital($imageId)) {
+        $imageId = pdb_iter_next($iter);
         next;
       } else {
         # if not a digital photo, break out of the loop
@@ -226,20 +241,20 @@ sub get_set_info {
       $out .= ",";
       $photoInfo .= ",\n";
     }
-    $out .= "\"$imageid\"";
+    $out .= "\"$imageId\"";
 
-    my $orientation = pdb_get_orientation($imageid);
-    my $title = pdb_get_title($imageid);
-    my $description = pdb_get_description($imageid);
+    my $orientation = pdb_get_orientation($imageId);
+    my $title = pdb_get_title($imageId);
+    my $description = pdb_get_description($imageId);
 
     $photoInfo .= "{\n";
-    $photoInfo .= json_out("imageId", $imageid) . ",\n";
+    $photoInfo .= json_out("imageId", $imageId) . ",\n";
     $photoInfo .= json_out("title", $title) . ",\n";
     $photoInfo .= json_out("description", $description) . ",\n";
     $photoInfo .= json_out("orientation", $orientation) . "\n";
     $photoInfo .= "}";
     $isFirst = 0;
-    $imageid = pdb_iter_next($iter);
+    $imageId = pdb_iter_next($iter);
   }
   $out .= "],\n";
 
@@ -251,33 +266,33 @@ sub get_set_info {
 }
 
 sub get_image_info {
-  my $imageid = $_[0];
+  my $imageId = $_[0];
   my $out = "";
 
-  my $category = pdb_get_category($imageid);
-  if (!pdb_image_exists($imageid)
+  my $category = pdb_get_category($imageId);
+  if (!pdb_image_exists($imageId)
     || (($category ne "") && !pusr_allowed($category))) {
     return "{\"error\":\"Not found\"}\n";
   }
 
-  my $category = pdb_get_category($imageid);
-  my $copyright = pdb_get_copyright($imageid);
-  my $datetime = pdb_get_datetime($imageid);
-  my $description = pdb_get_description($imageid);
-  my $latlong = pdb_get_latlong($imageid);
-  my $location = pdb_get_location($imageid);
-  my $orientation = pdb_get_orientation($imageid);
-  my $persons = pdb_get_persons($imageid);
-  my $person_id_list = ppers_get_persons_in_image($imageid);
-  my $quality = pdb_get_quality($imageid);
-  my $title = pdb_get_title($imageid);
-  my $year = pdb_get_year($imageid);
-  my $next = put_get_next($imageid);
-  my $prev = put_get_prev($imageid);
+  my $category = pdb_get_category($imageId);
+  my $copyright = pdb_get_copyright($imageId);
+  my $datetime = pdb_get_datetime($imageId);
+  my $description = pdb_get_description($imageId);
+  my $latlong = pdb_get_latlong($imageId);
+  my $location = pdb_get_location($imageId);
+  my $orientation = pdb_get_orientation($imageId);
+  my $persons = pdb_get_persons($imageId);
+  my $person_id_list = ppers_get_persons_in_image($imageId);
+  my $quality = pdb_get_quality($imageId);
+  my $title = pdb_get_title($imageId);
+  my $year = pdb_get_year($imageId);
+  my $next = put_get_next($imageId);
+  my $prev = put_get_prev($imageId);
 
-  my $fname = pfs_get_edited_location($imageid);
+  my $fname = pfs_get_edited_location($imageId);
   if ($fname eq "") {
-    $fname = pfs_get_orig_location($imageid);
+    $fname = pfs_get_orig_location($imageId);
   }
 
   # Get the (original) width and height of the image, to calculate display
