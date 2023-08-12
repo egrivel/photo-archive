@@ -33,6 +33,11 @@ if ($action eq "all") {
   if ($imageId ne "") {
     $data = get_image_info($imageId);
   }
+} elsif ($action eq "random") {
+  my $imageId = randomImage();
+  if ($imageId ne "") {
+    $data = get_image_info($imageId);
+  }
 }
 
 if ($data eq "") {
@@ -42,6 +47,25 @@ if ($data eq "") {
 }
 
 exit(0);
+
+sub randomImage {
+  my $types = put_types();
+  pdb_filter_category($types);
+
+  my $quality = put_quality();
+  pdb_filter_min_quality($quality);
+
+  my $imageId = pdb_random_image();
+  my $set = pcom_get_set($imageId);
+  my $setcategory = pdb_get_setcategory($set);
+  while (!($types =~ /$setcategory/)) {
+    $imageId = pdb_random_image();
+    $set = pcom_get_set($imageId);
+    $setcategory = pdb_get_setcategory($set);
+  }
+
+  return $imageId;
+}
 
 sub json_out {
   my $name = $_[0];
