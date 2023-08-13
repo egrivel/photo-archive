@@ -325,7 +325,7 @@ sub get_image_info {
   my ($width, $height) = pfs_get_file_dimensions($fname);
 
   $out .= "{\n";
-  $out .= json_out("imageId", $imageid) . ",\n";
+  $out .= json_out("imageId", $imageId) . ",\n";
   $out .= json_out("category", $category) . ",\n";
   $out .= json_out("copyright", $copyright) . ",\n";
   $out .= json_out("datetime", $datetime) . ",\n";
