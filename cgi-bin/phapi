@@ -13,6 +13,8 @@ pusr_logout();
 my $action = parg_get("action");
 if ($action eq "all") {
   $data = get_all_info();
+} elsif ($action eq "messages") {
+  $data = get_message_info();
 } elsif ($action eq "year") {
   my $year = parg_get("year");
   if ($year ne "") {
@@ -122,8 +124,40 @@ sub get_all_info {
   my $total = pdb_image_count();
   $out .= json_out("total", $total) . "\n";
 
+  my $messages = get_messages();
+  if ($messages ne "") {
+    $out .= ",\n\"messages\": $messages\n";
+  }
+
   $out .= "}\n";
 
+  return $out;
+}
+
+sub get_messages {
+  my $script = __FILE__;
+  my $localdir = ".";
+  if ($script =~ s/\/[^\/]*$//) {
+    $localdir = $script;
+  }
+  my $fname = "$localdir/../private/messages.json";
+  my $out = "";
+  if (-f $fname) {
+    $out = do {
+      local $/ = undef;
+      open my $fh, "<", $fname || die "could not open $fname: $!";
+      <$fh>;
+    };
+  }
+
+  return $out;
+}
+
+sub get_message_info {
+  my $out = get_messages();
+  if ($out eq "") {
+    return "[]\n";
+  }
   return $out;
 }
 
