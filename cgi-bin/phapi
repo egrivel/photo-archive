@@ -81,6 +81,24 @@ sub json_out {
 
   my $out = "";
   $out .= "\"$name\":\"";
+
+  # The following entity names seem to occur in the database
+  $value =~ s/&apos;/’/g;
+  $value =~ s/&auml;/ä/g;
+  $value =~ s/&eacute;/é/g;
+  $value =~ s/&egrave;/è/g;
+  $value =~ s/&euml;/ë/g;
+  $value =~ s/&iuml;/ï/g;
+  $value =~ s/&ntilde;/ñ/g;
+  $value =~ s/&oactue;/ó/g;
+  $value =~ s/&ocirc;/ô/g;
+  $value =~ s/&ouml;/ö/g;
+  $value =~ s/&rsquo;/’/g;
+  $value =~ s/&szlig;/ß/g;
+  $value =~ s/&uuml;/ü/g;
+  $value =~ s/&amp;/&/g;
+
+  # Escape the double quote because that would terminate the string in JSON
   $value =~ s/"/&quot;/g;
   $out .= "$value\"";
 
