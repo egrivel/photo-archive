@@ -3,7 +3,15 @@
 # Provide an API to get information from the photo archive
 use inc_all;
 
-print "Content-type: application/json\n\n";
+# Need to make sure that Perl properly outputs utf-8... not sure if both are
+# necessary. I think the first one makes sure the accented characters in this
+# script are handled correctly, and the second one may be making sure the output
+# channel handles UTF-8....
+use utf8;
+binmode(STDOUT, ":utf8");
+
+# Also, make sure we properly declare the content as UTF-8
+print "Content-type: application/json;charset=utf-8\n\n";
 my $data = "";
 
 put_init();
