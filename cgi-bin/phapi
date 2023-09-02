@@ -4,7 +4,7 @@
 use inc_all;
 
 print "Content-type: application/json\n\n";
-$data = "";
+my $data = "";
 
 put_init();
 # The logout function effectively "logs in" the guest user
@@ -40,6 +40,12 @@ if ($action eq "all") {
   if ($imageId ne "") {
     $data = get_image_info($imageId);
   }
+} elsif ($action eq "search") {
+  my $keyword = parg_get("keyword");
+  my $year = parg_get("year");
+  my $persons = parg_get("persons");
+  my $limit = parg_get("limit");
+  $data = get_search_results($keyword, $year, $persons, $limit);
 }
 
 if ($data eq "") {
@@ -333,7 +339,6 @@ sub get_image_info {
     return "{\"error\":\"Not found\"}\n";
   }
 
-  my $category = pdb_get_category($imageId);
   my $copyright = pdb_get_copyright($imageId);
   my $datetime = pdb_get_datetime($imageId);
   my $description = pdb_get_description($imageId);
@@ -378,6 +383,131 @@ sub get_image_info {
   $out .= json_out("width", $width) . ",\n";
   $out .= json_out("year", $year) . "\n";
 
+  $out .= "}\n";
+
+  return $out;
+}
+
+sub get_search_results {
+  my $keyword = $_[0];
+  my $yearInput = $_[1];
+  my $persons = $_[2];
+  my $limit = $_[3];
+  my $out = "";
+
+  my $start_year = "";
+  my $end_year = "";
+  my $year = "";
+  if ($yearInput =~ /^\s*(\d\d\d\d)\s*-\s*(\d\d\d\d)\s*$/) {
+    $start_year = $1;
+    $end_year = $2;
+    $year = "";
+    if ( ($start_year < 1800)
+      || ($start_year > 9999)
+      || ($end_year < 1800)
+      || ($end_year > 9999)
+      || ($start_year > $end_year)) {
+      $start_year = "";
+      $end_year = "";
+    }
+  } elsif ($yearInput =~ /^\s*(\d\d\d\d)\s*$/) {
+    $year = $1;
+    if ( ($year < 1800)
+      || ($year > 9999)) {
+      $year = "";
+    }
+  } else {
+    $year = "";
+  }
+
+  my $person_filter = "";
+  my $person_filter_exclude = "";
+  my $person_list = "";
+  if ($persons ne "") {
+    my $ids = ppers_names_to_ids($persons, 1);
+    if ($ids eq "") {
+      # No IDs found, possibly only punctuation in $person, so treat it
+      # as no persons entered
+      $persons = "";
+    } elsif ($ids =~ s/^ERROR: //) {
+      $ids =~ s/; /<\/li>\n<li>/g;
+      pht_output(
+        "<p>One or more names not recognized:</p><ul><li>$ids</li></ul>\n");
+      search_form();
+      pht_page_end();
+      exit(0);
+    } else {
+      $person_filter = ppers_get_filter($ids);
+      $person_filter_exclude = ppers_get_filter_exclude($ids);
+      $person_list = ppers_ids_to_names($ids);
+    }
+  }
+
+  if ((!($limit =~ /^\d+$/)) || ($limit > 100)) {
+    $limit = 50;
+  }
+
+  my $iter = pdb_iter_new("00101", $limit);
+  my $count = 0;
+  $out = "";
+
+  $out .= "{";
+  $out .= "\"photos\":[";
+  my $photoInfo = "\"photoInfo\":[";
+
+  if ($persons ne "") {
+    if ($person_filter ne "()") {
+      pdb_iter_filter_persons($iter, $person_filter);
+    }
+  }
+
+  if ($keyword ne "") {
+    pdb_iter_filter_keyword($iter, $keyword);
+  }
+
+  if ($year ne "") {
+    pdb_iter_filter_year($iter, $year);
+  }
+  if (($start_year ne "") && ($end_year ne "")) {
+    pdb_iter_filter_year_range($iter, $start_year, $end_year);
+  }
+
+  my $isFirst = 1;
+  my $imageId = pdb_iter_next($iter);
+  while (defined($imageId) && ($imageId ne "")) {
+    if ($person_filter_exclude =~ /'$imageId'/) {
+      # Skip all excluded photos
+      $imageId = pdb_iter_next($iter);
+      next;
+    }
+    # add imageId to the output
+    if (!$isFirst) {
+      $out .= ",";
+      $photoInfo .= ",\n";
+    }
+    $isFirst = 0;
+    $out .= "\"$imageId\"";
+    my $orientation = pdb_get_orientation($imageId);
+    my $title = pdb_get_title($imageId);
+    my $description = pdb_get_description($imageId);
+
+    $photoInfo .= "{\n";
+    $photoInfo .= json_out("imageId", $imageId) . ",\n";
+    $photoInfo .= json_out("title", $title) . ",\n";
+    $photoInfo .= json_out("description", $description) . ",\n";
+    $photoInfo .= json_out("orientation", $orientation) . "\n";
+    $photoInfo .= "}";
+    $isFirst = 0;
+
+    $count++;
+    last if ($count >= $limit);
+    $imageId = pdb_iter_next($iter);
+  }
+
+  $out .= "],\n";
+
+  $photoInfo .= "]\n";
+  $out .= $photoInfo;
   $out .= "}\n";
 
   return $out;

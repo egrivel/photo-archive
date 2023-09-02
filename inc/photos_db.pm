@@ -972,6 +972,17 @@ sub pdb_iter_filter_descr {
   $iter_filter[$iter] .= "description like '\%$text\%' ";
 }
 
+sub pdb_iter_filter_keyword {
+  my $iter = $_[0];
+  my $text = $_[1];
+
+  if ($iter_filter[$iter] ne "") {
+    $iter_filter[$iter] .= " AND ";
+  }
+  $iter_filter[$iter] .= "(description like '\%$text\%' ";
+  $iter_filter[$iter] .= "OR title like '\%$text\%') ";
+}
+
 sub pdb_iter_filter_comment {
   my $iter = $_[0];
   my $text = $_[1];

@@ -130,6 +130,11 @@ sub ppers_get_count {
 
 sub ppers_names_to_ids {
   my $person_list = ";" . $_[0];
+  # ignore errors is for photo app
+  my $ignore_errors = $_[1];
+  if (!defined($ignore_errors)) {
+    $ignore_errors = 0;
+  }
   my $id_result = "";
   my $error_result = "";
   while ($person_list =~ s/^([;\|])([^;\|]*)//) {
@@ -154,7 +159,7 @@ sub ppers_names_to_ids {
       }
     }
   }
-  if ($error_result eq "") {
+  if ($ignore_errors || ($error_result eq "")) {
     return $id_result;
   } else {
     return "ERROR: " . $error_result;
