@@ -53,7 +53,8 @@ if ($action eq "all") {
   my $year = parg_get("year");
   my $persons = parg_get("persons");
   my $limit = parg_get("limit");
-  $data = get_search_results($keyword, $year, $persons, $limit);
+  my $page = parg_get("page");
+  $data = get_search_results($keyword, $year, $persons, $limit, $page);
 }
 
 if ($data eq "") {
@@ -419,6 +420,8 @@ sub get_search_results {
   my $yearInput = $_[1];
   my $persons = $_[2];
   my $limit = $_[3];
+  my $page = $_[4];
+
   my $out = "";
 
   my $start_year = "";
@@ -473,13 +476,14 @@ sub get_search_results {
     $limit = 50;
   }
 
-  my $iter = pdb_iter_new("00101", $limit);
+  if (!defined($page) || !($page =~ /^\d+$/)) {
+    # Missing or unrecognized page parameter, default to first page
+    $page = 0;
+  }
+
+  my $iter = pdb_iter_new("00101", $limit, $page);
   my $count = 0;
   $out = "";
-
-  $out .= "{";
-  $out .= "\"photos\":[";
-  my $photoInfo = "\"photoInfo\":[";
 
   if ($persons ne "") {
     if ($person_filter ne "()") {
@@ -497,6 +501,13 @@ sub get_search_results {
   if (($start_year ne "") && ($end_year ne "")) {
     pdb_iter_filter_year_range($iter, $start_year, $end_year);
   }
+
+  $out .= "{";
+  $out .= "\"page\":$page,\n";
+  $out .= "\"pageSize\":$limit,\n";
+  $out .= "\"count\":" . pdb_iter_count($iter) . ",\n";
+  $out .= "\"photos\":[";
+  my $photoInfo = "\"photoInfo\":[";
 
   my $isFirst = 1;
   my $imageId = pdb_iter_next($iter);

@@ -714,15 +714,22 @@ my @iter_type = ();
 my @iter_filter = ();
 my @iter_subfilter = ();
 my @iter_limit = ();
+my @iter_page = ();
 my @iter_count = ();
 my @iter_result = ();
 
 sub pdb_iter_new {
   my $imageID = $_[0];
   my $limit = $_[1];
+  my $page = $_[2];
+
   if (!defined($limit)) {
     $limit = 1;
   }
+  if (!defined($page)) {
+    $page = 0;
+  }
+
   my $i = 0;
 
   while (defined($iter_type[$i]) && ($iter_type[$i] ne "free")) {
@@ -776,6 +783,7 @@ sub pdb_iter_new {
   $iter_filter[$i] = "";
   $iter_subfilter[$i] = "";
   $iter_limit[$i] = $limit;
+  $iter_page[$i] = $page;
   $iter_count[$i] = 0;
   my @result = ();
   $iter_result[$i] = [@result];
@@ -1058,6 +1066,42 @@ sub pdb_iter_debug {
   }
 }
 
+sub pdb_iter_count {
+  my $iter = $_[0];
+  my $query = "";
+
+  if ($iter_type[$iter] eq "image") {
+    $query = "SELECT COUNT(*) FROM images ";
+  } else {
+    $query = "SELECT COUNT(*) FROM sets ";
+  }
+
+  if (defined($iter_sortid[$iter]) && $iter_sortid[$iter] ne "") {
+    if ($iter_count[$iter] > 0) {
+      # We already have results; next result should be
+      # AFTER current one
+      $query .= "WHERE sortid > '$iter_sortid[$iter]' ";
+    } else {
+      # We don't have results yet; next result should
+      # include the starting position
+      $query .= "WHERE sortid >= '$iter_sortid[$iter]' ";
+    }
+    if ($iter_filter[$iter] ne "") {
+      $query .= "AND $iter_filter[$iter] ";
+    }
+  } elsif ($iter_filter[$iter] ne "") {
+    pcom_log($PCOM_DEBUG, "iter[$iter] is not defined");
+    $query .= "WHERE $iter_filter[$iter]";
+  }
+
+  psql_command($query);
+  my $pit = psql_iterator();
+  my $record = psql_next_record($pit);
+  my $count = psql_get_field(0, "COUNT(*)", $record);
+
+  return $count;
+}
+
 sub pdb_iter_next {
   my $iter = $_[0];
   my $query = "";
@@ -1086,7 +1130,14 @@ sub pdb_iter_next {
     $query .= "WHERE $iter_filter[$iter] ";
   }
 
-  $query .= "ORDER BY sortid LIMIT $iter_limit[$iter]";
+  # Pagination is used in the photoapp API only
+  if (defined($iter_page[$iter]) && ($iter_page[$iter] > 0)) {
+    # retrieving second page or later
+    my $skip = $iter_page[$iter] * $iter_limit[$iter];
+    $query .= "ORDER BY sortid LIMIT $skip,$iter_limit[$iter]";
+  } else {
+    $query .= "ORDER BY sortid LIMIT $iter_limit[$iter]";
+  }
 
   return pdb_do_iter($iter, $query);
 }
