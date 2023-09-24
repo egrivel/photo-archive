@@ -55,6 +55,9 @@ if ($action eq "all") {
   my $limit = parg_get("limit");
   my $page = parg_get("page");
   $data = get_search_results($keyword, $year, $persons, $limit, $page);
+} elsif ($action eq "log") {
+  my $message = parg_get("message");
+  $data = do_log($message);
 }
 
 if ($data eq "") {
@@ -548,4 +551,16 @@ sub get_search_results {
   $out .= "}\n";
 
   return $out;
+}
+
+sub do_log {
+  my $message = $_[0];
+
+  my $api_log_dir = setting_get("api-log-dir");
+  if ($api_log_dir ne "") {
+    open(FILE, ">>$api_log_dir/api-log.txt");
+    print FILE "$message\n";
+    close FILE;
+    return "{\"OK\": 1}";
+  }
 }
