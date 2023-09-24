@@ -559,7 +559,16 @@ sub do_log {
   my $api_log_dir = setting_get("api-log-dir");
   if ($api_log_dir ne "") {
     open(FILE, ">>$api_log_dir/api-log.txt");
-    print FILE "$message\n";
+    my $now = time();
+    my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) =
+      localtime($now);
+    my $timestamp = sprintf(
+      "%04d-%02d-%02d %02d:%02d:%02d",
+      $year + 1900,
+      $mon + 1, $mday, $hour, $min, $sec
+    );
+    $ip = $ENV{REMOTE_ADDR};
+    print FILE "$ip|$timestamp|$message\n";
     close FILE;
     return "{\"OK\": 1}";
   }
