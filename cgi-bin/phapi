@@ -384,9 +384,20 @@ sub get_image_info {
   my $title = pdb_get_title($imageId);
   my $year = pdb_get_year($imageId);
 
-  my $fname = pfs_get_edited_location($imageId);
+  # The file name is needed to get the image dimensions. Start the with "m5"
+  # mobile file, this is the one that'll be returned. If that file isn't
+  # there, try other file locations.
+  my $fname = pfs_get_mobile_location($imageId, "m5");
+  if ($fname eq "") {
+    $fname = pfs_get_edited_location($imageId);
+  }
   if ($fname eq "") {
     $fname = pfs_get_orig_location($imageId);
+  }
+  if ($fname eq "") {
+    # If there is no original (JPG) file, get the raw file; this is used to
+    # determine the file sizes
+    $fname = pfs_get_raw_location($imageId);
   }
 
   # Get the (original) width and height of the image, to calculate display
