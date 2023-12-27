@@ -10,6 +10,8 @@ use inc_all;
 use utf8;
 binmode(STDOUT, ":utf8");
 
+# Allow access from expo web testing
+print "Access-Control-Allow-Origin: http://localhost:19006\n";
 # Also, make sure we properly declare the content as UTF-8
 print "Content-type: application/json;charset=utf-8\n\n";
 my $data = "";
