@@ -567,6 +567,9 @@ sub display_raw {
     binmode(stdout);
     $| = 1;
 
+    # Allow access from expo web testing
+    print "Access-Control-Allow-Origin: http://localhost:19006\n";
+
     print "content-type: image/$1\n";
     print "content-disposition: attachment; filename=$imageID.$extension\n";
     if ($size) {
@@ -588,6 +591,9 @@ sub return_file {
 
   binmode(stdout);
   $| = 1;
+
+  # Allow access from expo web testing
+  print "Access-Control-Allow-Origin: http://localhost:19006\n";
 
   print "content-type: image/jpeg\n";
   my $size = get_filesize($fname);
