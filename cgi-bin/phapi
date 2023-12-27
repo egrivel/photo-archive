@@ -496,6 +496,10 @@ sub get_search_results {
   }
 
   my $iter = pdb_iter_new("00101", $limit, $page);
+  # Make sure only those photos the user should see are coming back
+  pdb_iter_filter_category($iter, put_types());
+  pdb_iter_filter_min_quality($iter, put_quality());
+
   my $count = 0;
   $out = "";
 
