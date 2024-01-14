@@ -7,6 +7,18 @@ function doWindow(target, id, attrib) {
   newWindow.focus();
 }
 
+function toggleTags(event) {
+  console.log("toggle " + event);
+  const elem = document.getElementById("ai-tags");
+  if (elem.style.display === "none") {
+    elem.style.display = "block";
+  } else {
+    elem.style.display = "none";
+  }
+  event.preventDefault();
+  return false;
+}
+
 window.onload = () => {
   const swipable = document.getElementById("swipable");
   if (swipable) {

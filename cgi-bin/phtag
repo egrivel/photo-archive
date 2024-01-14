@@ -1,0 +1,81 @@
+#!/usr/bin/perl -w -I .
+
+# Tool to add tags to photos
+use inc_all;
+# Need to get this to decode the json response of the image tagger
+use JSON;
+
+put_init();
+# The logout function effectively "logs in" the guest user
+pusr_logout();
+
+my $imagga_user = setting_get("imagga-user");
+
+# print "Got user: '$imagga_user'\n";
+
+# For initial testing, use command line to tag photos
+my $arg = shift;
+while (defined($arg)) {
+  # if (pdb_image_exists($arg)) {
+  tag_image($arg);
+  # } else {
+  #   print "Image $arg doesn't exist\n";
+  # }
+  $arg = shift;
+}
+
+exit(0);
+
+sub tag_image {
+  my $imageId = $_[0];
+
+  if (pdb_image_has_tags($imageId)) {
+    print "Image already tagged\n";
+    return;
+  }
+
+  my $cmd = "curl -s --user \"$imagga_user\" ";
+  $cmd .= "\"https://api.imagga.com/v2/tags?image_url=";
+  # Use externally accessible URL to read the image. The "large" format should
+  # be sufficient for tagging purposes.
+  $cmd .= "https://egrivel.ddns.net:4433/cgi-bin/photos/phimg?large=$imageId\"";
+
+  my $data = "";
+  if (!open(PIPE, "$cmd|")) {
+    print "Can't open pipe to '$cmd'\n";
+    return;
+  }
+  while (<PIPE>) {
+    $data .= $_;
+  }
+  close PIPE;
+
+  # Sample response
+  # $data =
+  #   '{"result":{"tags":[{"confidence":53.1150398254395,"tag":{"en":"architecture"}},{"confidence":47.0895233154297,"tag":{"en":"building"}},{"confidence":45.0595283508301,"tag":{"en":"city"}},{"confidence":34.1044731140137,"tag":{"en":"intersection"}},{"confidence":31.0084133148193,"tag":{"en":"travel"}},{"confidence":30.5467567443848,"tag":{"en":"church"}},{"confidence":27.8933849334717,"tag":{"en":"tower"}},{"confidence":27.2480201721191,"tag":{"en":"tourism"}},{"confidence":26.8893375396729,"tag":{"en":"sky"}},{"confidence":26.4969367980957,"tag":{"en":"old"}},{"confidence":25.9943809509277,"tag":{"en":"town"}},{"confidence":25.2988605499268,"tag":{"en":"landmark"}},{"confidence":22.4633235931396,"tag":{"en":"tourist"}},{"confidence":21.6567249298096,"tag":{"en":"historical"}},{"confidence":21.5775756835938,"tag":{"en":"university"}},{"confidence":21.5273475646973,"tag":{"en":"religion"}},{"confidence":20.5660858154297,"tag":{"en":"monument"}},{"confidence":19.6923828125,"tag":{"en":"history"}},{"confidence":19.0223159790039,"tag":{"en":"square"}},{"confidence":18.1976356506348,"tag":{"en":"bell cote"}},{"confidence":17.6453437805176,"tag":{"en":"park"}},{"confidence":17.5003108978271,"tag":{"en":"street"}},{"confidence":17.4336071014404,"tag":{"en":"historic"}},{"confidence":17.3437557220459,"tag":{"en":"palace"}},{"confidence":17.3243350982666,"tag":{"en":"temple"}},{"confidence":17.3101711273193,"tag":{"en":"ancient"}},{"confidence":17.1038856506348,"tag":{"en":"culture"}},{"confidence":16.8555603027344,"tag":{"en":"house"}},{"confidence":16.7452239990234,"tag":{"en":"cathedral"}},{"confidence":15.1358795166016,"tag":{"en":"buildings"}},{"confidence":14.4727249145508,"tag":{"en":"shelter"}},{"confidence":13.9929857254028,"tag":{"en":"urban"}},{"confidence":13.9843492507935,"tag":{"en":"structure"}},{"confidence":13.9779996871948,"tag":{"en":"clock"}},{"confidence":13.9656467437744,"tag":{"en":"famous"}},{"confidence":13.6720972061157,"tag":{"en":"stone"}},{"confidence":12.6927337646484,"tag":{"en":"tree"}},{"confidence":12.5794944763184,"tag":{"en":"statue"}},{"confidence":12.4065465927124,"tag":{"en":"brick"}},{"confidence":11.6476945877075,"tag":{"en":"traditional"}},{"confidence":11.4770030975342,"tag":{"en":"sculpture"}},{"confidence":11.2515363693237,"tag":{"en":"religious"}},{"confidence":11.1788034439087,"tag":{"en":"place"}},{"confidence":11.0698881149292,"tag":{"en":"exterior"}},{"confidence":11.0228157043457,"tag":{"en":"facade"}},{"confidence":10.9825382232666,"tag":{"en":"protective covering"}},{"confidence":10.5879316329956,"tag":{"en":"capital"}},{"confidence":10.2161331176758,"tag":{"en":"monastery"}},{"confidence":9.86323547363281,"tag":{"en":"hall"}},{"confidence":9.82908821105957,"tag":{"en":"tract"}},{"confidence":9.76172924041748,"tag":{"en":"dome"}},{"confidence":9.52808380126953,"tag":{"en":"antique"}},{"confidence":8.93163013458252,"tag":{"en":"landscape"}},{"confidence":8.66874027252197,"tag":{"en":"roof"}},{"confidence":8.65469074249268,"tag":{"en":"village"}},{"confidence":8.64628982543945,"tag":{"en":"window"}},{"confidence":8.61747550964355,"tag":{"en":"sunny"}},{"confidence":8.5366096496582,"tag":{"en":"residence"}},{"confidence":8.52499580383301,"tag":{"en":"cityscape"}},{"confidence":8.4182596206665,"tag":{"en":"outdoor"}},{"confidence":8.36655426025391,"tag":{"en":"summer"}},{"confidence":8.22903633117676,"tag":{"en":"covering"}},{"confidence":8.1035852432251,"tag":{"en":"area"}},{"confidence":8.01194858551025,"tag":{"en":"trees"}},{"confidence":7.97417306900024,"tag":{"en":"bell"}},{"confidence":7.96183156967163,"tag":{"en":"flag"}},{"confidence":7.86037826538086,"tag":{"en":"sidewalk"}},{"confidence":7.83287382125854,"tag":{"en":"cities"}},{"confidence":7.79550552368164,"tag":{"en":"scene"}},{"confidence":7.75522184371948,"tag":{"en":"cloud"}},{"confidence":7.75172185897827,"tag":{"en":"houses"}},{"confidence":7.70581102371216,"tag":{"en":"construction"}},{"confidence":7.70081233978271,"tag":{"en":"saint"}},{"confidence":7.68614959716797,"tag":{"en":"center"}},{"confidence":7.68043327331543,"tag":{"en":"medieval"}},{"confidence":7.17190361022949,"tag":{"en":"holiday"}},{"confidence":7.067298412323,"tag":{"en":"day"}},{"confidence":7.01969289779663,"tag":{"en":"wall"}}]},"status":{"text":"","type":"success"}}';
+
+  my $json = JSON->new;
+  my $parsedRef = $json->decode($data);
+
+  my $status = %{$parsedRef}{"status"}->{"type"};
+  if ($status ne "success") {
+    # If this is not a success, print the error information
+    print "Getting image tags $imageId: status is $status\n";
+    my $text = %{$parsedRef}{"status"}->{"text"};
+    print "   text: '$text'\n";
+    return;
+  }
+
+  my $count = 0;
+  while (defined(%{$parsedRef}{"result"}->{"tags"}[$count])) {
+    my $confidence = %{$parsedRef}{"result"}->{"tags"}[$count]->{"confidence"};
+    my $value = %{$parsedRef}{"result"}->{"tags"}[$count]->{"tag"}->{"en"};
+    pdb_image_add_tag($imageId, "imagga", $value, $confidence);
+    print "$value: $confidence\n";
+    $count++;
+  }
+
+  # Code to dump the entire result for debugging purposes.
+  # use Data::Dumper qw(Dumper);
+  # print Dumper($parsedRef);
+}

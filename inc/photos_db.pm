@@ -26,6 +26,8 @@ my @set_fields = (
   "copyright",
 );
 
+my @tag_fields = ("imageid", "source", "tag", "confidence");
+
 my $cur_image = "";
 my $cur_set = "";
 my %image_data = ();
@@ -42,15 +44,33 @@ sub pdb_init {
   return psql_init();
 }
 
+sub pdb_add_tag_table {
+  # hard-code the query, since the primary key has to include both the image
+  # ID and the tag (otherwise it's not unique).
+  my $query =
+      "CREATE TABLE tags ("
+    . "imageid    CHAR(31), "
+    . "source     TEXT, "
+    . "tag        TEXT, "
+    . "confidence FLOAT(10, 7), "
+    . "updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, "
+    . "PRIMARY KEY(imageid, tag(31))" . ")";
+  psql_command($query);
+
+  return "OK";
+}
+
 sub pdb_create_tables {
   return "no init" if (!pdb_init());
 
-  psql_create_table("images", \@image_fields);
-  psql_create_table("sets", \@set_fields);
+  psql_create_table("images", \@image_fields, 16);
+  psql_create_table("sets", \@set_fields, 8);
 
   my $query =
     "CREATE INDEX setcat ON images (setid(8), category(3), imageid(16));";
   psql_command($query);
+
+  pdb_add_tag_table();
 
   return "OK";
 }
@@ -75,6 +95,7 @@ sub pdb_drop_tables {
 
   psql_drop_table("images");
   psql_drop_table("sets");
+  psql_drop_tagle("tags");
 
   return "OK";
 }
@@ -294,6 +315,49 @@ sub pdb_get_setyear {
 sub pdb_get_setcopyright {
   return "" if (!pdb_set_info($_[0]));
   return $set_data{"copyright"};
+}
+
+sub pdb_image_has_tags {
+  my $imageId = $_[0];
+
+  my $query = "SELECT imageid FROM tags WHERE imageid='$imageId' LIMIT 1";
+  psql_command($query) || return 0;
+  my $record = psql_next_record(psql_iterator());
+  return defined($record);
+}
+
+sub pdb_image_add_tag {
+  my $imageId = $_[0];
+  my $source = $_[1];
+  my $tag = $_[2];
+  my $confidence = $_[3];
+
+  # When inserting, ignore existing entries ("insert ignore")
+  my $query =
+      "INSERT IGNORE INTO tags SET "
+    . "imageid='$imageId', "
+    . "source='$source', "
+    . "tag='$tag', "
+    . "confidence=$confidence";
+  psql_command($query);
+}
+
+sub pdb_image_get_tags {
+  my $imageId = $_[0];
+  my $result = "";
+
+  # print "Getting tags for $imageId<br/>";
+  my $query =
+    "SELECT tag FROM tags WHERE imageid='$imageId' ORDER BY confidence DESC";
+  psql_command($query) || return $result;
+  my $iterator = psql_iterator();
+  while (defined($record = psql_next_record($iterator))) {
+    my $tag = psql_get_field(0, "tag", $record);
+    $result .= ", " if ($result ne "");
+    $result .= $tag;
+  }
+
+  return $result;
 }
 
 sub pdb_set_contains_category {

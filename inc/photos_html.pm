@@ -135,7 +135,7 @@ sub pht_page_start {
     "   <link rel='shortcut icon' href='$staticroot/images/photo_favicon.ico'/>\n";
   print "   <script type='text/javascript' \n";
   # Add an identifier to the link to make sure browsers pick up the new version
-  print "           src='$staticroot/js/photos.js?new=20230724'></script>\n";
+  print "           src='$staticroot/js/photos.js?new=20240114'></script>\n";
   print $pht_extra_header;
   print "</head>\n";
   print "\n";
@@ -225,6 +225,9 @@ sub pht_tab {
   my $label = $_[0];
   my $link = $_[1];
   my $id = $_[2];
+  if (!defined($id)) {
+    $id = "";
+  }
 
   my $isNarrow = 0;
   if ($id eq "prevlink" || $id eq "nextlink" || $id eq "overview") {
