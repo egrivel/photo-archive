@@ -225,16 +225,13 @@ sub pht_tab {
   my $label = $_[0];
   my $link = $_[1];
   my $id = $_[2];
-  if (!defined($id)) {
-    $id = "";
-  }
 
   my $isNarrow = 0;
-  if ($id eq "prevlink" || $id eq "nextlink" || $id eq "overview") {
-    $isNarrow = 1;
-  }
 
   if (defined($id)) {
+    if ($id eq "prevlink" || $id eq "nextlink" || $id eq "overview") {
+      $isNarrow = 1;
+    }
     $global_tabs .= "<span class='tab' id='$id'>";
     $global_narrow_tabs .= "<span class='tab' id='$id'>" if ($isNarrow);
   } else {
