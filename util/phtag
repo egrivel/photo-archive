@@ -16,11 +16,15 @@ my $imagga_user = setting_get("imagga-user");
 # For initial testing, use command line to tag photos
 my $arg = shift;
 while (defined($arg)) {
-  # if (pdb_image_exists($arg)) {
-  tag_image($arg);
-  # } else {
-  #   print "Image $arg doesn't exist\n";
-  # }
+  if ($arg eq "-new") {
+    tag_new_images();
+  } else {
+    # if (pdb_image_exists($arg)) {
+    tag_image($arg);
+    # } else {
+    #   print "Image $arg doesn't exist\n";
+    # }
+  }
   $arg = shift;
 }
 
@@ -78,4 +82,14 @@ sub tag_image {
   # Code to dump the entire result for debugging purposes.
   # use Data::Dumper qw(Dumper);
   # print Dumper($parsedRef);
+}
+
+sub tag_new_images {
+  my $iter = pdb_iter_new("20240101-000000", 500);
+  pdb_iter_filter_category($iter, PCOM_NEW);
+  my $imageid = pdb_iter_next($iter);
+  while (defined($imageid) && ($imageid ne "")) {
+    tag_image($imageid);
+    $imageid = pdb_iter_next($iter);
+  }
 }
