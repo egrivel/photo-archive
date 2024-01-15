@@ -9,12 +9,12 @@ use inc_all;
 $admin_email = get_admin_email();
 
 my @help = (
-# Page #0: General welcome page
-"Photo System Help
+  # Page #0: General welcome page
+  "Photo System Help
 <p>Welcome to the Photo System.</p>",
 
-# Page #1: Types of Photos
-"Photo Categories
+  # Page #1: Types of Photos
+  "Photo Categories
 <p>The system recognizes different categories of photos. Once logged in, you can select which categories of photos you want to be able to see. Not all categories are available to all users, so some options may be unavailable.</p>
 <ul>
 <li><b>regular</b> is the default category.</li>
@@ -25,8 +25,8 @@ my @help = (
 <li><b>new</b> are new photos, not yet categorized.</li>
 </ul>",
 
-# Page #2: Image Quality
-"Photo Quality
+  # Page #2: Image Quality
+  "Photo Quality
 <p>The <em>quality</em> of a photo is an indication of how good it it. Each photo can be assigned a quality, ranging from low (bad photos) to high (great photos). The following qualities are defined:</p>
 <ul>
 <li><b>dud</b>: this photo failed entirely (blank, unrecognizable, etc). Failed digital photos are deleted, so this is only used for scanned photos.</li>
@@ -38,8 +38,8 @@ my @help = (
 </ul>
 <p>The <em>minimum quality</em> preference specifies what quality photos would be shown to the user.",
 
-# Page #3: Display Sizes
-"Photo Sizes
+  # Page #3: Display Sizes
+  "Photo Sizes
 <p>The photo system maintains versions of photos in a number of different sizes. Users can choose the size they prefer, depending on their personal preferences, monitor size, etc. Available sizes for landscape photos are:</p>
 <ul>
 <li><b>thumbnail</b>, which is 150 pixels wide by 100 pixels high</li>
@@ -50,15 +50,15 @@ my @help = (
 </ul>
 <p>Note: portrait photos have height and width switched.</p>",
 
-# Page #4: Orientation
-"Orientation
+  # Page #4: Orientation
+  "Orientation
 <p>All original photos have one of the two standard orientations: either <b>landscape</b> or <b>portrait</b>. The landscape and portrait photos have aspect rations of 3:2 and 2:3 respectively, e.g. 6x4 inch or 900x600 pixels.</p>
 <p>Some photos <q>work</q> better with a different aspect ratio. For instance, a panoramic landscape may be best at a 5:1 ratio, whereas sometimes a photo would be best presented in a more square format. For these special cases, an orientation of <b>freeform</b> can be defined. A freeform orientation means that the aspect ratio is not hard-coded at 3:2 or 2:3, but is defined by the dimensions of the source photo itself.</p>
 <p>By definition, freeform orientation can only happen for photos that have been manually created or edited; digital and scanned originals always come in 3:2 or 2:3 ratio. Because freeform photos are always edited, there is never a need to rotate freeform photos.</p>
 <p>Freeform photos will never be cut off when rendered. If one rendering dimension is given, the other one is determined automatically from the photo&#8217;s actual aspect ratio. If both rendering dimensions are given, black bands (top/bottom or left/right, as appropriate) will be added.</p>",
 
-# Page #5: Search - Title field
-"Title
+  # Page #5: Search - Title field
+  "Title
 <p>The title of the photo is the text typically displayed above the photo.
 For most photos, it is the place where the photo is taken, although for
 older photos a more descriptive title may have been used. Almost all photos
@@ -70,8 +70,8 @@ taken elsewhere are often titled by the city, neighborhood or location.</p>
 title will return photos titled &ldquo;Baltimore, MD&rdquo; as well as
 those with title &ldquo;Turnhout Stea<u>md</u>ay&rdquo;.</p>",
 
-# Page #6: Search - Description field
-"Description
+  # Page #6: Search - Description field
+  "Description
 <p>The description of the photo is typically displayed below the photo.
 It may contain a description of who and what is in the photo, the occasion
 when the photo was taken, etc.</p>
@@ -80,8 +80,8 @@ when the photo was taken, etc.</p>
 will include results with &ldquo;Walletjes&rdquo; and
 &ldquo;wallpaper&rdquo;.</p>",
 
-# Page #7: Search - Persons field
-"Persons
+  # Page #7: Search - Persons field
+  "Persons
 <p>Only show photos that include a particular person. The person name must
 be entered exactly as it appears in the person list (an error will result
 if the person name is not found in the archive).</p>
@@ -91,14 +91,14 @@ returned in the search result.</p>
 <p>People in the photos have been identified as much as possible. Please
 report any mistakes to <a href='mailto:$admin_email'>Eric Grivel</a></p>",
 
-# Page #8: Search - Comment field
-"Comment
+  # Page #8: Search - Comment field
+  "Comment
 <p>People who are logged into the photo archive system can leave comments
 on individual photos. This feature is not really used, so there is not
 much sense in searching on the comments.</p>",
 
-# Page #9: Search - Year field
-"Year
+  # Page #9: Search - Year field
+  "Year
 <p>The year a photo was taken. A single, 4-digit year, or a year range
 using a hyphen &ldquo;-&rdquo;, must be entered.
 Often the year can be used to limit search results; sometimes, doing
@@ -116,8 +116,8 @@ photos etc.) the year may not have been indicated.</p>
 <li>1974-1979</li>
 </ul>",
 
-# Page #10: Search - Minimum and Maximum quality fields
-"Minimum and maximum quality
+  # Page #10: Search - Minimum and Maximum quality fields
+  "Minimum and maximum quality
 <p>Photos have been labeled with a quality indicator, ranging from 0 to 5.
 Entering a minimum and/or maximum quality limits the search results to
 only photos with a quality indicator in that range. The default for
@@ -142,8 +142,8 @@ hanging in your living room.</li>
 <p>Note that the difference between quality levels 4 and 5 is extremely
 subjective and has been changing over time.</p>",
 
-# Page #11: Search - Limit field
-"Limit
+  # Page #11: Search - Limit field
+  "Limit
 <p>Limit the number of search results that are <em>displayed</em>.
 Enter a number, e.g. 50, and only
 the first 50 results matching the search criteria will be displayed.</p>
@@ -157,14 +157,14 @@ photos match the criteria.</p>
 <p>The photo archive does not yet have the ability to &ldquo;page&rdquo;
 through the search results.</p>",
 
-# Page #12: Search - Text only checkbox
-"Display text only
+  # Page #12: Search - Text only checkbox
+  "Display text only
 <p>This checkbox is mostly for internal use. When checked, only the
 photo IDs are displayed, not the photos themselves. This is mostly useful
 to produce a list of photo IDs needed for some other process.</p>",
 
-# Page #13: Edit - Persons field
-"People and Other Tags
+  # Page #13: Edit - Persons field
+  "People and Other Tags
 <p>Provides a way to tag photos. To tag a person in the photo, enter
 the person&rsquo;s name. To tag a photo with a hash tag, enter the hash
 tag. Separate multiple people / tags with a semicolon.</p>
@@ -174,31 +174,39 @@ List</em>. When tagging a person, please take care of using the exact
 name in the tag.</p>
 <p>Hash tags are a relatively new feature. They use the exact same
 functionality as person tags, except that they start with a
-&ldquo;#&rdquo;.</p>"
+&ldquo;#&rdquo;.</p>",
+
+  # Page #14: Search - AI Tags
+  "AI Tags
+<p>Use the tags which have been automatically added to the photos (using
+the Artificial Intelligence (AI) photo tagger at imagga.com) to filter the
+search results. One or more tags can be presented in a comma-separated list.
+If more than one tag is given, images that have ANY of the tags will be
+included in the search result.</p>"
 );
 
 put_init();
 
 my $helppage = int(parg_get("page"));
 if (defined($help[$helppage])) {
-    disp_help($help[$helppage]);
+  disp_help($help[$helppage]);
 } else {
-    disp_help($help[0]);
+  disp_help($help[0]);
 }
 
 sub disp_help {
-    my $text = $_[0];
+  my $text = $_[0];
 
-    pht_set_pagetype("help");
-    my $title = "Photo System Help";
-    if ($text =~ s/^([^\n]+)\n//s) {
-        $title = $1;
-    }
-    pht_set_title($title);
-    pht_page_start(1);
-#    while ($text =~ s/^([^\n]*)\n//s) {
-#        pht_output "<p>$1</p>\n";
-#    }
-    pht_output $text;
-    put_page_end();
+  pht_set_pagetype("help");
+  my $title = "Photo System Help";
+  if ($text =~ s/^([^\n]+)\n//s) {
+    $title = $1;
+  }
+  pht_set_title($title);
+  pht_page_start(1);
+  #    while ($text =~ s/^([^\n]*)\n//s) {
+  #        pht_output "<p>$1</p>\n";
+  #    }
+  pht_output $text;
+  put_page_end();
 }

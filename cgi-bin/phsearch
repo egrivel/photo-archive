@@ -10,6 +10,7 @@ my $descr = parg_get("descr");
 my $persons = parg_get("persons");
 my $comment = parg_get("comment");
 my $year = parg_get("year");
+my $tags = parg_get("tags");
 my $start_year = "";
 my $end_year = "";
 my $staticroot = get_static_root();
@@ -146,7 +147,8 @@ if ( ($title ne "")
   || ($year ne "")
   || ($start_year ne "")
   || ($minquality ne "")
-  || ($maxquality ne "")) {
+  || ($maxquality ne "")
+  || ($tags ne "")) {
   if ($limit eq "") {
     $iter = pdb_iter_new("00101", 50);
   } else {
@@ -187,6 +189,11 @@ if ( ($title ne "")
     pdb_iter_filter_year($iter, $year);
     pdb_filter_year($year);
   }
+  if ($tags ne "") {
+    my $tag_filter = pdb_tags_get_images($tags);
+    pdb_iter_filter_tags($iter, $tag_filter);
+    pdb_filter_tags($tag_filter);
+  }
   if (($start_year ne "") && ($end_year ne "")) {
     pdb_iter_filter_year_range($iter, $start_year, $end_year);
     pdb_filter_year_range($start_year, $end_year);
@@ -220,6 +227,10 @@ if ( ($title ne "")
   if ($start_year ne "") {
     $search .= " and " if ($search ne "");
     $search .= " year between $start_year and $end_year";
+  }
+  if ($tags ne "") {
+    $search .= " and " if ($search ne "");
+    $search .= " AI tags include $tags";
   }
   if ($minquality ne "") {
     $search .= " and " if ($search ne "");
@@ -370,6 +381,7 @@ sub search_form {
     "persons", 0, "<br/>Multiple people separated by semicolon");
   put_form_text("Comment" . put_help_link(8), "comment", 0);
   put_form_text("Year" . put_help_link(9), "year", 0);
+  put_form_text("AI Tags" . put_help_link(14), "tags", 0);
   put_form_text("Minimum quality" . put_help_link(10), "minquality", 0);
   put_form_text("Maximum quality" . put_help_link(10), "maxquality", 0);
   put_form_text("Limit" . put_help_link(11), "limit", 0);

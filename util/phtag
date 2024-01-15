@@ -10,6 +10,7 @@ put_init();
 pusr_logout();
 
 my $gl_verbose = 1;
+my $gl_count = 0;
 my $imagga_user = setting_get("imagga-user");
 # print "Got user: '$imagga_user'\n";
 
@@ -30,6 +31,8 @@ while (defined($arg)) {
   }
   $arg = shift;
 }
+
+print "$gl_count images successfully tagged.\n" if ($gl_verbose);
 
 exit(0);
 
@@ -72,13 +75,16 @@ sub tag_image {
     {
       # Recognize the reaching of the monthly limit. No need to try to tag
       # any more photos.
-      print "Monthly tagging limit has been reached. Aborting.\n";
+      print "Monthly tagging limit has been reached. $gl_count images ";
+      print "successfully tagged. Aborting.\n";
       exit(0);
     }
     print "Getting image tags $imageId: status is $status\n";
     print "   text: '$text'\n";
     return;
   }
+
+  $gl_count++;
 
   my $count = 0;
   while (defined(%{$parsedRef}{"result"}->{"tags"}[$count])) {

@@ -360,6 +360,33 @@ sub pdb_image_get_tags {
   return $result;
 }
 
+sub pdb_tags_get_images {
+  my $tags = $_[0];
+  my $result = "";
+
+  my $query = "SELECT imageid FROM tags WHERE ";
+  my $count = 0;
+  while ($tags =~ s/^\s*([^,]+),?\s*//) {
+    my $single_tag = $1;
+    if ($count) {
+      $query .= " OR ";
+    }
+    $query .= "tag='$single_tag'";
+    $count++;
+  }
+
+  psql_command($query) || return $result;
+
+  my $iterator = psql_iterator();
+  while (defined($record = psql_next_record($iterator))) {
+    my $imageid = psql_get_field(0, "imageid", $record);
+    $result .= ", " if ($result ne "");
+    $result .= "'$imageid'";
+  }
+
+  return $result;
+}
+
 sub pdb_set_contains_category {
   my $setid = $_[0];
   my $category = $_[1];
@@ -1001,6 +1028,16 @@ sub pdb_iter_filter_year {
   $iter_filter[$iter] .= "year = '$year' ";
 }
 
+sub pdb_iter_filter_tags {
+  my $iter = $_[0];
+  my $tags_filter = $_[1];
+
+  if ($iter_filter[$iter] ne "") {
+    $iter_filter[$iter] .= " AND ";
+  }
+  $iter_filter[$iter] .= "imageid in ($tags_filter)";
+}
+
 sub pdb_iter_filter_setid {
   my $iter = $_[0];
   my $setid = $_[1];
@@ -1333,6 +1370,15 @@ sub pdb_filter_year {
     $filter .= "AND ";
   }
   $filter .= "year = '$year' ";
+}
+
+sub pdb_filter_tags {
+  my $tags = $_[0];
+
+  if ($filter ne "") {
+    $filter .= " AND ";
+  }
+  $filter .= "imageid in ($tags_filter)";
 }
 
 sub pdb_filter_year_range {
