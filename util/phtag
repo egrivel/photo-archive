@@ -9,15 +9,17 @@ put_init();
 # The logout function effectively "logs in" the guest user
 pusr_logout();
 
+my $is_new = 0;
 my $imagga_user = setting_get("imagga-user");
-
 # print "Got user: '$imagga_user'\n";
 
 # For initial testing, use command line to tag photos
 my $arg = shift;
 while (defined($arg)) {
   if ($arg eq "-new") {
+    $is_new = 1;
     tag_new_images();
+    $is_new = 0;
   } else {
     # if (pdb_image_exists($arg)) {
     tag_image($arg);
@@ -34,7 +36,7 @@ sub tag_image {
   my $imageId = $_[0];
 
   if (pdb_image_has_tags($imageId)) {
-    print "Image already tagged\n";
+    print "Image already tagged\n" if (!$is_new);
     return;
   }
 
@@ -85,8 +87,8 @@ sub tag_image {
 }
 
 sub tag_new_images {
-  my $iter = pdb_iter_new("20240101-000000", 500);
-  pdb_iter_filter_category($iter, PCOM_NEW);
+  my $iter = pdb_iter_new("20231215-000000", 500);
+  # pdb_iter_filter_category($iter, PCOM_NEW);
   my $imageid = pdb_iter_next($iter);
   while (defined($imageid) && ($imageid ne "")) {
     tag_image($imageid);
