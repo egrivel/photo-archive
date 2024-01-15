@@ -67,8 +67,15 @@ sub tag_image {
   my $status = %{$parsedRef}{"status"}->{"type"};
   if ($status ne "success") {
     # If this is not a success, print the error information
-    print "Getting image tags $imageId: status is $status\n";
     my $text = %{$parsedRef}{"status"}->{"text"};
+    if ($text eq "You have reached your monthly limits for your subscription.")
+    {
+      # Recognize the reaching of the monthly limit. No need to try to tag
+      # any more photos.
+      print "Monthly tagging limit has been reached. Aborting.\n";
+      exit(0);
+    }
+    print "Getting image tags $imageId: status is $status\n";
     print "   text: '$text'\n";
     return;
   }
@@ -88,7 +95,7 @@ sub tag_image {
 }
 
 sub tag_new_images {
-  my $iter = pdb_iter_new("20231215-000000", 500);
+  my $iter = pdb_iter_new("20240101-000000", 500);
   # pdb_iter_filter_category($iter, PCOM_NEW);
   my $imageid = pdb_iter_next($iter);
   while (defined($imageid) && ($imageid ne "")) {
