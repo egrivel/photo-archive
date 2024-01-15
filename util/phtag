@@ -9,7 +9,7 @@ put_init();
 # The logout function effectively "logs in" the guest user
 pusr_logout();
 
-my $is_new = 0;
+my $gl_verbose = 1;
 my $imagga_user = setting_get("imagga-user");
 # print "Got user: '$imagga_user'\n";
 
@@ -17,9 +17,10 @@ my $imagga_user = setting_get("imagga-user");
 my $arg = shift;
 while (defined($arg)) {
   if ($arg eq "-new") {
-    $is_new = 1;
+    # Turn off verbose mode while processing multiple images
+    $gl_verbose = 0;
     tag_new_images();
-    $is_new = 0;
+    $gl_verbose = 1;
   } else {
     # if (pdb_image_exists($arg)) {
     tag_image($arg);
@@ -36,7 +37,7 @@ sub tag_image {
   my $imageId = $_[0];
 
   if (pdb_image_has_tags($imageId)) {
-    print "Image already tagged\n" if (!$is_new);
+    print "Image already tagged\n" if ($gl_verbose);
     return;
   }
 
@@ -77,7 +78,7 @@ sub tag_image {
     my $confidence = %{$parsedRef}{"result"}->{"tags"}[$count]->{"confidence"};
     my $value = %{$parsedRef}{"result"}->{"tags"}[$count]->{"tag"}->{"en"};
     pdb_image_add_tag($imageId, "imagga", $value, $confidence);
-    print "$value: $confidence\n";
+    print "$value: $confidence\n" if ($gl_verbose);
     $count++;
   }
 
