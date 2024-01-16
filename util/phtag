@@ -104,7 +104,11 @@ sub tag_new_images {
   my $iter = pdb_iter_new("20240101-000000", 500);
   # pdb_iter_filter_category($iter, PCOM_NEW);
   my $imageid = pdb_iter_next($iter);
-  while (defined($imageid) && ($imageid ne "")) {
+  # Added check on image ID starting with a year-month-date value
+  # to avoid running over into "special" sets with the "new" tagging
+  while (defined($imageid)
+    && ($imageid ne "")
+    && ($imageid =~ /^20\d\d[0-1]\d[0-3]\d/)) {
     tag_image($imageid);
     $imageid = pdb_iter_next($iter);
   }
