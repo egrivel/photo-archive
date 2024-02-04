@@ -25,6 +25,7 @@ pusr_login("tester", "tester");
 my $gl_sourcedir = ".";
 my $gl_verbose = 1;
 my $gl_testmode = 0;
+my $gl_silent = 0;    # silent + testmode doesn't write out commands
 my $gl_recursive = 0;
 my $gl_phone = 0;
 
@@ -36,9 +37,12 @@ my $gl_timeoffset = 0;
 my $gl_timezoneoffset = 0;
 
 while (defined($arg = shift)) {
-  if ($arg eq "-test") {
+  if ($arg eq "-test" || $arg eq "--test") {
     $gl_testmode = 1;
-    print "Turning on test mode\n";
+    print "Turning on test mode\n" if (!$gl_silent);
+  } elsif ($arg eq "-silent" || $arg eq "--silent") {
+    $gl_silent = 1;
+    $gl_verbose = 0;
   } elsif ($arg eq "-r") {
     $gl_recursive = 1;
   } elsif ($arg eq "-h" || $arg eq "-help" || $arg eq "--help" || $arg eq "-?")
@@ -348,6 +352,7 @@ sub process_photo {
   my $do_portrait = 0;
   my $latlong = "";
   my $timezone = "+00:00";
+  my $timezone_found = 0;
   my $dst = "No";
   my $shuttercount = 0;
   my $phoneportrait = 0;
@@ -438,6 +443,7 @@ sub process_photo {
         $latlong = $value;
       } elsif ($label eq "Daylight Savings") {
         $dst = $value;
+        # Normalize on No/Yes
         if ($dst eq "Off") {
           $dst = "No";
         } elsif ($dst eq "On") {
@@ -445,6 +451,11 @@ sub process_photo {
         }
       } elsif (($label eq "Timezone") || ($label eq "Time Zone")) {
         $timezone = $value;
+        $timezone_found = 1;
+      } elsif ($label eq "Offset Time") {
+        # On Pixel, offset time includes DST adjustment
+        $timezone = $value;
+        $timezone_found = 1;
       } elsif ($label eq "Shutter Count") {
         $shuttercount = $value;
       } elsif ($label eq "Image Size") {
@@ -471,10 +482,96 @@ sub process_photo {
   }
   close FILE;
 
+  if ($gl_testmode) {
+    print "time zone = $timezone; time zone found = $timezone_found; ";
+    print "dst = $dst\n";
+    print "latlong = $latlong\n";
+    print "camera model = $camera_model\n";
+  }
+
   if ($setID eq "00000000") {
     # Not a valid set ID
     $setID = "";
     $targetfile = "";
+  }
+
+  if (!$timezone_found && $fname =~ /^PXL_/) {
+    print "No time zone, pixel camera, ID is $targetfile\n" if ($gl_verbose);
+    if ($targetfile =~ /^(\d\d\d\d)(\d\d)(\d\d)-(\d\d)(\d\d)(\d\d)$/) {
+      # Pixel stores videos in a file with a UTC file name, but does not store
+      # the time zone info in the EXIF. So use the `date` command to convert
+      # the UTC date-time in a local one
+      $testdate = "$1-$2-${3}T$4:$5:${6}Z";
+      open(PIPE, "date \"+\%Y\%m\%d-\%H\%M\%S \%Z\" --date=$testdate|")
+        || die "Cannot determine time zone for $testdate\n";
+      while (<PIPE>) {
+        # This should just be a single line, so process here
+        chomp();
+        if (/^(\d\d\d\d\d\d\d\d-\d\d\d\d\d\d) (\w\w\w)$/) {
+          my $date_imageid = $1;
+          my $date_timezone = $2;
+          print "Got image ID $date_imageid, time zone $date_timezone\n"
+            if ($gl_verbose);
+          if ($date_timezone eq "EST") {
+            $timezone = "-05:00";
+            $timezone_found = 1;
+            $targetfile = $date_imageid;
+            $dst = "No";
+          } elsif ($date_timezone eq "EDT") {
+            $timezone = "-04:00";
+            $timezone_found = 0;
+            $targetfile = $date_imageid;
+            $dst = "Yes";
+          } else {
+            print "Unknown time zone for $testdate\n";
+          }
+        }
+      }
+      close(PIPE);
+    }
+  }
+
+  if (!$timezone_found && $fname =~ /^WhatsApp/) {
+    print "No time zone, WhatsApp photo or video\n" if ($gl_verbose);
+    if ($fname =~
+      /^WhatsApp \w+ (\d\d\d\d)-(\d\d)-(\d\d) at (\d\d)\.(\d\d)\.(\d\d)/) {
+      # WhatsApp has virtually no EXIF info, but uses the _post_ timestamp
+      # (local time) in the file name. So use the `date` command to figure out
+      # the time zone for the post timestamp
+      my $fname_timestamp = "$1$2$3-$4$5$6";
+      my $fname_setId = "$1$2$3";
+      $testdate = "$1-$2-${3}T$4:$5:$6";
+      open(PIPE, "date \"+\%Y\%m\%d-\%H\%M\%S \%Z\" --date=$testdate|")
+        || die "Cannot determine time zone for $testdate\n";
+      while (<PIPE>) {
+        # This should just be a single line, so process here
+        chomp();
+        if (/^(\d\d\d\d\d\d\d\d-\d\d\d\d\d\d) (\w\w\w)$/) {
+          my $date_imageid = $1;
+          my $date_timezone = $2;
+          print "Got image ID $date_imageid, time zone $date_timezone\n"
+            if ($gl_verbose);
+          if ($date_timezone eq "EST") {
+            $timezone = "-05:00";
+            $timezone_found = 1;
+            $targetfile = $fname_timestamp;
+            $setID = $fname_setId;
+            $dst = "No";
+          } elsif ($date_timezone eq "EDT") {
+            $timezone = "-04:00";
+            $timezone_found = 0;
+            $targetfile = $fname_timestamp;
+            $setID = $fname_setId;
+            $dst = "Yes";
+          } else {
+            print "Unknown time zone for $testdate\n";
+          }
+        } else {
+          print "Unknown response from date command\n";
+        }
+      }
+      close(PIPE);
+    }
   }
 
   if ($gl_phone) {
@@ -708,7 +805,8 @@ sub process_photo {
 
     if ($gl_testmode) {
       my $sortid = pdb_create_sortid($imageid, $timezone, $dst);
-      print "Image $fname: image ID $imageid --> sort ID $sortid\n";
+      print
+        "Image $fname: image ID $imageid timezone=$timezone --> sort ID $sortid\n";
     }
 
     # Create the directories
@@ -810,7 +908,7 @@ sub process_photo {
       move_file("$dir/$edited_file", "$set_directory/edited/$imageid.jpg");
     }
   }
-  print "\n" if ($gl_verbose);
+  print "\n" if ($gl_verbose || $gl_testmode);
 }
 
 sub create_directory {
@@ -818,8 +916,10 @@ sub create_directory {
 
   if (!-d $dirname) {
     if ($gl_testmode) {
-      print "mkdir($dirname)\n";
-      print "chmod 777 \"$dirname\"\n";
+      if (!$gl_silent) {
+        print "mkdir($dirname)\n";
+        print "chmod 777 \"$dirname\"\n";
+      }
     } else {
       mkdir($dirname);
       system("chmod 777 \"$dirname\"");
@@ -840,8 +940,10 @@ sub move_file {
     return;
   }
   if ($gl_testmode) {
-    print "mv \"$srcfile\" \"$dstfile\"\n";
-    print "chmod 444 \"$dstfile\"\n";
+    if (!$gl_silent) {
+      print "mv \"$srcfile\" \"$dstfile\"\n";
+      print "chmod 444 \"$dstfile\"\n";
+    }
   } else {
     system("mv \"$srcfile\" \"$dstfile\"");
     system("chmod 444 \"$dstfile\"");
@@ -852,7 +954,9 @@ sub run_cmd {
   my $cmd = $_[0];
 
   if ($gl_testmode) {
-    print "run command $cmd\n";
+    if (!$gl_silent) {
+      print "run command $cmd\n";
+    }
   } else {
     system($cmd);
   }

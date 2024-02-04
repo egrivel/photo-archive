@@ -715,9 +715,11 @@ sub pdb_fix_imageid {
       $hour += $1;
       $minute += $2;
     }
+
     if ($dst eq "Yes") {
       $hour -= 1;
     }
+
     while ($minute > 59) {
       $hour++;
       $minute -= 60;
