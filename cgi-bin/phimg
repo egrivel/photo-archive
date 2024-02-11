@@ -125,7 +125,11 @@ if ($imageid eq "roku") {
 
 if (($imageid eq "random") || ($imageid eq "roku")) {
   my $effective_user = $imageid;
+  $imageid = get_random_image_id($effective_user);
+}
 
+sub get_random_image_id {
+  my $effective_user = $_[0];
   # Set the filters appropriately
   my $types = get_types($effective_user);
   my $min_quality = get_min_quality($effective_user);
@@ -158,7 +162,7 @@ if (($imageid eq "random") || ($imageid eq "roku")) {
     $setcategory = pdb_get_setcategory($set);
   }
 
-  $imageid = $image;
+  return $image;
 }
 
 sub get_min_quality {
@@ -587,7 +591,6 @@ sub get_filesize {
 
 sub return_file {
   my $fname = $_[0];
-  my $dispname = $_[1];
 
   binmode(stdout);
   $| = 1;
@@ -604,6 +607,32 @@ sub return_file {
   print "\n";
 
   system("cat $fname");
+}
+
+sub return_frame {
+  my $frameName = $_[0];
+
+  my $imageId = get_random_image_id("roku");
+  my $fname = pfs_get_large_location($imageId);
+
+  binmode(stdout);
+  $| = 1;
+
+  my $cmd =
+    "convert \"$frameName\" \\( \"$fname\" -resize 900x600 -background none -gravity center -extent 900x600 \\) -gravity southeast -composite -";
+
+  # print "content-type: text/plain\n\nCommand is $cmd\n";
+  # exit(0);
+
+  print "content-type: image/jpeg\n";
+  # my $size = get_filesize($fname);
+  # if ($size) {
+  #   print "content-length: $size\n";
+  # }
+  print "cache-control: max-age=3600\n";
+  print "\n";
+
+  system($cmd);
 }
 
 sub return_error {
@@ -667,6 +696,7 @@ sub do_roku_special {
   # $roku_image_dir is the directory where the Roku special images are. Those
   # images are named "roku-000.jpg" through "roku-nnn.jpg".
   my $roku_image_dir = setting_get("roku-image-dir");
+  my $roku_use_frame = setting_get("roku-use-frame");
 
   if ($roku_total eq "" || $roku_image_dir eq "") {
     # if the roku variables aren't set, return false
@@ -678,6 +708,29 @@ sub do_roku_special {
   my $counter = parg_get("foo");
   if ($counter eq "") {
     $counter = 1;
+  }
+
+  if ($roku_use_frame eq "true") {
+    my @frames = [];
+    my $nr_frames = 0;
+
+    # load @list a sorted list of files in the directory
+    opendir(DIR, "$roku_image_dir/frames");
+    my @list = sort grep !/^\.\.?$/, readdir(DIR);
+    closedir(DIR);
+
+    for (my $i = 0; defined($list[$i]); $i++) {
+      if ($list[$i] =~ /\.jpg/) {
+        $frames[$nr_frames++] = $list[$i];
+      }
+    }
+
+    if ($nr_frames) {
+      # Got the number of frames
+      $imageNr = $counter % $nr_frames;
+      return_frame("$roku_image_dir/frames/$frames[$imageNr]");
+      return 1;
+    }
   }
 
   # $counter is the how-manyth image is to be retured

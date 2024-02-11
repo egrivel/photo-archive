@@ -471,7 +471,7 @@ sub pfs_get_file_dimensions {
   # be significantly faster.
   if (-f $fname) {
     if (
-      ($fname =~ /\.nef$/i)
+         ($fname =~ /\.nef$/i)
       || ($fname =~ /\.dng$/i)
       #	    || ($fname =~ /\.jpe?g$/i)
       || ($fname =~ /\.tiff?$/i)
