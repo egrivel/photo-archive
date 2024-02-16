@@ -293,8 +293,21 @@ sub disp_image_page {
     if ($tags ne "") {
       pht_output "<div class='tags'>This photo has AI generated tags, "
         . "<a href='' onclick='toggleTags(event)'>click to see</a>."
-        . "<div id='ai-tags' style='display: none'>"
-        . "$tags.</div></div>";
+        . "<div id='ai-tags' style='display: none'>";
+      my $count = 0;
+      my $out = "";
+      while ($tags =~ s/^\(([\w ]+) ([12])\)[, ]*//) {
+        my $tag = $1;
+        my $level = $2;
+        $out .= ", " if ($count);
+        if ($level eq "1") {
+          $out .= "<b>$tag</b>";
+        } else {
+          $out .= $tag;
+        }
+        $count++;
+      }
+      pht_output "$out.</div></div>";
     }
 
     # if ($comment ne "") {

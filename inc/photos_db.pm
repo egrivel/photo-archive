@@ -345,16 +345,24 @@ sub pdb_image_add_tag {
 sub pdb_image_get_tags {
   my $imageId = $_[0];
   my $result = "";
+  my $threshold = setting_get("imagga-threshold");
 
   # print "Getting tags for $imageId<br/>";
   my $query =
-    "SELECT tag FROM tags WHERE imageid='$imageId' ORDER BY confidence DESC";
+    "SELECT tag, confidence FROM tags WHERE imageid='$imageId' ORDER BY confidence DESC";
   psql_command($query) || return $result;
   my $iterator = psql_iterator();
   while (defined($record = psql_next_record($iterator))) {
     my $tag = psql_get_field(0, "tag", $record);
+    my $confidence = psql_get_field(0, "confidence", $record);
     $result .= ", " if ($result ne "");
-    $result .= $tag;
+    $result .= "(" . $tag;
+    if ($confidence > $threshold) {
+      $result .= " 1)";
+    } else {
+      $result .= " 2)";
+    }
+
   }
 
   return $result;
@@ -363,6 +371,8 @@ sub pdb_image_get_tags {
 sub pdb_tags_get_images {
   my $tags = $_[0];
   my $result = "";
+
+  my $threshold = setting_get("imagga-threshold");
 
   my $query = "SELECT imageid FROM tags WHERE ";
   my $count = 0;
@@ -373,6 +383,10 @@ sub pdb_tags_get_images {
     }
     $query .= "tag='$single_tag'";
     $count++;
+  }
+
+  if ($threshold ne "") {
+    $query .= " AND confidence > $threshold";
   }
 
   psql_command($query) || return $result;
