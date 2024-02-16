@@ -17,11 +17,21 @@ my $imagga_user = setting_get("imagga-user");
 # For initial testing, use command line to tag photos
 my $arg = shift;
 while (defined($arg)) {
-  if ($arg eq "-new") {
-    # Turn off verbose mode while processing multiple images
-    $gl_verbose = 0;
-    tag_new_images();
-    $gl_verbose = 1;
+  if ($arg =~ /^--?(\w+)$/) {
+    my $verb = $1;
+    if ($verb eq "new") {
+      # Turn off verbose mode while processing multiple images
+      $gl_verbose = 0;
+      tag_new_images();
+      $gl_verbose = 1;
+    } elsif ($verb eq "help") {
+      show_help();
+      exit(0);
+    } else {
+      print "Unknown argument $arg\n";
+      show_help();
+      exit(0);
+    }
   } else {
     # if (pdb_image_exists($arg)) {
     tag_image($arg);
@@ -35,6 +45,15 @@ while (defined($arg)) {
 print "$gl_count images successfully tagged.\n" if ($gl_verbose);
 
 exit(0);
+
+sub show_help {
+  print "Add AI tags to photos in the album. Usage:\n";
+  print "--all     Tag all untagged images (not yet implemented)\n";
+  print "--help    This help screen\n";
+  print "--new     Tag untagged images since 2024\n";
+  print "--old     Tag images before 2024, going backwards (not implemented)\n";
+  print "<imageId> Tag a single image\n";
+}
 
 sub tag_image {
   my $imageId = $_[0];
