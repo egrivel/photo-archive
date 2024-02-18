@@ -618,8 +618,34 @@ sub return_frame {
   binmode(stdout);
   $| = 1;
 
+  pdb_image_info($imageId);
+  my $title = pdb_get_title($imageId);
+  my $description = pdb_get_description($imageId);
+  my $datetime = pdb_get_datetime($imageId);
+
+  my $text = "";
+  if ($title ne "") {
+    $text .= "$title.";
+  }
+  if ($description ne "") {
+    $text .= " " if ($text ne "");
+    $text .= "$description.";
+  }
+
+  if ($datetime ne "") {
+    $text .= " " if ($text ne "");
+    $text .= "$datetime.";
+  }
+  $text =~ s/'/’/g;
+
   my $cmd =
-    "convert \"$frameName\" \\( \"$fname\" -resize 900x600 -background none -gravity center -extent 900x600 \\) -gravity southeast -composite -";
+      "convert \"$frameName\" \\( \"$fname\" "
+    . "-resize 900x600 -background none -gravity center "
+    . "-extent 900x600 \\) -gravity southeast -composite "
+    . "-gravity southeast -pointsize 20 "
+    . "-stroke 'rgb(100,100,100)' -fill black -strokewidth 3 "
+    . "-annotate +21+11 '$text' -blur 5 "
+    . "-stroke none -fill white -annotate +20+10 '$text' " . "-";
 
   # print "content-type: text/plain\n\nCommand is $cmd\n";
   # exit(0);
