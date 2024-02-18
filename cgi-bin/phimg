@@ -643,8 +643,8 @@ sub return_frame {
     . "-resize 900x600 -background none -gravity center "
     . "-extent 900x600 \\) -gravity southeast -composite "
     . "-gravity southeast -pointsize 20 "
-    . "-stroke 'rgb(100,100,100)' -fill black -strokewidth 3 "
-    . "-annotate +21+11 '$text' -blur 5 "
+    . "-stroke 'rgb(100,100,100)' -fill black -strokewidth 5 "
+    . "-annotate +21+11 '$text' "
     . "-stroke none -fill white -annotate +20+10 '$text' " . "-";
 
   # print "content-type: text/plain\n\nCommand is $cmd\n";
