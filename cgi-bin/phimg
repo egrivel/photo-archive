@@ -622,6 +622,7 @@ sub return_frame {
   my $title = pdb_get_title($imageId);
   my $description = pdb_get_description($imageId);
   my $datetime = pdb_get_datetime($imageId);
+  $datetime =~ s/\s+\d+:\d+:\d+$//;
 
   my $text = "";
   if ($title ne "") {
