@@ -9,8 +9,10 @@ put_init();
 # The logout function effectively "logs in" the guest user
 pusr_logout();
 
-my $gl_verbose = 1;
+my $gl_verbose = 0;
+my $gl_quiet = 0;
 my $gl_count = 0;
+my $gl_test = 0;
 my $imagga_user = setting_get("imagga-user");
 # print "Got user: '$imagga_user'\n";
 
@@ -21,12 +23,18 @@ while (defined($arg)) {
     my $verb = $1;
     if ($verb eq "new") {
       # Turn off verbose mode while processing multiple images
-      $gl_verbose = 0;
       tag_new_images();
-      $gl_verbose = 1;
-    } elsif ($verb eq "help") {
+    } elsif ($verb eq "old") {
+      tag_old_images();
+    } elsif ($verb eq "help" || $verb eq "h") {
       show_help();
       exit(0);
+    } elsif ($verb eq "test") {
+      $gl_test = 1;
+    } elsif ($verb eq "verbose" || $verb eq "v") {
+      $gl_verbose = 1;
+    } elsif ($verb eq "quiet") {
+      $gl_quiet = 1;
     } else {
       print "Unknown argument $arg\n";
       show_help();
@@ -42,7 +50,7 @@ while (defined($arg)) {
   $arg = shift;
 }
 
-print "$gl_count images successfully tagged.\n" if ($gl_verbose);
+print "$gl_count images successfully tagged.\n" if (!$gl_quiet);
 
 exit(0);
 
@@ -52,6 +60,9 @@ sub show_help {
   print "--help    This help screen\n";
   print "--new     Tag untagged images since 2024\n";
   print "--old     Tag images before 2024, going backwards (not implemented)\n";
+  print "--quiet   Be extra quiet\n";
+  print "--test    Determine which images to tag, but don't actually tag\n";
+  print "--verbose Give more details in the output\n";
   print "<imageId> Tag a single image\n";
 }
 
@@ -59,7 +70,13 @@ sub tag_image {
   my $imageId = $_[0];
 
   if (pdb_image_has_tags($imageId)) {
-    print "Image already tagged\n" if ($gl_verbose);
+    print "Image $imageId already tagged\n" if ($gl_verbose);
+    return;
+  }
+
+  if ($gl_test) {
+    print "Tag image $imageId\n" if ($gl_verbose);
+    $gl_count++;
     return;
   }
 
@@ -130,5 +147,19 @@ sub tag_new_images {
     && ($imageid =~ /^20\d\d[0-1]\d[0-3]\d/)) {
     tag_image($imageid);
     $imageid = pdb_iter_next($iter);
+  }
+}
+
+sub tag_old_images {
+  my $iter = pdb_iter_new("20240101-000000", 500);
+  # pdb_iter_filter_category($iter, PCOM_NEW);
+  my $imageid = pdb_iter_previous($iter);
+  # Added check on image ID starting with a year-month-date value
+  # to avoid running over into "special" sets with the "new" tagging
+  while (defined($imageid)
+    && ($imageid ne "")
+    && ($imageid =~ /^20\d\d[0-1]\d[0-3]\d/)) {
+    tag_image($imageid);
+    $imageid = pdb_iter_previous($iter);
   }
 }
