@@ -642,7 +642,9 @@ sub return_frame {
   my $cmd =
       "convert \"$frameName\" \\( \"$fname\" "
     . "-resize 900x600 -background none -gravity center "
-    . "-extent 905x605 \\) -gravity southeast -composite "
+    # extent is 910x610, which centers it in the space including the 5 pixel
+    # border on all four sides.
+    . "-extent 910x610 \\) -gravity southeast -composite "
     . "-gravity southeast -pointsize 20 "
     . "-stroke 'rgb(100,100,100)' -fill black -strokewidth 5 "
     . "-annotate +21+11 '$text' "
