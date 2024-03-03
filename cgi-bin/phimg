@@ -640,15 +640,37 @@ sub return_frame {
   $text =~ s/'/’/g;
 
   my $cmd =
-      "convert \"$frameName\" \\( \"$fname\" "
-    . "-resize 900x600 -background none -gravity center "
-    # extent is 910x610, which centers it in the space including the 5 pixel
-    # border on all four sides.
-    . "-extent 910x610 \\) -gravity southeast -composite "
-    . "-gravity southeast -pointsize 20 "
-    . "-stroke 'rgb(100,100,100)' -fill black -strokewidth 5 "
-    . "-annotate +21+11 '$text' "
-    . "-stroke none -fill white -annotate +20+10 '$text' " . "-";
+    "convert \"$frameName\" "
+      # First draw the image blurred in the background. This blurs the existing
+      # image, scales it 150% to cover the canvas (1.5 * 600 = 900), and cuts
+      # out the center 900x60 part (-extent with gravity center), then puts
+      # the resulting 900x600 image on a 910x610 extent (to give it the
+      # 10 pixel margin) in the southeast corner (using compposite)
+      . "\\( \"$fname\" -blur 0x10 -scale 150% -gravity center -extent 900x600 "
+      . "-background none -gravity center -extent 910x610 \\) "
+      . "-gravity southeast -composite "
+      # Second, the actual image (resized to fit 900x600) is drawn on top of
+      # this, again using the 910x610 extent to provide the 10 pixel margin.
+      . "\\( \"$fname\" "
+      . "-resize 900x600 -background none -gravity center "
+      . "-extent 910x610 \\) -gravity southeast -composite "
+      # finally draw the text on the result. It is drawn twice, first with a
+      # black text using a 2 pixel stroke (outline), then on top of that the
+      # same text in white without a stroke. Note that the original 2-pixel
+      # stroke is offset by half a pixel horizontal and vertical to get the
+      # best result (not exactly sure why). Also note that the first text
+      # with a stroke can't use fill of white, because the stroke works both
+      # on the outside and the inside of the image, and therefore would make
+      # the letters too thin to read. Instead, overrite the first text with
+      # the second without stroke to get the full letter shapes on the
+      # canvas.
+      # Update: increase pointsize from 20 to 25, strokewith from 2 to 4,
+      # and offset from 0.5 to 1 pixel.
+      . "-gravity southeast -pointsize 25 "
+      . "-stroke 'rgb(50,50,50)' -fill black -strokewidth 4 "
+      . "-annotate +21+11 '$text' "
+      . "-stroke none -fill white -annotate +20+10 '$text' "
+      . "-";
 
   # print "content-type: text/plain\n\nCommand is $cmd\n";
   # exit(0);
