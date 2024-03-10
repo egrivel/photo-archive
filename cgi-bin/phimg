@@ -646,8 +646,18 @@ sub return_frame {
       # out the center 900x60 part (-extent with gravity center), then puts
       # the resulting 900x600 image on a 910x610 extent (to give it the
       # 10 pixel margin) in the southeast corner (using compposite)
-      . "\\( \"$fname\" -blur 0x10 -scale 150% -gravity center -extent 900x600 "
-      . "-background none -gravity center -extent 910x610 \\) "
+    # . "\\( \"$fname\" -blur 0x10 -scale 150% -gravity center -extent 900x600 "
+    # . "-background none -gravity center -extent 910x610 \\) "
+    # . "-gravity southeast -composite "
+      # Draw the image left-aligned and blurred
+      . "\\( \"$fname\" "
+      . "-resize 900x600 -background none -blur 0x20 -gravity west "
+      . "-extent 910x610 \\) "
+      . "-gravity southeast -composite "
+      # Draw the image right-aligned and blurred
+      . "\\( \"$fname\" "
+      . "-resize 900x600 -background none -blur 0x20 -gravity east "
+      . "-extent 910x610 \\) "
       . "-gravity southeast -composite "
       # Second, the actual image (resized to fit 900x600) is drawn on top of
       # this, again using the 910x610 extent to provide the 10 pixel margin.
