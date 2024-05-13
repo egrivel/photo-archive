@@ -126,6 +126,7 @@ sub tag_image {
   while (defined(%{$parsedRef}{"result"}->{"tags"}[$count])) {
     my $confidence = %{$parsedRef}{"result"}->{"tags"}[$count]->{"confidence"};
     my $value = %{$parsedRef}{"result"}->{"tags"}[$count]->{"tag"}->{"en"};
+    $value =~ s/'/’/g;
     pdb_image_add_tag($imageId, "imagga", $value, $confidence);
     print "$value: $confidence\n" if ($gl_verbose);
     $count++;
