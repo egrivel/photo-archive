@@ -98,6 +98,37 @@ exit(0);
 sub process {
   my $dir = $_[0];
 
+  if ($gl_testmode && -f "$dir/index.txt") {
+    # proces the files listed in index.txt
+    my $fname = "";
+    my %ids = ();
+    my %sortids = ();
+    open(FILE, "<$dir/index.txt");
+    while (<FILE>) {
+      next if (/^\s*#/);
+      next if (/^\s*\/\//);
+      if (/^file\s+=\s+(.*?)\s*$/) {
+        $fname = $1;
+      } elsif (/^id\s+=\s+(.*?)\s*$/) {
+        my $id = $1;
+        if ($fname eq "") {
+          die "No file for id $id in $dir/index.txt\n";
+        }
+        $ids{$fname} = $id;
+      } elsif (/^sortid\s+=\s+(.*?)\s*$/) {
+        my $sortid = $1;
+        if ($fname eq "") {
+          die "No file for sortid $sortid in $dir/index.txt\n";
+        }
+        $sortids{$fname} = $sortid;
+      }
+    }
+    foreach $key (keys %ids) {
+      process_photo($dir, $key, $ids{$key}, $sortids{$key});
+    }
+    return;
+  }
+
   opendir(DIR, $dir)
     || die "Cannot scan source directory '$dir'\n";
   my %dirlist = ();
@@ -337,6 +368,8 @@ sub get_type {
 sub process_photo {
   my $dir = $_[0];
   my $fname = $_[1];
+  my $expect_id = $_[2];
+  my $expect_sortid = $_[3];
 
   my %attrib = ();
   my $setID = "";
@@ -360,6 +393,10 @@ sub process_photo {
 
   if ($gl_testmode) {
     print "Process photo '$fname'\n";
+    if (defined($expect_sortid)) {
+      $gl_verbose = 0;
+      $gl_silent = 1;
+    }
   }
 
   if ($fname =~ /\.mov$/i || $fname =~ /\.mp4$/i || $fname =~ /\.gif$/i) {
@@ -482,7 +519,7 @@ sub process_photo {
   }
   close FILE;
 
-  if ($gl_testmode) {
+  if ($gl_testmode && $gl_verbose) {
     print "time zone = $timezone; time zone found = $timezone_found; ";
     print "dst = $dst\n";
     print "latlong = $latlong\n";
@@ -495,9 +532,13 @@ sub process_photo {
     $targetfile = "";
   }
 
-  if (!$timezone_found && $fname =~ /^PXL_/) {
+  # Files starting with PXL come from a Pixel phone
+  # Note: Pixel phones do not store the $dst, so that is "No", but since the
+  # time zone (if stored) already includes any DST offset, that's not a problem.
+  if ($fname =~ /^PXL_/ && !$timezone_found) {
     print "No time zone, pixel camera, ID is $targetfile\n" if ($gl_verbose);
-    if ($targetfile =~ /^(\d\d\d\d)(\d\d)(\d\d)-(\d\d)(\d\d)(\d\d)$/) {
+    if ($fname =~ /^PXL_(\d\d\d\d)(\d\d)(\d\d)_(\d\d)(\d\d)(\d\d)\d\d\d\.\w+$/)
+    {
       # Pixel stores videos in a file with a UTC file name, but does not store
       # the time zone info in the EXIF. So use the `date` command to convert
       # the UTC date-time in a local one
@@ -521,7 +562,8 @@ sub process_photo {
             $timezone = "-04:00";
             $timezone_found = 0;
             $targetfile = $date_imageid;
-            $dst = "Yes";
+            # The time zone above already takes EDT offset into account
+            $dst = "No";
           } else {
             print "Unknown time zone for $testdate\n";
           }
@@ -562,7 +604,8 @@ sub process_photo {
             $timezone_found = 0;
             $targetfile = $fname_timestamp;
             $setID = $fname_setId;
-            $dst = "Yes";
+            # The timezone offset already takes EDT/EST into account
+            $dst = "No";
           } else {
             print "Unknown time zone for $testdate\n";
           }
@@ -806,7 +849,26 @@ sub process_photo {
     if ($gl_testmode) {
       my $sortid = pdb_create_sortid($imageid, $timezone, $dst);
       print
-        "Image $fname: image ID $imageid timezone=$timezone --> sort ID $sortid\n";
+        "Image $fname: image ID $imageid timezone=$timezone --> sort ID $sortid\n"
+        if ($gl_verbose);
+
+      if (defined($expect_id)) {
+        if ($imageid ne $expect_id) {
+          print "   image ID $imageid expected $expect_id\n";
+        }
+      }
+      if (defined($expect_sortid)) {
+        if ($sortid ne $expect_sortid) {
+          print
+            "   sort ID $sortid expected $expect_sortid\n   (time zone $timezone $dst)\n";
+        }
+      }
+      if ( defined($expect_id)
+        && defined($expect_sortid)
+        && ($imageid eq $expect_id)
+        && ($sortid eq $expect_sortid)) {
+        print "   image ID and sort ID match expectation\n";
+      }
     }
 
     # Create the directories
@@ -835,16 +897,16 @@ sub process_photo {
       my $dngname = $fname;
       $nefname =~ s/\.jpg$/\.nef/;
       $dngname =~ s/\.jpg$/\.dng/;
-      print "Got dng name '$dngname'\n" if ($gl_testmode);
 
       if (-f "$dir/$nefname") {
         # Got a ".nef" file (Nikon RAW format), copy that too
         move_file("$dir/$nefname", "$set_directory/tif/$imageid.nef");
       } elsif (-f "$dir/$dngname") {
         # Got a ".dng" file (Google phone "RAW" format), copy that too
+        print "Got dng name '$dngname'\n" if ($gl_testmode);
         move_file("$dir/$dngname", "$set_directory/tif/$imageid.dng");
       } else {
-        print "Not found in neflist: $dngname\n" if ($gl_testmode);
+        print "Not found in neflist: $nefname or $dngname\n" if ($gl_verbose);
       }
     } elsif ($fname =~ /\.png$/i) {
       # Get the JPG first
