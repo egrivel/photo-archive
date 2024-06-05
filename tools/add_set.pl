@@ -120,7 +120,7 @@ sub add_image {
     $is_kids = 1;
   }
 
-  open(FILE, "exiftool \"$dir/$fname\"|")
+  open(FILE, "exiftool -api largefilesupport=1 \"$dir/$fname\"|")
     || die "Cannot process '$dir/$fname'\n";
   while (<FILE>) {
     chomp();
