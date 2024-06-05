@@ -79,6 +79,8 @@ while (defined($arg = shift)) {
     }
   } elsif ($arg eq "-phone") {
     $gl_phone = 1;
+  } elsif ($arg eq "-verbose" || $arg eq "--verbose") {
+    $gl_verbose = 1;
   } elsif (-d $arg) {
     $gl_sourcedir = $arg;
     $gl_sourcedir =~ s/\/$//;
@@ -394,8 +396,8 @@ sub process_photo {
   if ($gl_testmode) {
     print "Process photo '$fname'\n";
     if (defined($expect_sortid)) {
-      $gl_verbose = 0;
-      $gl_silent = 1;
+      # $gl_verbose = 0;
+      # $gl_silent = 1;
     }
   }
 
