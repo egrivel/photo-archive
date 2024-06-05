@@ -340,7 +340,7 @@ sub get_exif_data {
   $data{"_dir"} = $dir;
   $data{"_fname"} = $fname;
 
-  open(FILE, "exiftool \"$dir/$fname\"|")
+  open(FILE, "exiftool -api largefilesupport=1 \"$dir/$fname\"|")
     || die "Cannot process '$dir/$fname'\n";
   while (<FILE>) {
     chomp();
@@ -424,7 +424,7 @@ sub process_photo {
   my $camera_model = "";
 
   print "Process $dir/$fname\n" if ($gl_verbose);
-  open(FILE, "exiftool \"$dir/$fname\"|")
+  open(FILE, "exiftool -api largefilesupport=1 \"$dir/$fname\"|")
     || die "Cannot process '$dir/$fname'\n";
   while (<FILE>) {
     chomp();
