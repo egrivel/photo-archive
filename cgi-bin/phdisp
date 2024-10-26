@@ -246,8 +246,12 @@ sub disp_image_page {
     if (pdb_get_type($imageid) eq "MOV") {
       # If somehow the 'poster' isn't there, generate it
       generate_poster_image($imageid);
+      my $video_size = "width='960' height='540'";
+      if ($orientation eq $PCOM_PORTRAIT || $orientation eq $PCOM_FREEFORM_P) {
+        $video_size = "width='540' height='960'";
+      }
       pht_output "<div class='movie'>";
-      pht_output "<video width='960' height='540' controls ";
+      pht_output "<video $video_size controls ";
       pht_output "poster='phimg?mov=$imageid'>";
       pht_output "<source src='phmov?mov=$imageid' type='video/mp4'/>";
       pht_output "</video>";
