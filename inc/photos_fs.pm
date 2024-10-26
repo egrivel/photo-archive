@@ -925,10 +925,16 @@ sub pfs_cmd_large {
 
 sub pfs_cmd_large_movie {
   my $imageid = $_[0];
-  my $src = $_[1];
+  my $orientation = $_[1];
+  my $src = $_[2];
 
   if (!defined($src) || ($src eq "")) {
     $src = pfs_get_raw_location($imageid);
+  }
+
+  my $size = "scale=960:540";
+  if ($orientation eq $PCOM_PORTRAIT || $orientation eq $PCOM_FREEFORM_P) {
+    $size = "scale=540:960";
   }
 
   my $outfile = pfs_get_buffer_location($imageid, "large");
@@ -938,7 +944,7 @@ sub pfs_cmd_large_movie {
     # or audio frames", see:
     #    https://trac.ffmpeg.org/ticket/6375
     return
-      "ffmpeg -i $src -max_muxing_queue_size 400 -vcodec libx264 -acodec libvorbis -aq 5 -ac 2 -qmax 25 -vf scale=960:540 $outfile.mp4; qt-faststart $outfile.mp4 $outfile; rm $outfile.mp4; chmod a+w $outfile";
+      "ffmpeg -i $src -max_muxing_queue_size 400 -vcodec libx264 -acodec libvorbis -aq 5 -ac 2 -qmax 25 -vf $size outfile.mp4; qt-faststart $outfile.mp4 $outfile; rm $outfile.mp4; chmod a+w $outfile";
   }
   return "";
 }

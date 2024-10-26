@@ -150,10 +150,11 @@ sub generate_image {
       # Also check for movies
       if (pdb_get_type($imageid) eq "MOV") {
         my $orig = pfs_get_raw_location($imageid);
+        my $orientation = pdb_get_orientation($imageid);
         if ($orig ne "") {
           $outfile =~ s/\.jpg/.mp4/;
           if (!-f $outfile) {
-            my $cmd = pfs_cmd_large_movie($imageid);
+            my $cmd = pfs_cmd_large_movie($imageid, $orientation);
             print "$cmd\n";
             system($cmd);
           }

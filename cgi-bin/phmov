@@ -14,9 +14,10 @@ my $srcname = pfs_get_raw_location($movieid);
 my $fname = pfs_get_buffer_location($movieid, $PCOM_LARGE);
 $fname =~ s/\.jpg$/.mp4/;
 
-if (! -f $fname) {
-    my $cmd = pfs_cmd_large_movie($movieid);
-    system($cmd);
+if (!-f $fname) {
+  my $orientation = pdb_getorie($movieid);
+  my $cmd = pfs_cmd_large_movie($movieid);
+  system($cmd);
 }
 
 my $data = "";
@@ -24,8 +25,8 @@ open(FILE, "<$fname");
 binmode(FILE);
 binmode(STDOUT);
 while (<FILE>) {
-    print $_;
-    # $data .= $_;
+  print $_;
+  # $data .= $_;
 }
 close FILE;
 
