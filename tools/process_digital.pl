@@ -535,6 +535,8 @@ sub process_photo {
     $targetfile = "";
   }
 
+  print "setID=$setID, targetfile=$targetfile\n";
+
   # Files starting with PXL come from a Pixel phone
   # Note: Pixel phones do not store the $dst, so that is "No", but since the
   # time zone (if stored) already includes any DST offset, that's not a problem.
@@ -551,19 +553,22 @@ sub process_photo {
       while (<PIPE>) {
         # This should just be a single line, so process here
         chomp();
-        if (/^(\d\d\d\d\d\d\d\d-\d\d\d\d\d\d) (\w\w\w)$/) {
+        if (/^((\d\d\d\d\d\d\d\d)-\d\d\d\d\d\d) (\w\w\w)$/) {
           my $date_imageid = $1;
-          my $date_timezone = $2;
+          my $date_setid = $2;
+          my $date_timezone = $3;
           print "Got image ID $date_imageid, time zone $date_timezone\n"
             if ($gl_verbose);
           if ($date_timezone eq "EST") {
             $timezone = "-05:00";
             $timezone_found = 1;
+            $setID = $date_setid;
             $targetfile = $date_imageid;
             $dst = "No";
           } elsif ($date_timezone eq "EDT") {
             $timezone = "-04:00";
             $timezone_found = 0;
+            $setid = $date_setid;
             $targetfile = $date_imageid;
             # The time zone above already takes EDT offset into account
             $dst = "No";
