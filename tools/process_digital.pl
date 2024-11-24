@@ -101,7 +101,7 @@ sub process {
   my $dir = $_[0];
 
   if ($gl_testmode && -f "$dir/index.txt") {
-    # proces the files listed in index.txt
+    # process the files listed in index.txt
     my $fname = "";
     my %ids = ();
     my %sortids = ();
@@ -233,6 +233,7 @@ sub help {
   print "    Time zone offset must be in [+-]hh:mm format\n";
   print " -phone: recognize photos and videos from different phones and\n";
   print "    apply time zone offsets automatically.\n";
+  print " -test: run in test mode.\n";
   print "";
 }
 
@@ -779,6 +780,7 @@ sub process_photo {
       $minutes = '0' . $minutes if ($minutes < 10);
       $seconds = '0' . $seconds if ($seconds < 10);
       $targetfile = "$year$month$day-$hours$minutes$seconds$suffix";
+      $setID = "$year$month$day";
     } else {
       print "Got offset but don't recognize target file $targetfile, skip\n";
       return;
