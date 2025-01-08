@@ -156,8 +156,8 @@ sub pfs_get_edited_location {
     }
 
     if (-f "$setdir/edited/$imageID$ext") {
-      # Check to see if there is a RawShooter updated file
       my $fname = "$setdir/edited/$imageID$ext";
+      # Check to see if there is a RawShooter updated file
       my $ftime = pfs_get_time($fname);
       my $nr = "02";
       while (-f "$setdir/edited/$imageID-$nr$ext") {
@@ -946,7 +946,10 @@ sub pfs_cmd_large_movie {
   my $src = $_[2];
 
   if (!defined($src) || ($src eq "")) {
-    $src = pfs_get_raw_location($imageid);
+    $src = pfs_get_edited_location($imageid);
+    if ($src eq "") {
+      $src = pfs_get_raw_location($imageid);
+    }
   }
 
   my $size = "scale=960:540";
