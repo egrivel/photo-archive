@@ -151,9 +151,28 @@ sub generate_image {
       if (pdb_get_type($imageid) eq "MOV") {
         my $orig = pfs_get_raw_location($imageid);
         my $orientation = pdb_get_orientation($imageid);
+
         if ($orig ne "") {
           $outfile =~ s/\.jpg/.mp4/;
-          if (!-f $outfile) {
+
+          my $do_generate = 1;
+          if (-f $outfile) {
+            # File already exist, check if it is up-to-date
+            my $edittime = 0;
+            if (pfs_get_edited_location($imageid) ne "") {
+              $edittime = pfs_get_time(pfs_get_edited_location($imageid));
+            } elsif (pfs_get_orig_location($imageid) ne "") {
+              $edittime = pfs_get_time(pfs_get_orig_location($imageid));
+            }
+            if (pfs_get_time($outfile) >= $edittime) {
+              # Generated file is newer than edited one, so no need
+              # to re-generate
+              print "File $outfile already up-to-date\n";
+              $do_generate = 0;
+            }
+          }
+          
+          if ($do_generate) {
             my $cmd = pfs_cmd_large_movie($imageid, $orientation);
             print "$cmd\n";
             system($cmd);

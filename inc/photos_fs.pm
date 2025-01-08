@@ -488,6 +488,16 @@ sub pfs_get_file_dimensions {
         }
         close SIZE;
       }
+    } elsif ($fname =~ /\.mov$/ || $fname =~ /\.mp4$/i) {
+      if (open(SIZE, "exiftool $fname|")) {
+        while (<SIZE>) {
+          if (/Image Size\s+:\s+(\d+)x(\d+)\s*$/) {
+            $width = $1;
+            $height = $2;
+            last;
+          }
+        }
+      }
     } else {
       if (open(SIZE, "identify $fname|")) {
         while (<SIZE>) {
@@ -914,8 +924,15 @@ sub pfs_cmd_resize {
   if ($imageID =~ /^d\d\d\d\d/) {
     $remove_profile = "+profile \"*\"";
   }
+
+  # If this is a video, explicitly get the first frame from the video
+  my $imgInstance = "";
+  if ($fname =~ /\.((mov)|(mp4))$/) {
+    $imgInstance = "[1]";
+  }
+  
   return
-    "convert -size $finalsize $fname $rotate -resize $scalesize $page -crop $finalsize $realresize $quality $sharpen $remove_profile jpg:- > $outfile; "
+    "convert -size $finalsize $fname$imgInstance $rotate -resize $scalesize $page -crop $finalsize $realresize $quality $sharpen $remove_profile jpg:- > $outfile; "
     . pfs_cmd_copy_exif($imageID, $outfile);
 }
 
