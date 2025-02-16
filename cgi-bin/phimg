@@ -807,7 +807,8 @@ sub do_roku_special {
   # images start repeating.
   my $roku_total = setting_get("roku-total");
   # $roku_image_dir is the directory where the Roku special images are. Those
-  # images are named "roku-000.jpg" through "roku-nnn.jpg".
+  # images are named "roku-000.jpg" through "roku-nnn.jpg". Or, if frames are
+  # used, where the frames are stored.
   my $roku_image_dir = setting_get("roku-image-dir");
   my $roku_use_frame = setting_get("roku-use-frame");
   my $roku_caption = setting_get("roku-caption");
@@ -842,7 +843,7 @@ sub do_roku_special {
     if ($nr_frames) {
       # Got the number of frames
       $imageNr = $counter % $nr_frames;
-      return_frame("$roku_image_dir/frames/$frames[$imageNr]");
+      return_frame("$roku_image_dir/$frames[$imageNr]");
       return 1;
     }
     return 1;
