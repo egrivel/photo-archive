@@ -14,6 +14,8 @@ use File::Temp qw/ tempfile tempdir /;
 use inc_all;
 put_init();
 
+$gl_do_roku = 0;
+
 my $type = parg_get("type");
 my $imageid = parg_get("image");
 
@@ -115,6 +117,10 @@ if ($type eq "custom") {
 }
 
 if ($imageid eq "roku") {
+  # Special Roku stuff. For Roku, always render a caption on the image
+  # Note: The Roku screensaver will send a request of the format:
+  # .../phimg?width=1280&height=720&custom=roku&orientation=landscape
+  $gl_do_roku = 1;
   if (do_roku_special()) {
     # Roku already handled
     exit(0);
@@ -124,6 +130,10 @@ if ($imageid eq "roku") {
 }
 
 if (($imageid eq "random") || ($imageid eq "roku")) {
+  # for Roku, if we get here, the Roku image is not an announcement image, or is
+  # not an image in a frame. Just a "regular" random image, but still, if the
+  # "roku-caption" setting is true, needs to be handled to display a caption
+  # further downstream.
   my $effective_user = $imageid;
   $imageid = get_random_image_id($effective_user);
 }
@@ -335,7 +345,7 @@ sub display_mobile {
     system($cmd);
     $did_generate = 1;
   }
-  return_file($outfile, "$imageID.jpg");
+  return_file($outfile);
 
   if ($has_tempfile) {
     # Done with the output file, discard it
@@ -400,7 +410,7 @@ sub display {
 
   if ($fname ne "") {
     # Got a file to return; return it and be done
-    return_file($fname, "$imageID.jpg");
+    return_file($fname);
     return;
   }
 
@@ -452,7 +462,7 @@ sub display {
 
   pcom_log($PCOM_DEBUG, "Resize command: $cmd\n");
   system($cmd);
-  return_file($outfile, "$imageID.jpg");
+  return_file($outfile);
 
   if ($has_tempfile) {
     # Done with the output file, discard it
@@ -461,6 +471,27 @@ sub display {
     # Permanent; make auto-generated file writable.
     system("chmod a+w $outfile");
   }
+}
+
+# Status: this draws a horizontal or vertical image. Need to resize a vertical one
+# to also become horizontal.
+sub return_file_with_caption {
+  my $fname = $_[0];
+  my $caption = $_[1];
+
+  my $tempfile = "";
+  (undef, $tempfile) = tempfile();
+
+  my $cmd =
+      "convert \"$fname\" "
+    . "-gravity southeast -pointsize 25 "
+    . "-stroke 'rgb(50,50,50)' -fill black -strokewidth 4 "
+    . "-annotate +21+11 '$caption' "
+    . "-stroke none -fill white -annotate +20+10 '$caption' "
+    . "$tempfile";
+  system($cmd);
+  return_file($tempfile);
+  unlink($tempfile);
 }
 
 sub display_custom {
@@ -478,6 +509,12 @@ sub display_custom {
       return_error("Invalid image '$imageID'");
     }
     return;
+  }
+
+  my $caption = "";
+  my $roku_caption = setting_get("roku-caption");
+  if ($gl_do_roku && $roku_caption eq "true") {
+    $caption = get_image_caption($imageID);
   }
 
   my $realwidth = parg_get("realwidth");
@@ -514,7 +551,11 @@ sub display_custom {
       $edittime = pfs_get_time(pfs_get_orig_location($imageID));
     }
     if (pfs_get_time($outfile) >= $edittime) {
-      return_file($outfile, "$imageID.jpg");
+      if ($caption ne "") {
+        return_file_with_caption($outfile, $caption);
+      } else {
+        return_file($outfile);
+      }
       return;
     }
   }
@@ -538,7 +579,12 @@ sub display_custom {
   }
 
   system($cmd);
-  return_file($outfile, "$imageID.jpg");
+
+  if ($caption ne "") {
+    return_file_with_caption($outfile, $caption);
+  } else {
+    return_file($outfile);
+  }
 
   # Done with the output file, discard it
   if ($is_tempfile) {
@@ -609,14 +655,8 @@ sub return_file {
   system("cat $fname");
 }
 
-sub return_frame {
-  my $frameName = $_[0];
-
-  my $imageId = get_random_image_id("roku");
-  my $fname = pfs_get_large_location($imageId);
-
-  binmode(stdout);
-  $| = 1;
+sub get_image_caption {
+  my $imageId = $_[0];
 
   pdb_image_info($imageId);
   my $title = pdb_get_title($imageId);
@@ -638,6 +678,20 @@ sub return_frame {
     $text .= "$datetime.";
   }
   $text =~ s/'/’/g;
+
+  return $text;
+}
+
+sub return_frame {
+  my $frameName = $_[0];
+
+  my $imageId = get_random_image_id("roku");
+  my $fname = pfs_get_large_location($imageId);
+
+  binmode(stdout);
+  $| = 1;
+
+  my $text = get_image_caption($imageId);
 
   my $cmd = "convert \"$frameName\" "
     # First draw the image blurred in the background. This blurs the existing
@@ -756,6 +810,7 @@ sub do_roku_special {
   # images are named "roku-000.jpg" through "roku-nnn.jpg".
   my $roku_image_dir = setting_get("roku-image-dir");
   my $roku_use_frame = setting_get("roku-use-frame");
+  my $roku_caption = setting_get("roku-caption");
 
   if ($roku_total eq "" || $roku_image_dir eq "") {
     # if the roku variables aren't set, return false
@@ -774,7 +829,7 @@ sub do_roku_special {
     my $nr_frames = 0;
 
     # load @list a sorted list of files in the directory
-    opendir(DIR, "$roku_image_dir/frames");
+    opendir(DIR, "$roku_image_dir");
     my @list = sort grep !/^\.\.?$/, readdir(DIR);
     closedir(DIR);
 
@@ -790,6 +845,7 @@ sub do_roku_special {
       return_frame("$roku_image_dir/frames/$frames[$imageNr]");
       return 1;
     }
+    return 1;
   }
 
   # $counter is the how-manyth image is to be retured
