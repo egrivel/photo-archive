@@ -813,7 +813,7 @@ sub do_roku_special {
   my $roku_use_frame = setting_get("roku-use-frame");
   my $roku_caption = setting_get("roku-caption");
 
-  if ($roku_total eq "" || $roku_use_frame eq "") {
+  if ($roku_total eq "" && $roku_use_frame eq "") {
     # Neither an announcement every <n> pictures, not announcement frames
     return 0;
   }
