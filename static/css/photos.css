@@ -603,7 +603,8 @@ div.thumbnail {
 }
 
 div.movie {
-  width: 962px;
+  -width: 962px;
+  text-align: center;
   margin-left: auto;
   margin-right: auto;
 }
