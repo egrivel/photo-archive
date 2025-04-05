@@ -818,7 +818,7 @@ sub do_roku_special {
     return 0;
   }
   if ($roku_image_dir eq "") {
-    # if there is no image directory, return false
+    # if there is no directory for announcements, return false
     return 0;
   }
 
