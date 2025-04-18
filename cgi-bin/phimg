@@ -138,6 +138,46 @@ if (($imageid eq "random") || ($imageid eq "roku")) {
   $imageid = get_random_image_id($effective_user);
 }
 
+if ($type eq $PCOM_CUSTOM) {
+  my $orientation = parg_get("orientation");
+  if ($orientation eq "") {
+    $orientation = parg_get("makelandscape");
+    if ($orientation > 0) {
+      $orientation = $PCOM_LANDSCAPE;
+    }
+  }
+  my $img_origentation = pdb_get_orientation($imageid);
+  if ( ($img_orientation eq $PCOM_FREEFORM)
+    || ($img_orientation eq $PCOM_FREEFORM_P)
+    || ($img_orientation eq $PCOM_FREEFORM_L)) {
+    if (parg_get("keepratio")) {
+      my ($realwidth, $realheight) = pfs_get_orig_dimensions($imageid);
+      if ((($width * $realheight) / $realwidth) > $height) {
+        $width = ($height * $realwidth) / $realheight;
+      } else {
+        $height = ($width * $realheight) / $realwidth;
+      }
+    }
+  }
+  my $x_offset = parg_get("x_offset");
+  if ($x_offset eq "") {
+    $x_offset = 0;
+  }
+  my $y_offset = parg_get("y_offset");
+  if ($y_offset eq "") {
+    $y_offset = 0;
+  }
+  display_custom($imageid, $width, $height, $orientation, $x_offset, $y_offset);
+} elsif ($type eq "raw") {
+  display_raw($imageid);
+} elsif ($type eq "mobile") {
+  display_mobile($imageid, $mobile_size, $width, $height);
+} elsif ($imageid ne "") {
+  display($imageid, $type);
+} else {
+  return_error("Unrecognized arguments in phimg");
+}
+
 sub get_random_image_id {
   my $effective_user = $_[0];
   # Set the filters appropriately
@@ -229,46 +269,6 @@ sub get_tags {
   my $tags = put_tags();
 
   return $tags;
-}
-
-if ($type eq $PCOM_CUSTOM) {
-  my $orientation = parg_get("orientation");
-  if ($orientation eq "") {
-    $orientation = parg_get("makelandscape");
-    if ($orientation > 0) {
-      $orientation = $PCOM_LANDSCAPE;
-    }
-  }
-  my $img_origentation = pdb_get_orientation($imageid);
-  if ( ($img_orientation eq $PCOM_FREEFORM)
-    || ($img_orientation eq $PCOM_FREEFORM_P)
-    || ($img_orientation eq $PCOM_FREEFORM_L)) {
-    if (parg_get("keepratio")) {
-      my ($realwidth, $realheight) = pfs_get_orig_dimensions($imageid);
-      if ((($width * $realheight) / $realwidth) > $height) {
-        $width = ($height * $realwidth) / $realheight;
-      } else {
-        $height = ($width * $realheight) / $realwidth;
-      }
-    }
-  }
-  my $x_offset = parg_get("x_offset");
-  if ($x_offset eq "") {
-    $x_offset = 0;
-  }
-  my $y_offset = parg_get("y_offset");
-  if ($y_offset eq "") {
-    $y_offset = 0;
-  }
-  display_custom($imageid, $width, $height, $orientation, $x_offset, $y_offset);
-} elsif ($type eq "raw") {
-  display_raw($imageid);
-} elsif ($type eq "mobile") {
-  display_mobile($imageid, $mobile_size, $width, $height);
-} elsif ($imageid ne "") {
-  display($imageid, $type);
-} else {
-  return_error("Unrecognized arguments in phimg");
 }
 
 sub display_mobile {
@@ -479,19 +479,32 @@ sub return_file_with_caption {
   my $fname = $_[0];
   my $caption = $_[1];
 
-  my $tempfile = "";
-  (undef, $tempfile) = tempfile();
+  # tempfile1 will be the script to run the convert command. Need to do this in
+  # a script, because calling the `system` command doesn't put UTF characters
+  # on the command line.
+  my ($fh1, $tempfile1) = tempfile();
+  # tempfile2 will be the actual generated image
+  my (undef, $tempfile2) = tempfile();
 
   my $cmd =
-      "convert \"$fname\" "
+      "convert '$fname' "
     . "-gravity southeast -pointsize 25 "
     . "-stroke 'rgb(50,50,50)' -fill black -strokewidth 4 "
     . "-annotate +21+11 '$caption' "
     . "-stroke none -fill white -annotate +20+10 '$caption' "
-    . "$tempfile";
-  system($cmd);
-  return_file($tempfile);
-  unlink($tempfile);
+    . "$tempfile2";
+
+  print $fh1 $cmd;
+  $fh1->flush;
+
+  # Files in /tmp can't be executable, but it's possible to call a shell to
+  # interpret them
+  system("sh $tempfile1");
+
+  return_file("$tempfile2");
+
+  # Note: files created with tempfile() are automatically deleted when the
+  # script ends, so no need to unlink them.
 }
 
 sub display_custom {
@@ -655,6 +668,37 @@ sub return_file {
   system("cat $fname");
 }
 
+sub fix_special_chars {
+  my $text = $_[0];
+
+  $text =~ s/<[^>]*?>//g;
+
+  # apostrophe
+  $text =~ s/'/’/g;
+
+  # open double quote
+  $text =~ s/^"/“/;
+  $text =~ s/([ \(\[])"/$1“/g;
+
+  # closing double quote
+  $text =~ s/"$/”/;
+  $text =~ s/"([ \.\]\)])/”$1/g;
+
+  # Any HTML entities still left (should get cleaned up one day)
+  $text =~ s/&aacute;/á/g;
+  $text =~ s/&agrave;/à/g;
+  $text =~ s/&eacute;/é/g;
+  $text =~ s/&egrave;/è/g;
+
+  $text =~ s/&auml;/ä/g;
+  $text =~ s/&euml;/ë/g;
+  $text =~ s/&iuml;/ï/g;
+  $text =~ s/&ouml;/ö/g;
+  $text =~ s/&uuml;/ü/g;
+
+  return $text;
+}
+
 sub get_image_caption {
   my $imageId = $_[0];
 
@@ -662,13 +706,15 @@ sub get_image_caption {
   my $title = pdb_get_title($imageId);
   my $description = pdb_get_description($imageId);
   my $datetime = pdb_get_datetime($imageId);
-  $datetime =~ s/\s+\d+:\d+:\d+$//;
+  $datetime =~ s/\s+\d+:\d+:\d+$/ /;
 
   my $text = "";
   if ($title ne "") {
+    $title = fix_special_chars($title);
     $text .= "$title.";
   }
   if ($description ne "") {
+    $description = fix_special_chars($description);
     $text .= " " if ($text ne "");
     $text .= "$description.";
   }
