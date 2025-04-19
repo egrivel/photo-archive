@@ -36,6 +36,9 @@ my $gl_timeoffset = 0;
 # time zone offset: correction for the time zone reported by the camera
 my $gl_timezoneoffset = 0;
 
+# video time zone: hard-coded time zone for Pixel 8 video files, if not EST/EDT
+my $gl_video_time_zone = "";
+
 while (defined($arg = shift)) {
   if ($arg eq "-test" || $arg eq "--test") {
     $gl_testmode = 1;
@@ -77,6 +80,16 @@ while (defined($arg = shift)) {
     } else {
       die "Time zone offset must be in [+-]hh:mm format\n";
     }
+  } elsif ($arg eq "-video-time-zone") {
+    my $value = shift;
+    if (!defined($value)) {
+      die "Must provide video time zone\n";
+    } elsif ($value =~ /^([+\-])(\d\d?):(\d\d)$/) {
+      $gl_video_time_zone = $value;
+      print "Video time zone becomes $gl_video_time_zone\n";
+    } else {
+      die "Video time zone must be in [+-]hh:mm format\n";
+    }
   } elsif ($arg eq "-phone") {
     $gl_phone = 1;
   } elsif ($arg eq "-verbose" || $arg eq "--verbose") {
@@ -96,6 +109,22 @@ exit(0);
 # --------------------------------------------------------------------------
 # Only subroutines below
 # --------------------------------------------------------------------------
+
+sub get_last_day {
+  my $month = $_[0];
+
+  my $last_day = 31;
+  if ($month eq "02") {
+    $last_day = 28;
+  } elsif ($month eq "04"
+    || $month eq "06"
+    || $month eq "09"
+    || $month eq "11") {
+    $last_day = 30;
+  }
+
+  return $last_day;
+}
 
 sub process {
   my $dir = $_[0];
@@ -544,40 +573,112 @@ sub process_photo {
     print "No time zone, pixel camera, ID is $targetfile\n" if ($gl_verbose);
     if ($fname =~ /^PXL_(\d\d\d\d)(\d\d)(\d\d)_(\d\d)(\d\d)(\d\d)\d\d\d\.\w+$/)
     {
+      my $year = $1;
+      my $month = $2;
+      my $day = $3;
+      my $hour = $4;
+      my $min = $5;
+      my $sec = $6;
+
       # Pixel stores videos in a file with a UTC file name, but does not store
       # the time zone info in the EXIF. So use the `date` command to convert
-      # the UTC date-time in a local one
-      $testdate = "$1-$2-${3}T$4:$5:${6}Z";
-      open(PIPE, "date \"+\%Y\%m\%d-\%H\%M\%S \%Z\" --date=$testdate|")
-        || die "Cannot determine time zone for $testdate\n";
-      while (<PIPE>) {
-        # This should just be a single line, so process here
-        chomp();
-        if (/^((\d\d\d\d\d\d\d\d)-\d\d\d\d\d\d) (\w\w\w)$/) {
-          my $date_imageid = $1;
-          my $date_setid = $2;
-          my $date_timezone = $3;
-          print "Got image ID $date_imageid, time zone $date_timezone\n"
-            if ($gl_verbose);
-          if ($date_timezone eq "EST") {
-            $timezone = "-05:00";
-            $timezone_found = 1;
-            $setID = $date_setid;
-            $targetfile = $date_imageid;
-            $dst = "No";
-          } elsif ($date_timezone eq "EDT") {
-            $timezone = "-04:00";
-            $timezone_found = 0;
-            $setid = $date_setid;
-            $targetfile = $date_imageid;
-            # The time zone above already takes EDT offset into account
-            $dst = "No";
+      # the UTC date-time in a local one if no video time zone is provided
+      print "Google Pixel video without time zone. ";
+      if ($gl_video_time_zone ne "") {
+        print "Use hard-coded time zone $gl_video_time_zone\n";
+        $timezone = $gl_video_time_zone;
+        $timezone_found = 0;
+        if ($gl_video_time_zone =~ /^([+-]?)(\d\d):(\d\d)$/) {
+          my $sign = $1;
+          my $h = $2;
+          my $m = $3;
+          if ($sign eq "-") {
+            $hour -= $h;
+            $min -= $m;
           } else {
-            print "Unknown time zone for $testdate\n";
+            $hour += $h;
+            $min += $m;
+          }
+          if ($min >= 60) {
+            $hour++;
+            $min -= 60;
+          } elsif ($min < 0) {
+            $hour--;
+            $min += 60;
+          }
+          if ($hour >= 24) {
+            $day++;
+            $hour -= 24;
+          } elsif ($hour < 0) {
+            $day--;
+            $hour += 24;
+          }
+          if ($day < 1) {
+            $month--;
+            if ($month < 1) {
+              $year--;
+              $month += 12;
+            }
+            $day += get_last_day($month);
+          } elsif ($day > get_last_day($month)) {
+            $day -= get_last_day($month);
+            $month++;
+            if ($month > 12) {
+              $year++;
+              $month -= 12;
+            }
+          }
+          if ($month < 10) {
+            $month = "0" . int($month);
+          }
+          if ($day < 10) {
+            $day = "0" . int($day);
+          }
+          if ($hour < 10) {
+            $hour = "0" . int($hour);
+          }
+          if ($min < 10) {
+            $min = "0" . int($min);
           }
         }
+        $setid = "$year$month$day";
+        $targetfile = "$year$month$day-$hour$min$sec";
+        # The time zone above already takes DST offset into account
+        $dst = "No";
+      } else {
+        $testdate = "$year-$month-${day}T$hour:$min:${sec}Z";
+        open(PIPE, "date \"+\%Y\%m\%d-\%H\%M\%S \%Z\" --date=$testdate|")
+          || die "Cannot determine time zone for $testdate\n";
+        print "Get time zone from date #1\n" if ($gl_testmode);
+        while (<PIPE>) {
+          # This should just be a single line, so process here
+          chomp();
+          if (/^((\d\d\d\d\d\d\d\d)-\d\d\d\d\d\d) (\w\w\w)$/) {
+            my $date_imageid = $1;
+            my $date_setid = $2;
+            my $date_timezone = $3;
+            print "Got image ID $date_imageid, time zone $date_timezone\n"
+              if ($gl_verbose);
+            if ($date_timezone eq "EST") {
+              $timezone = "-05:00";
+              $timezone_found = 1;
+              $setID = $date_setid;
+              $targetfile = $date_imageid;
+              $dst = "No";
+            } elsif ($date_timezone eq "EDT") {
+              $timezone = "-04:00";
+              $timezone_found = 0;
+              $setid = $date_setid;
+              $targetfile = $date_imageid;
+              # The time zone above already takes EDT offset into account
+              $dst = "No";
+            } else {
+              print "Unknown time zone for $testdate\n";
+            }
+          }
+        }
+        close(PIPE);
       }
-      close(PIPE);
     }
   }
 
@@ -593,6 +694,7 @@ sub process_photo {
       $testdate = "$1-$2-${3}T$4:$5:$6";
       open(PIPE, "date \"+\%Y\%m\%d-\%H\%M\%S \%Z\" --date=$testdate|")
         || die "Cannot determine time zone for $testdate\n";
+      print "Get time zone from date #2\n" if ($gl_testmode);
       while (<PIPE>) {
         # This should just be a single line, so process here
         chomp();
@@ -658,6 +760,7 @@ sub process_photo {
     }
     # Use the shell 'date' command to determine time zone, as well as convert
     # a filename in UTC to a proper image ID.
+    print "Get time zone from date #3\n" if ($gl_testmode);
     open(PIPE, "date \"+\%Y\%m\%d-\%H\%M\%S \%Z\" --date=$testdate|")
       || die "Cannot determine DST for $testdate\n";
     while (<PIPE>) {
