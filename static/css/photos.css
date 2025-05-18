@@ -116,7 +116,7 @@ div.banner {
 }
 
 .edit {
-  font-family: Courier New, Courier, fixed;
+  font-family: monospace, Courier New, Courier, fixed;
   font-size: 90%;
 }
 
@@ -333,6 +333,7 @@ div.infolabel {
   margin-bottom: 0.1em;
   border-top: 1px solid #bbbbbb;
 }
+
 div.infodata {
   float: left;
   width: 60%;
@@ -342,6 +343,7 @@ div.infodata {
   margin-bottom: 0.1em;
   border-top: 1px solid #bbbbbb;
 }
+
 div.infoline {
 }
 
