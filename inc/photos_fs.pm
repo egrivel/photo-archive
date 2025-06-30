@@ -964,7 +964,7 @@ sub pfs_cmd_large_movie {
     # or audio frames", see:
     #    https://trac.ffmpeg.org/ticket/6375
     return
-      "ffmpeg -i $src -max_muxing_queue_size 400 -vcodec libx264 -acodec libvorbis -aq 5 -ac 2 -crf 30 -vf $size $outfile.mp4; qt-faststart $outfile.mp4 $outfile; rm $outfile.mp4; chmod a+w $outfile";
+      "ffmpeg -i $src -max_muxing_queue_size 400 -vcodec libx264 -acodec libmp3lame -aq 5 -ac 2 -crf 30 -vf $size $outfile.mp4; qt-faststart $outfile.mp4 $outfile; rm $outfile.mp4; chmod a+w $outfile";
   }
   return "";
 }
