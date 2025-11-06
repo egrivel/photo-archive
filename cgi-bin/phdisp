@@ -250,10 +250,23 @@ sub disp_image_page {
       if ($orientation eq $PCOM_PORTRAIT || $orientation eq $PCOM_FREEFORM_P) {
         $video_size = "width='540' height='960'";
       }
+      my $tifdir = pfs_get_setdir($imageid) . "/tif";
       pht_output "<div class='movie'>";
       pht_output "<video $video_size controls ";
       pht_output "poster='phimg?mov=$imageid'>";
       pht_output "<source src='phmov?mov=$imageid' type='video/mp4'/>";
+      if (-f "$tifdir/$imageid.vtt") {
+        pht_output "<track src='phsub?id=$imageid' kind='subtitles' />";
+      }
+      if (-f "$tifdir/$imageid.en.vtt") {
+        pht_output "<track src='phsub?imageid=$imageid&lang=en' kind='subtitles' label='English' srclang='en' />";
+      }
+      if (-f "$tifdir/$imageid.es.vtt") {
+        pht_output "<track src='phsub?imageid=$imageid&lang=es' kind='subtitles' label='Espanol' srclang='es' />";
+      }
+      if (-f "$tifdir/$imageid.nl.vtt") {
+        pht_output "<track src='phsub?imageid=$imageid&lang=nl' kind='subtitles' label='Nederlands' srclang='nl' />";
+      }
       pht_output "</video>";
       pht_output "</div>\n";
     } else {

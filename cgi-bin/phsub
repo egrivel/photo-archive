@@ -1,0 +1,41 @@
+#!/usr/bin/perl -w -I .
+
+#
+# Purpose of this tool is to display a standard image page for an image
+# from the photos database.
+#
+
+use inc_all;
+
+put_init();
+put_restore_session();
+
+my $imageid = parg_get("imageid");
+my $lang = parg_get("lang");
+
+my $setdir = pfs_get_setdir($imageid);
+if (defined($lang) && $lang ne "") {
+  $fname = "$setdir/tif/$imageid.$lang.vtt";
+} else {
+  $fname = "$setdir/tif/$imageid.vtt";
+}
+
+if (-f $fname) {
+  my $document = do {
+    local $/ = undef;
+    # Make sure the file is read in UTF-8 mode
+    open my $fh, "<:encoding(UTF-8)", $fname
+        or die "could not open $fname: $!";
+    <$fh>;
+  };
+
+  # set the output encoding to be in UTF-8...
+  binmode(STDOUT, ":encoding(UTF-8)");
+  print "content-type: text/plain; charset=utf-8\n\n";
+  print $document;
+} else {
+  print "content-type: text/plain\n\n";
+  print "Could not find '$fname'\n";
+}
+
+exit(0);
