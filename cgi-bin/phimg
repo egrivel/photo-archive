@@ -711,12 +711,18 @@ sub get_image_caption {
   my $text = "";
   if ($title ne "") {
     $title = fix_special_chars($title);
-    $text .= "$title.";
+    $text .= $title;
+    if (!($title =~ /\.\s*$/)) {
+      $text .= "."
+    }
   }
   if ($description ne "") {
     $description = fix_special_chars($description);
     $text .= " " if ($text ne "");
-    $text .= "$description.";
+    $text .= $description;
+    if (!($description =~ /\.\s*$/)) {
+      $text .= "."
+    }
   }
 
   if ($datetime ne "") {
