@@ -256,7 +256,12 @@ sub disp_image_page {
       pht_output "poster='phimg?mov=$imageid'>";
       pht_output "<source src='phmov?mov=$imageid' type='video/mp4'/>";
       if (-f "$tifdir/$imageid.vtt") {
-        pht_output "<track src='phsub?id=$imageid' kind='subtitles' />";
+        # default to English
+        pht_output "<track src='phsub?imageid=$imageid' kind='subtitles' label='English' srclang='en' />";
+      }
+      if (-f "$tifdir/$imageid.orig.vtt") {
+        # Original means caption of original sound, possibly different languages
+        pht_output "<track src='phsub?imageid=$imageid&lang=orig' kind='subtitles' label='Original (SDH)' srclang='en' />";
       }
       if (-f "$tifdir/$imageid.en.vtt") {
         pht_output "<track src='phsub?imageid=$imageid&lang=en' kind='subtitles' label='English' srclang='en' />";
