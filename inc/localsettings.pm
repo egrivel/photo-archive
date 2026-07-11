@@ -30,6 +30,8 @@ if (-f "$localdir/../private/photos.ini") {
     }
   }
   close FILE;
+} else {
+  print "Cannot find ini file in '$localdir/private'\n";
 }
 
 sub setting_get {

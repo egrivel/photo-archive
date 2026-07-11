@@ -8,6 +8,7 @@ if ($script =~ s/\/[^\/]*$//) {
 push @INC, "$localdir/../inc";
 push @INC, $localdir;
 
+require localsettings;
 require photos_util;
 
 put_init();
@@ -130,6 +131,8 @@ if (!$count) {
 }
 exit;
 
+
+
 sub generate_image {
   my $imageid = $_[0];
 
@@ -171,7 +174,7 @@ sub generate_image {
               $do_generate = 0;
             }
           }
-          
+
           if ($do_generate) {
             my $cmd = pfs_cmd_large_movie($imageid, $orientation);
             print "$cmd\n";
