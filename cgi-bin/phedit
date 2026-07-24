@@ -303,6 +303,13 @@ sub save_image_data {
   pdb_set_copyright(parg_get("copyright"));
   pdb_set_latlong(parg_get("latlong")) if ($do_latlong);
   pdb_set_persons(parg_get("persons"));
+  # If this is a movie, set the type (this is needed when adding a new image
+  # manually, which creates the row in the database)
+  my $setdir = pfs_get_setdir($imageid);
+  if ((-f "$setdir/tif/$imageid.mov") || (-f "$setdir/tif/$imageid.mp4")) {
+    pdb_set_type("MOV");
+  }
+
   pdb_close_image();
 
   if ( ($orientation ne pdb_get_orientation($imageid))
