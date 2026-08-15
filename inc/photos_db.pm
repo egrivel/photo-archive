@@ -72,7 +72,45 @@ sub pdb_create_tables {
 
   pdb_add_tag_table();
 
+  # The create table command basically only handles text fields. Starting with
+  # version 1.3, we are adding number and date-time fields which are not
+  # supported by the psql_create_table function. In the future, we want to
+  # have custom SQL to create the table right the first time, but for now,
+  # just call the migration function.
+  pdb_image_table_to_1_3();
+
   return "OK";
+}
+
+# Upgrade the image table from 1.2 to 1.3, which meant adding the
+# following fields:
+#  - origWidth
+#  - origHeight
+#  - editedWidth
+#  - editedHeight
+#  - addedDateTime
+# Also, add an index on the addedDateTime and sortid fields. However,
+# to add an index including the sortid, I will first need to convert
+# the sortid from a TEXT to a CHAR(31) type... Note: I checked the
+# actual photo archive, and the longest sort ID there is 22 characters.
+sub pdb_image_table_to_1_3 {
+  my $query = "ALTER TABLE images "
+    . "ADD COLUMN origWidth INT(1) AFTER category, "
+    . "ADD COLUMN origHeight INT(1) AFTER origWidth, "
+    . "ADD COLUMN editedWidth INT(1) AFTER origHeight, "
+    . "ADD COLUMN editedHeight INT(1) AFTER editedWidth, "
+    . "ADD COLUMN addedDateTime DATETIME AFTER editedHeight";
+
+  psql_command($query);
+
+  $query = "ALTER TABLE images "
+    . "MODIFY COLUMN sortid CHAR(31)";
+
+  psql_command($query);
+
+  $query = "CREATE INDEX added ON images(addedDateTime, sortId)";
+
+  psql_command($query);
 }
 
 sub pdb_tables_exist {
@@ -1116,6 +1154,18 @@ sub pdb_iter_filter_comment {
     $iter_filter[$iter] .= " AND ";
   }
   $iter_filter[$iter] .= "comment like '\%$text\%' ";
+}
+
+# Select only free-form photos
+sub pdb_iter_filter_freeform {
+  my $iter = $_[0];
+
+  if ($iter_filter[$iter] ne "") {
+    $iter_filter[$iter] .= " AND ";
+  }
+  $iter_filter[$iter] .= "(orientation = '$PCOM_FREEFORM' ";
+  $iter_filter[$iter] .= "OR orientation = '$PCOM_FREEFORM_P' ";
+  $iter_filter[$iter] .= "OR orientation = '$PCOM_FREEFORM_L') ";
 }
 
 sub pdb_do_iter {
