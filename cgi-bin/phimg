@@ -487,7 +487,7 @@ sub return_file_with_caption {
   my (undef, $tempfile2) = tempfile();
 
   my $cmd =
-      "convert '$fname' "
+      "magick convert '$fname' "
     . "-gravity southeast -pointsize 25 "
     . "-stroke 'rgb(50,50,50)' -fill black -strokewidth 4 "
     . "-annotate +21+11 '$caption' "
@@ -745,7 +745,7 @@ sub return_frame {
 
   my $text = get_image_caption($imageId);
 
-  my $cmd = "convert \"$frameName\" "
+  my $cmd = "magick convert \"$frameName\" "
     # First draw the image blurred in the background. This blurs the existing
     # image, scales it 150% to cover the canvas (1.5 * 600 = 900), and cuts
     # out the center 900x600 part (-extent with gravity center), then puts
@@ -827,7 +827,7 @@ sub do_roku {
 
   my $random = int(rand($count));
 
-  open(FILE, "convert $dir/$files[$random] -resize ${width}x${height} -|");
+  open(FILE, "magick convert $dir/$files[$random] -resize ${width}x${height} -|");
   local $/;
   my $data = <FILE>;
   close FILE;

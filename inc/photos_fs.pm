@@ -606,7 +606,7 @@ sub pfs_cmd_orig {
   # To get the original file, the only issue is to get a conversion from
   # the raw format to JPEG
   my $fname = pfs_get_raw_location($imageID);
-  $cmd = "convert $fname jpg:- > $outfile; ";
+  $cmd = "magick convert $fname jpg:- > $outfile; ";
   if ($fname =~ /\.nef$/i) {
     $cmd = "exiftool -b -JpgFromRaw $fname > $outfile; ";
   }
@@ -909,7 +909,7 @@ sub pfs_cmd_resize {
   # filename to force a JPEG output
   $realresize = "";
   if (($realwidth > 0) && ($realheight > 0)) {
-    $realresize = " jpg:- | convert jpg:- -resize ${realwidth}x${realheight}! ";
+    $realresize = " jpg:- | magick convert jpg:- -resize ${realwidth}x${realheight}! ";
   }
 
   # Removing the color profile from the image. It seems the Vuescan
@@ -930,9 +930,9 @@ sub pfs_cmd_resize {
   if ($fname =~ /\.((mov)|(mp4))$/) {
     $imgInstance = "[1]";
   }
-  
+
   return
-    "convert -size $finalsize $fname$imgInstance $rotate -resize $scalesize $page -crop $finalsize $realresize $quality $sharpen $remove_profile jpg:- > $outfile; "
+    "magick convert -size $finalsize $fname$imgInstance $rotate -resize $scalesize $page -crop $finalsize $realresize $quality $sharpen $remove_profile jpg:- > $outfile; "
     . pfs_cmd_copy_exif($imageID, $outfile);
 }
 
@@ -965,7 +965,7 @@ sub pfs_cmd_large_movie {
     #    https://trac.ffmpeg.org/ticket/6375
     # libmp3lame
     return
-      "ffmpeg -i $src -max_muxing_queue_size 400 -vcodec libx264 -acodec aac -aq 5 -ac 2 -crf 30 -vf $size $outfile.mp4; qt-faststart $outfile.mp4 $outfile; rm $outfile.mp4; chmod a+w $outfile";
+      "ffmpeg -hide_banner -loglevel error -i $src -max_muxing_queue_size 400 -vcodec libx264 -acodec aac -aq 5 -ac 2 -crf 30 -vf $size $outfile.mp4; qt-faststart $outfile.mp4 $outfile; rm $outfile.mp4; chmod a+w $outfile";
   }
   return "";
 }

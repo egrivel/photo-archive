@@ -92,7 +92,7 @@ if (($button eq "save") || ($button eq "next") || ($button eq "setOK")) {
     # Set is deleted from the file system
     pdb_delete_set_if_empty($setid);
     $setid = put_get_next_set($setid);
-    if (setid eq "") {
+    if ($setid eq "") {
       pht_redirect($return);
     } else {
       parg_set("setid", $setid);
@@ -120,6 +120,42 @@ if (($button eq "save") || ($button eq "next") || ($button eq "setOK")) {
   }
 }
 
+sub validate_numeric {
+  $field_name = $_[0];
+
+  $value = parg_get($field_name);
+
+  if (!defined($value) || ($value eq "")) {
+    # value can be absent
+    return 1;
+  }
+
+  if ($value =~ /^\d+$/) {
+    # value must be all numeric
+    return 1;
+  }
+
+  return 0;
+}
+
+sub validate_date_time {
+  $field_name = $_[0];
+
+  $value = parg_get($field_name);
+
+  if (!defined($value) || ($value eq "")) {
+    # value can be absent
+    return 1;
+  }
+
+  if ($value =~ /^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d$/) {
+    # value must be a valid date time
+    return 1;
+  }
+
+  return 0;
+}
+
 sub validate_image_data {
   my $imageid    = $_[0];
   my $do_latlong = $_[1];
@@ -134,6 +170,29 @@ sub validate_image_data {
       "The image is marked 'new'. Please select a proper category.");
     $data_ok = 0;
   }
+
+  if (!validate_numeric("origWidth")) {
+    put_form_error("origWidth", "Width must be numeric.");
+    $data_ok = 0;
+  }
+  if (!validate_numeric("origHeight")) {
+    put_form_error("origHeight", "Height must be numeric.");
+    $data_ok = 0;
+  }
+  if (!validate_numeric("editedWidth")) {
+    put_form_error("editedWidth", "Width must be numeric.");
+    $data_ok = 0;
+  }
+  if (!validate_numeric("editedHeight")) {
+    put_form_error("editedHeight", "Height must be numeric.");
+    $data_ok = 0;
+  }
+
+  if (!validate_date_time("addedDateTime")) {
+    put_form_error("addedDateTime", "Must be a date and time.");
+    $data_ok = 0;
+  }
+
   return $data_ok;
 }
 
@@ -202,6 +261,11 @@ sub prefill_image_data {
   parg_set("orientation", pdb_get_orientation($imageid));
   parg_set("location",    pdb_get_location($imageid));
   parg_set("category",    pdb_get_category($imageid));
+  parg_set("origWidth", pdb_get_orig_width($imageid));
+  parg_set("origHeight", pdb_get_orig_height($imageid));
+  parg_set("editedWidth", pdb_get_edited_width($imageid));
+  parg_set("editedHeight", pdb_get_edited_height($imageid));
+  parg_set("addedDateTime", pdb_get_added_date_time($imageid));
   my $quality = pdb_get_quality($imageid);
   if ($quality eq "") {
     $quality = $PCOM_QUAL_DEFAULT;
@@ -298,6 +362,11 @@ sub save_image_data {
   pdb_set_orientation(parg_get("orientation"));
   pdb_set_location(parg_get("location"));
   pdb_set_category(parg_get("category"));
+  pdb_set_orig_width(parg_get("origWidth"));
+  pdb_set_orig_height(parg_get("origHeight"));
+  pdb_set_edited_width(parg_get("editedWidth"));
+  pdb_set_edited_height(parg_get("editedHeight"));
+  pdb_set_added_date_time(parg_get("addedDateTime"));
   pdb_set_quality(parg_get("quality"));
   pdb_set_rotation(parg_get("rotation"));
   pdb_set_copyright(parg_get("copyright"));
@@ -429,10 +498,10 @@ sub disp_image {
   #    put_form_image($imageid);
   # Instead, display the image to the side
   pht_output
-"<tr valign='middle' style='vertical-align: middle'><td colspan='2'></td><td rowspan='15' style='width: 600px; height: 600px; text-align: center;'>";
+"<tr valign='middle' style='vertical-align: middle'><td colspan='2'></td><td rowspan='18' style='width: 600px; height: 600px; text-align: center;'>";
   my $editsize = pusr_get_setting($PUSR_EDIT_SIZE);
   if (!defined($editsize) || ($editsize eq "")) {
-    $editsize = "normal";
+    $editsize = "large";
   }
   pht_output "<img src='phimg?$editsize=$imageid' /></td></tr>\n";
   put_form_protected("ImageID", "imageid");
@@ -454,6 +523,10 @@ sub disp_image {
   put_form_textlong("Lattitude / longtitude", "latlong") if ($do_latlong);
   put_form_radio("Category" . put_help_link(1), "category", @category);
   put_form_radio("Quality" . put_help_link(2),  "quality",  @quality);
+  # display width and height,
+  put_form_width_height("Original", "origWidth", "origHeight");
+  put_form_width_height("Edited", "editedWidth", "editedHeight");
+  put_form_text("Added", "addedDateTime");
   put_form_radio("Rotation",                    "rotation", @rotation);
   put_form_textlong("Copyright", "copyright");
   put_form_buttons("save", "Save", "cancel", "Cancel",

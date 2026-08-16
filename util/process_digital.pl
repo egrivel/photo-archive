@@ -502,7 +502,7 @@ sub process_photo {
       move_file("$dir/$fname", "$set_directory/tif/$imageid.cr2");
     } elsif ($fname =~ /\.mov$/i) {
       # Extract a JPG thumbnail
-      system("ffmpeg -i \"$dir/$fname\" -vframes 1 -ss 1 "
+      system("ffmpeg -hide_banner -loglevel error -i \"$dir/$fname\" -vframes 1 -ss 1 "
           . "$set_directory/tif/$imageid.jpg");
       # Add all the EXIF information to the JPG file
       #system("exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0
@@ -510,7 +510,7 @@ sub process_photo {
       move_file("$dir/$fname", "$set_directory/tif/$imageid.mov");
     } elsif ($fname =~ /\.mp4$/i) {
       # Extract a JPG thumbnail
-      system("ffmpeg -i \"$dir/$fname\" -vframes 1 -ss 1 "
+      system("ffmpeg -hide_banner -loglevel error -i \"$dir/$fname\" -vframes 1 -ss 1 "
           . "$set_directory/tif/$imageid.jpg");
       # Add all the EXIF information to the JPG file
       #system("exiftool -TagsFromFile \"$dir/$fname\" -q -q -SerialNumber=0

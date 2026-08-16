@@ -83,6 +83,7 @@ sub pcom_log {
 
   if ($level >= $log_level) {
     if (open(LOGFILE, ">>$log_file")) {
+      binmode(LOGFILE, ":encoding(UTF-8)");
       print LOGFILE "$message\n";
       close LOGFILE;
     }

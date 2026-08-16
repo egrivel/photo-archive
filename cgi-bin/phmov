@@ -15,7 +15,7 @@ my $fname = pfs_get_buffer_location($movieid, $PCOM_LARGE);
 $fname =~ s/\.jpg$/.mp4/;
 
 if (!-f $fname) {
-  my $orientation = pdb_getorie($movieid);
+  # my $orientation = pdb_get_orientation($movieid);
   my $cmd = pfs_cmd_large_movie($movieid);
   system($cmd);
 }

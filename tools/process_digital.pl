@@ -1022,7 +1022,7 @@ sub process_photo {
       }
     } elsif ($fname =~ /\.png$/i) {
       # Get the JPG first
-      run_cmd("convert \"$dir/$fname\" \"$set_directory/tif/$imageid.jpg\"");
+      run_cmd("magick convert \"$dir/$fname\" \"$set_directory/tif/$imageid.jpg\"");
       move_file("$dir/$fname", "$set_directory/tif/$imageid.png");
     } elsif ($fname =~ /\.nef$/i) {
       # Extract the JPG first
@@ -1057,7 +1057,7 @@ sub process_photo {
     } elsif ($fname =~ /\.mov$/i || $fname =~ /\.mp4$/i) {
       # Extract a JPG thumbnail
       run_cmd(
-        "ffmpeg -i \"$dir/$fname\" -vframes 1 -ss 1 \"$set_directory/tif/$imageid.jpg\""
+        "ffmpeg -hide_banner -loglevel error -i \"$dir/$fname\" -vframes 1 -ss 1 \"$set_directory/tif/$imageid.jpg\""
       );
       # Add all the EXIF information to the JPG file
       #run_cmd("exiftool -TagsFromFile $dir/$fname -q -q -SerialNumber=0 -overwrite_original $set_directory/tif/$imageid.jpg");
@@ -1068,10 +1068,10 @@ sub process_photo {
       }
     } elsif ($fname =~ /\.gif$/i) {
       # Convert GIF to an MP4 file
-      run_cmd("ffmpeg -i \"$dir/$fname\" \"$set_directory/tif/$imageid.mp4\"");
+      run_cmd("ffmpeg -hide_banner -loglevel error -i \"$dir/$fname\" \"$set_directory/tif/$imageid.mp4\"");
       # Extract JPG
       run_cmd(
-        "ffmpeg -i \"$dir/$fname\" -vframes 1 -ss 1 \"$set_directory/tif/$imageid.jpg\""
+        "ffmpeg -hide_banner -loglevel error -i \"$dir/$fname\" -vframes 1 -ss 1 \"$set_directory/tif/$imageid.jpg\""
       );
       # Move the GIF to the target
       move_file("$dir/$fname", "$set_directory/tif/$imageid.gif");

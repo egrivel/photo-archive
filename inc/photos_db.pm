@@ -1,3 +1,7 @@
+# Module: pdb - Photos Database
+# This module handles interactions with the "images", "sets", and "tags"
+# tables.
+
 use photos_common;
 use photos_sql;
 
@@ -20,6 +24,33 @@ my @image_fields = (
   "persons",
   "type",
 );
+
+# List of image fields starting with database version 1.4
+my @image_fields4 = (
+  "imageid",
+  "sortid",
+  "setid",    # used to get images of a set
+  "title",
+  "datetime",
+  "year",
+  "description",
+  "comment",
+  "orientation",
+  "location",
+  "category",
+  "origWidth",
+  "origHeight",
+  "editedWidth",
+  "editedHeight",
+  "addedDateTime",
+  "quality",
+  "rotation",
+  "copyright",
+  "latlong",
+  "persons",
+  "type",
+);
+
 my @set_fields = (
   "setid", "sortid", "datetime", "title",
   "description", "comment", "category", "year",
@@ -44,6 +75,27 @@ sub pdb_init {
   return psql_init();
 }
 
+sub pdb_is_numeric_field {
+  my $field_name = $_[0];
+
+  if (($field_name =~ /Width$/)
+    || ($field_name =~ /Height$/)) {
+    return 1;
+  }
+
+  return 0;
+}
+
+sub pdb_is_date_time_field {
+  my $field_name = $_[0];
+
+  if ($field_name eq "addedDateTime") {
+    return 1;
+  }
+
+  return 0;
+}
+
 sub pdb_add_tag_table {
   # hard-code the query, since the primary key has to include both the image
   # ID and the tag (otherwise it's not unique).
@@ -63,6 +115,8 @@ sub pdb_add_tag_table {
 sub pdb_create_tables {
   return "no init" if (!pdb_init());
 
+  # create the images table with the original fields, add the newer fields
+  # later
   psql_create_table("images", \@image_fields, 16);
   psql_create_table("sets", \@set_fields, 8);
 
@@ -197,8 +251,8 @@ sub pdb_image_info {
     $image_exists = 0;
   }
 
-  for ($i = 0; defined($image_fields[$i]); $i++) {
-    my $field = $image_fields[$i];
+  for ($i = 0; defined($image_fields4[$i]); $i++) {
+    my $field = $image_fields4[$i];
     my $value = psql_get_field($i, $field, $record);
     $image_data{$field} = $value;
   }
@@ -283,6 +337,31 @@ sub pdb_get_location {
 sub pdb_get_category {
   return "" if (!pdb_image_info($_[0]));
   return $image_data{"category"};
+}
+
+sub pdb_get_orig_width {
+  return "" if (!pdb_image_info($_[0]));
+  return $image_data{"origWidth"};
+}
+
+sub pdb_get_orig_height {
+  return "" if (!pdb_image_info($_[0]));
+  return $image_data{"origHeight"};
+}
+
+sub pdb_get_edited_width {
+  return "" if (!pdb_image_info($_[0]));
+  return $image_data{"editedWidth"};
+}
+
+sub pdb_get_edited_height {
+  return "" if (!pdb_image_info($_[0]));
+  return $image_data{"editedHeight"};
+}
+
+sub pdb_get_added_date_time {
+  return "" if (!pdb_image_info($_[0]));
+  return $image_data{"addedDateTime"};
 }
 
 sub pdb_get_quality {
@@ -461,15 +540,21 @@ sub pdb_open_image {
 
   pdb_image_info($imageID);
   my $i;
-  for ($i = 0; defined($image_fields[$i]); $i++) {
-    if (defined($image_data{$image_fields[$i]})) {
-      $save_image_data{$image_fields[$i]} = $image_data{$image_fields[$i]};
+  for ($i = 0; defined($image_fields4[$i]); $i++) {
+    my $field_name = $image_fields4[$i];
+    if (defined($image_data{$field_name})) {
+      $save_image_data{$field_name} = $image_data{$field_name};
     } else {
-      $save_image_data{$image_fields[$i]} = "";
+      if (pdb_is_numeric_field($field_name)
+        || pdb_is_date_time_field($field_name)) {
+        # numeric and date time fields default to undefined
+      } else {
+        $save_image_data{$field_name} = "";
+      }
     }
   }
   $cur_save_image = $imageID;
-  $save_image_data{$image_fields[0]} = $imageID;
+  $save_image_data{$image_fields4[0]} = $imageID;
   $cur_image_changed = 0;
 }
 
@@ -546,6 +631,61 @@ sub pdb_set_category {
   }
 }
 
+sub pdb_set_orig_width {
+  if (defined($_[0])
+    && ($_[0] ne "")
+    && ($_[0] =~ /^\d*$/)) {
+    if (!defined($save_image_data{"origWidth"}) ||($save_image_data{"origWidth"} ne $_[0])) {
+      $save_image_data{"origWidth"} = $_[0];
+      $cur_image_changed = 1;
+    }
+  }
+}
+
+sub pdb_set_orig_height {
+  if (defined($_[0])
+    && ($_[0] ne "")
+    && ($_[0] =~ /^\d*$/)) {
+    if (!defined($save_image_data{"origHeight"}) || ($save_image_data{"origHeight"} ne $_[0])) {
+      $save_image_data{"origHeight"} = $_[0];
+      $cur_image_changed = 1;
+    }
+  }
+}
+
+sub pdb_set_edited_width {
+  if (defined($_[0])
+    && ($_[0] ne "")
+    && ($_[0] =~ /^\d*$/)) {
+    if (!defined($save_image_data{"editedWidth"}) || ($save_image_data{"editedWidth"} ne $_[0])) {
+      $save_image_data{"editedWidth"} = $_[0];
+      $cur_image_changed = 1;
+    }
+  }
+}
+
+sub pdb_set_edited_height {
+  if (defined($_[0])
+    && ($_[0] ne "")
+    && ($_[0] =~ /^\d*$/)) {
+    if (!defined($save_image_data{"editedHeight"}) || ($save_image_data{"editedHeight"} ne $_[0])) {
+      $save_image_data{"editedHeight"} = $_[0];
+      $cur_image_changed = 1;
+    }
+  }
+}
+
+sub pdb_set_added_date_time {
+  if (defined($_[0])
+    && ($_[0] ne "")
+    && ($_[0] =~ /^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d$/)) {
+    if (!defined($save_image_data{"addedDateTime"}) || ($save_image_data{"addedDateTime"} ne $_[0])) {
+      $save_image_data{"addedDateTime"} = $_[0];
+      $cur_image_changed = 1;
+    }
+  }
+}
+
 sub pdb_set_quality {
   if ($save_image_data{"quality"} ne $_[0]) {
     $save_image_data{"quality"} = $_[0];
@@ -590,20 +730,50 @@ sub pdb_set_type {
 
 sub pdb_close_image {
   if (($cur_save_image ne "") && $cur_image_changed) {
+    # Check if the image exists
     my $query = "SELECT imageid FROM images WHERE imageid='$cur_save_image';";
     my $end = "";
     psql_command($query);
     my $record = psql_next_record(psql_iterator());
+    # If the image exists, update, otherwise insert
     if (defined($record)) {
       $query = "UPDATE images SET ";
       $end = " WHERE imageid = '$cur_save_image'";
     } else {
       $query = "INSERT INTO images SET ";
     }
-    for ($i = 0; defined($image_fields[$i]); $i++) {
-      $query .= "," if ($i);
-      my $value = psql_encode($save_image_data{$image_fields[$i]});
-      $query .= " $image_fields[$i]='$value' ";
+    # Loop through the fields setting the values
+    my $was_data = 0;
+    for ($i = 0; defined($image_fields4[$i]); $i++) {
+      my $field_name = $image_fields4[$i];
+      if (defined($save_image_data{$field_name})) {
+        $query .= ", " if ($was_data);
+        $was_data = 1;
+        my $value = $save_image_data{$field_name};
+        if (pdb_is_numeric_field($field_name)) {
+          # Strip non-digits
+          $value =~ s/[^\d]//g;
+          if ($value eq '') {
+            # no data is NULL in SQL
+            $query .= "$field_name=NULL";
+          } else {
+            # data is set without quotes
+            $query .= "$field_name=$value";
+          }
+        } elsif (pdb_is_date_time_field($field_name)) {
+          # Date time fields without a value are saved as NULL
+          if (!defined($value) || ($value eq "")) {
+            $query .= "$field_name=NULL";
+          } else {
+            $value = psql_encode($value);
+            $query .= "$field_name='$value'";
+          }
+        } else {
+          # encode and save as string
+          $value = psql_encode($value);
+          $query .= "$field_name='$value'";
+        }
+      }
     }
     $query .= "$end;";
     psql_command($query);
@@ -1565,9 +1735,9 @@ sub pdb_dump_tables {
   my $setid = $_[0];
   if (defined($setid)) {
     psql_dump_table("sets", -1, \@set_fields, $setid);
-    psql_dump_table("images", -1, \@image_fields, $setid);
+    psql_dump_table("images", -1, \@image_fields4, $setid);
   } else {
-    psql_dump_table("images", 1, \@image_fields);
+    psql_dump_table("images", 1, \@image_fields4);
     print
       "CREATE INDEX setcat ON images (setid(8), category(3), imageid(16));\n";
     psql_dump_table("sets", 1, \@set_fields);
@@ -1578,7 +1748,7 @@ sub pdb_dump_tables {
 sub pdb_dump_set {
   my $setid = $_[0];
 
-  psql_dump_records("images", "setid='$setid'", \@image_fields);
+  psql_dump_records("images", "setid='$setid'", \@image_fields4);
   psql_dump_records("sets", "setid='$setid'", \@set_fields);
 
   return "OK";
@@ -1590,10 +1760,18 @@ sub pdb_get_image_data {
 
   if (pdb_image_info($imageid)) {
     my $i;
-    for ($i = 0; defined($image_fields[$i]); $i++) {
+    for ($i = 0; defined($image_fields4[$i]); $i++) {
       $result .= ", " if ($i);
-      my $field = $image_fields[$i];
-      $result .= "$field='" . psql_encode($image_data{$field}) . "'";
+      my $field_name = $image_fields4[$i];
+      my $value = $image_data{$field};
+      if (pdb_is_numeric_field($field_name)) {
+        # Strip all non-number characters.
+        # After stripping non-numbers, what remains doesn't have to be encoded
+        $value =~ s/[^\d]//g;
+        $result .= "$field=$value";
+      } else {
+        $result .= "$field='" . psql_encode($value) . "'";
+      }
     }
   }
   return $result;

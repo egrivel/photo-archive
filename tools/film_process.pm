@@ -38,7 +38,7 @@ sub get_command {
     my $resize_short = $is_digital ? $proc_resize_short_digital : $proc_resize_short_film;
     my $resize_superlong = 2 * $resize_short;
 
-    my $size = $is_portrait 
+    my $size = $is_portrait
       ? $proc_size_short . "x" . $proc_size_long
       : $proc_size_long . "x" . $proc_size_short;
     my $resize = $is_portrait
@@ -105,7 +105,7 @@ sub get_command {
         }
     }
 
-    return "convert -size $size $infile $rotate -resize $resize -crop $size $proc_quality $proc_sharpen $outfile";
+    return "magick convert -size $size $infile $rotate -resize $resize -crop $size $proc_quality $proc_sharpen $outfile";
 }
 
 return 1;

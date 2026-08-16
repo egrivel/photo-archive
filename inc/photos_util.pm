@@ -165,7 +165,9 @@ sub put_form_text {
     }
     pht_output "</th>\n";
     my $value = pht_value_escape(parg_get($fieldname));
-    pht_output "<td><input type='text' class='edit' name='$fieldname' value='$value' />";
+    pht_output "<td>";
+    put_output_error($fieldname);
+    pht_output "<input type='text' class='edit' name='$fieldname' value='$value' />";
     pht_output "</td></tr>\n";
     $put_has_required++ if ($required);
 }
@@ -328,6 +330,40 @@ sub put_form_radio {
         $count++;
     }
     pht_output "</td></tr>\n";
+}
+
+sub put_form_width_height {
+    my $label = $_[0];
+    my $fieldname1 = $_[1];
+    my $fieldname2 = $_[2];
+    my $required = $_[3];
+    my $helptext = $_[4];
+    if (!defined($required)) {
+        $required = 0;
+    }
+    if (!defined($helptext)) {
+        $helptext = "";
+    }
+
+    pht_output "<tr>";
+    pht_output "<th class='label";
+    pht_output " required" if ($required);
+    pht_output "'>$label";
+    if ($helptext ne "") {
+        pht_output " <span class='helptext'>$helptext</span>";
+    }
+    pht_output "</th>\n";
+    pht_output "<td>";
+    put_output_error($fieldname1);
+    put_output_error($fieldname2);
+    my $value1 = pht_value_escape(parg_get($fieldname1));
+    pht_output "<input type='text' class='edit' name='$fieldname1' size='8' value='$value1' />";
+    pht_output " x ";
+    my $value2 = pht_value_escape(parg_get($fieldname2));
+    pht_output "<input type='text' class='edit' name='$fieldname2' size='8' value='$value2' />";
+    pht_output " (width x height)";
+    pht_output "</td></tr>\n";
+    $put_has_required++ if ($required);
 }
 
 sub put_form_default_button {

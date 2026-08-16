@@ -84,7 +84,7 @@ sub generate_poster_image {
     return;
   }
 
-  my $cmd = "ffmpeg -i \"$srcname\" -vframes 1 -ss 1 \"$postername\"";
+  my $cmd = "ffmpeg -hide_banner -loglevel error -i \"$srcname\" -vframes 1 -ss 1 \"$postername\"";
   system($cmd);
 }
 
