@@ -75,12 +75,15 @@ sub do_image {
     $orig = $raw;
   }
   if ($orig eq "") {
-    print "Cannot find orig for '$imageId; every image should have an original.\n";
+    print "Cannot find orig for $imageId; every image should have an original.\n";
   }
   my $edited = pfs_get_edited_location($imageId);
 
   ($origWidth, $origHeight) = pfs_get_file_dimensions($orig);
   print "Got file dimensions $origWidth x $origHeight for $orig\n" if ($gl_verbose);
+  if (!$origWidth || !$origHeight) {
+    print "$imageId: orig dimensions are $origWidth x $origHeight\n";
+  }
 
   my $editedWidth;
   my $editedHeight;
@@ -96,6 +99,9 @@ sub do_image {
     }
   } else {
     ($editedWidth, $editedHeight) = pfs_get_file_dimensions($edited);
+  }
+  if (!$editedWidth || !$editedHeight) {
+    print "$imageId: edited dimensions are $editedWidth x $editedHeight\n";
   }
   print "Got file dimensions $editedWidth x $editedHeight for $edited\n" if ($gl_verbose);
 
@@ -113,6 +119,9 @@ sub do_image {
     if ($editedTime < $time) {
       $time = $edited;
     }
+  }
+  if (!$time) {
+    print "$imageId: no time found\n";
   }
   my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime($time);
   $year += 1900;
