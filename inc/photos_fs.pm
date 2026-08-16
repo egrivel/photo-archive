@@ -499,7 +499,7 @@ sub pfs_get_file_dimensions {
         }
       }
     } else {
-      if (open(SIZE, "identify $fname|")) {
+      if (open(SIZE, "identify -quiet $fname|")) {
         while (<SIZE>) {
           if (/(\d+)x(\d+)/) {
             $width = $1;

@@ -57,7 +57,7 @@ sub get_command {
     # irregular ones), use the actual dimensions to determine the
     # real parameters
     if (!$is_digital) {
-        open(SIZE, "identify $infile|");
+        open(SIZE, "identify -quiet $infile|");
         my $width = 0;
         my $height = 0;
         while (<SIZE>) {

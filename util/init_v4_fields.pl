@@ -69,22 +69,8 @@ sub show_help {
   print "Can give an image ID, a set ID, or a year.\n";
 }
 
-sub do_image {
+sub compute_values {
   my $imageId = $_[0];
-
-  if (!pcom_is_valid($imageId)) {
-    # invalid image ID
-    print "$imageId: invalid image ID.\n";
-    return;
-  }
-
-  pdb_open_image($imageId);
-  if (!pdb_image_info($imageId)) {
-    # I don't think this can happen after opening the image, but keeping this
-    # just in case
-    print "$imageId: does not exist in the database.\n";
-    return;
-  }
 
   my $orig = pfs_get_orig_location($imageId);
   my $raw = pfs_get_raw_location($imageId);
@@ -122,8 +108,8 @@ sub do_image {
   # $PCOM_FREEFORM_L = "freeform-l";
   my $orientation = pdb_get_orientation($imageId);
 
-  my $editedWidth;
-  my $editedHeight;
+  my $editedWidth = "";
+  my $editedHeight = "";
   if ($edited eq "") {
     # No edited file to get dimensions from, so default to copying the orig
     # values
@@ -229,6 +215,30 @@ sub do_image {
   my $addedDateTime = format_timestamp($time);
   print "$addedDateTime for this file\n" if ($gl_verbose);
 
+  return ($origWidth, $origHeight, $editedWidth, $editedHeight, $addedDateTime);
+}
+
+sub do_image {
+  my $imageId = $_[0];
+
+  if (!pcom_is_valid($imageId)) {
+    # invalid image ID
+    print "$imageId: invalid image ID.\n";
+    return;
+  }
+
+  pdb_open_image($imageId);
+  if (!pdb_image_info($imageId)) {
+    # I don't think this can happen after opening the image, but keeping this
+    # just in case
+    print "$imageId: does not exist in the database.\n";
+    return;
+  }
+
+  my ($origWidth, $origHeight, $editedWidth, $editedHeight, $addedDateTime)
+    = compute_values($imageId);
+
+
   pdb_set_orig_width($origWidth);
   pdb_set_orig_height($origHeight);
   pdb_set_edited_width($editedWidth);
@@ -299,32 +309,52 @@ sub check_image {
 
   pdb_open_image($imageId);
 
-  my $origWidth = pdb_get_orig_width($imageId);
-  my $origHeight = pdb_get_orig_height($imageId);
-  my $editedWidth = pdb_get_edited_width($imageId);
-  my $editedHeight = pdb_get_edited_height($imageId);
-  my $addedDateTime = pdb_get_added_date_time($imageId);
+  my ($origWidth, $origHeight, $editedWidth, $editedHeight, $addedDateTime)
+    = compute_values($imageId);
 
-  if (!defined($origWidth) || $origWidth eq "") {
+
+  my $storedOrigWidth = pdb_get_orig_width($imageId);
+  my $storedOrigHeight = pdb_get_orig_height($imageId);
+  my $storedEditedWidth = pdb_get_edited_width($imageId);
+  my $storedEditedHeight = pdb_get_edited_height($imageId);
+  my $storedAddedDateTime = pdb_get_added_date_time($imageId);
+
+  if (!defined($storedOrigWidth) || $storedOrigWidth eq "") {
     print "$imageId: missing orig width\n";
-  }
-  if (!defined($origHeight) || $origHeight eq "") {
+  } elsif (!defined($storedOrigHeight) || $storedOrigHeight eq "") {
     print "$imageId: missing orig height\n";
-  }
-  if (!defined($editedWidth) || $editedWidth eq "") {
+  } elsif (!defined($storedEditedWidth) || $storedEditedWidth eq "") {
     print "$imageId: missing edited width\n";
-  }
-  if (!defined($editedHeight) || $editedHeight eq "") {
+  } elsif (!defined($storedEditedHeight) || $storedEditedHeight eq "") {
     print "$imageId: missing edited height\n";
-  }
-  if (!defined($addedDateTime) || $addedDateTime eq "") {
+  } elsif (!defined($storedAddedDateTime) || $storedAddedDateTime eq "") {
     print "$imageId: missing added date time\n";
+  } else {
+    if ($storedOrigWidth ne $origWidth) {
+      print "$imageId: different orig width: $storedOrigWidth stored, $origWidth computed.\n";
+    }
+    if ($storedOrigHeight ne $origHeight) {
+      print "$imageId: different orig height: $storedOrigHeight stored, $origHeight computed.\n";
+    }
+    if ($storedEditedWidth ne $editedWidth) {
+      print "$imageId: different edited width: $storedEditedWidth stored, $editedWidth computed.\n";
+    }
+    if ($storedEditedHeight ne $editedHeight) {
+      print "$imageId: different edited height: $storedEditedHeight stored, $editedHeight computed.\n";
+    }
+    if ($storedAddedDateTime ne $addedDateTime) {
+      print "$imageId: different added date time: $storedAddedDateTime stored, $addedDateTime computed.\n";
+    }
   }
 
   pdb_close_image();
 }
 
 sub check_all {
+  my $start = time();
+  print "Starting full check " . format_timestamp($start) . "\n";
+  print "-------------------------------------------------------------------\n";
+
   # The iter must be created with a potentially valid image ID. Since film
   # sets come first, "001" is the first possible set ID and "00100" is the
   # first possible image ID
@@ -338,4 +368,17 @@ sub check_all {
     last if ($imageId eq "");
   }
   pdb_iter_done($img_iter);
+
+  my $end = time();
+  print "-------------------------------------------------------------------\n";
+  print "Ending " . format_timestamp($end) . "\n";
+  my $seconds = $end - $start;
+  my $minutes = int($seconds / 60);
+  $seconds -= 60 * $minutes;
+  my $hours = int($minutes / 60);
+  $minutes -= 60 * $hours;
+  my $days = int($hours / 24);
+  $hours -= 24 * $days;
+  print "Time to run: $days days, $hours hours, $minutes minutes, $seconds seconds\n";
+  print "-------------------------------------------------------------------\n";
 }
