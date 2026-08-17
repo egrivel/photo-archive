@@ -261,11 +261,45 @@ sub prefill_image_data {
   parg_set("orientation", pdb_get_orientation($imageid));
   parg_set("location",    pdb_get_location($imageid));
   parg_set("category",    pdb_get_category($imageid));
-  parg_set("origWidth", pdb_get_orig_width($imageid));
-  parg_set("origHeight", pdb_get_orig_height($imageid));
-  parg_set("editedWidth", pdb_get_edited_width($imageid));
-  parg_set("editedHeight", pdb_get_edited_height($imageid));
-  parg_set("addedDateTime", pdb_get_added_date_time($imageid));
+
+  # If the width and/or height are not defined, default them to the image
+  # size. The only way this gets saved is when the photo is no longer new.
+  my $origWidth = pdb_get_orig_width($imageid);
+  my $origHeight = pdb_get_orig_height($imageid);
+  if (!defined($origWidth) || !defined($origHeight)
+    || ($origWidth eq "") || ($origHeight eq "")) {
+    my $orig = pfs_get_orig_location($imageid);
+    my $raw = pfs_get_raw_location($imageid);
+    if ($orig eq "") {
+      $orig = $raw;
+    }
+    ($origWidth, $origHeight) = pfs_get_file_dimensions($orig);
+  }
+  parg_set("origWidth", $origWidth);
+  parg_set("origHeight", $origHeight);
+  my $editedWidth = pdb_get_edited_width($imageid);
+  my $editedHeight = pdb_get_edited_height($imageid);
+  if (!defined($editedWidth) || !defined($editedHeight)
+    || ($editedWidth eq "") || ($editedHeight eq "")) {
+    my $edited = pfs_get_edited_location($imageid);
+    if ($edited eq "") {
+      $editedWidth = $origWidth;
+      $editedHeight = $origHeight;
+    } else {
+      ($editedWidth, $editedHeight) = pfs_get_file_dimensions($edited);
+    }
+  }
+  parg_set("editedWidth", $editedWidth);
+  parg_set("editedHeight", $editedHeight);
+
+  # Add the added date time if not there. The only way this gets saved is
+  # if the photo is no longer new.
+  my $addedDateTime = pdb_get_added_date_time($imageid);
+  if (!defined($addedDateTime) || ($addedDateTime eq "")) {
+    $addedDateTime = format_timestamp(time());
+  }
+  parg_set("addedDateTime", $addedDateTime);
+
   my $quality = pdb_get_quality($imageid);
   if ($quality eq "") {
     $quality = $PCOM_QUAL_DEFAULT;
@@ -344,11 +378,27 @@ sub prefill_set_images {
   parg_set("nr_images", $count);
 }
 
+sub format_timestamp {
+  my $time = $_[0];
+
+  my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime($time);
+  $year += 1900;
+  $mon++;
+  $mon = "0$mon" if ($mon < 10);
+  $mday = "0$mday" if ($mday < 10);
+  $hour = "0$hour" if ($hour < 10);
+  $min = "0$min" if ($min < 10);
+  $sec = "0$sec" if ($sec < 10);
+
+  return "$year-$mon-$mday $hour:$min:$sec";
+}
+
 sub save_image_data {
   my $imageid     = $_[0];
   my $do_latlong  = $_[1];
   my $orientation = pdb_get_orientation($imageid);
   my $rotation    = pdb_get_rotation($imageid);
+
   pdb_open_image($imageid);
   if (parg_get("setid") ne "") {
     pdb_set_setid(parg_get("setid"));
@@ -456,6 +506,44 @@ sub save_set_data {
             $qual = $PCOM_QUAL_OK;
           }
           pdb_set_quality($qual);
+
+          my $origWidth = pdb_get_orig_width($imageid);
+          my $origHeight = pdb_get_orig_height($imageid);
+          my $editedWidth = pdb_get_edited_width($imageid);
+          my $editedHeight = pdb_get_edited_height($imageid);
+          if (!defined($origWidth) || !defined($origHeight)
+            || ($origWidth eq "") || ($origHeight eq "")) {
+            my $orig = pfs_get_orig_location($imageid);
+            my $raw = pfs_get_raw_location($imageid);
+            if ($orig eq "") {
+              $orig = $raw;
+            }
+            ($origWidth, $origHeight) = pfs_get_file_dimensions($orig);
+            pdb_set_orig_width($origWidth);
+            pdb_set_orig_height($origHeight);
+          }
+
+          if (!defined($editedWidth) || !defined($editedHeight)
+            || ($editedWidth eq "") || ($editedHeight eq "")) {
+            my $edited = pfs_get_edited_location($imageid);
+            if ($edited eq "") {
+              $editedWidth = $origWidth;
+              $editedHeight = $origHeight;
+            } else {
+              ($editedWidth, $editedHeight) = pfs_get_file_dimensions($edited);
+            }
+            pdb_set_edited_width($editedWidth);
+            pdb_set_edited_height($editedHeight);
+          }
+
+          # This is the first save, so this is adding the photo to the archive.
+          # Set the added date time.
+          my $addedDateTime = pdb_get_added_date_time($imageid);
+          if (!defined($addedDateTime) || ($addedDateTime eq "")) {
+            $addedDateTime = format_timestamp(time());
+            pdb_set_added_date_time($addedDateTime);
+          }
+
           pdb_close_image();
         }
       }
