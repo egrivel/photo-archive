@@ -1020,6 +1020,50 @@ sub pdb_create_sortid {
   return $sortid;
 }
 
+sub pdb_get_latest {
+  my $query = "";
+  my $result = "";
+
+  $query .= "SELECT imageid, sortid, title, description, "
+    . "editedWidth, editedHeight, addedDateTime "
+    . "FROM images "
+    # for now, hard-coded limits (must change to what the user has access to)
+    . "WHERE NOT category = '" . $PCOM_NEW . "' "
+    . "AND NOT category = '" . $PCOM_PRIVATE . "' "
+    . "ORDER BY addedDateTime DESC, sortId DESC "
+    . "LIMIT 50";
+
+  psql_command($query) || return 0;
+  my $iterator = psql_iterator();
+  my $record;
+  my $isFirst = 1;
+  $result .= "[";
+  while (defined($record = psql_next_record($iterator))) {
+    my $imageId = psql_get_field(0, "imageid", $record);
+    my $sortId = psql_get_field(0, "sortid", $record);
+    my $title = psql_get_field(0, "title", $record);
+    my $description = psql_get_field(0, "description", $record);
+    my $editedWidth = psql_get_field(0, "editedWidth", $record);
+    my $editedHeight = psql_get_field(0, "editedHeight", $record);
+    my $addedDateTime = psql_get_field(0, "addedDateTime", $record);
+
+    $result .= ", " if (!$isFirst);
+    $result .= "{";
+    $result .= "\"imageid\": \"$imageId\", ";
+    $result .= "\"sortid\": \"$sortId\", ";
+    $result .= "\"title\": \"$title\", ";
+    $result .= "\"description\": \"$description\", ";
+    $result .= "\"editedWidth\": \"$editedWidth\", ";
+    $result .= "\"editedHeight\": \"$editedHeight\", ";
+    $result .= "\"addedDateTime\": \"$addedDateTime\" ";
+    $result .= "}";
+    $isFirst = 0;
+  }
+  $result .= "]";
+
+  return $result;
+}
+
 # ------------------------------------------------------------
 # Implement the iterator functionality
 # ------------------------------------------------------------

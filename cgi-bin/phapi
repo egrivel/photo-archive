@@ -23,6 +23,8 @@ pusr_logout();
 my $action = parg_get("action");
 if ($action eq "all") {
   $data = get_all_info();
+} elsif ($action eq "latest") {
+  $data = get_latest_info();
 } elsif ($action eq "messages") {
   $data = get_message_info();
 } elsif ($action eq "year") {
@@ -116,6 +118,14 @@ sub json_out {
   $value =~ s/"/&quot;/g;
   $out .= "$value\"";
 
+  return $out;
+}
+
+sub get_latest_info {
+  my $out  = "";
+
+  $out .= pdb_get_latest();
+  
   return $out;
 }
 
