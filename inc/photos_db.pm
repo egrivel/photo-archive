@@ -1021,6 +1021,11 @@ sub pdb_create_sortid {
 }
 
 sub pdb_get_latest {
+  my $limit = $_[0];
+
+  if (!isset($limit)) {
+    $limit = 50;
+  }
   my $query = "";
   my $result = "";
 
@@ -1031,7 +1036,7 @@ sub pdb_get_latest {
     . "WHERE NOT category = '" . $PCOM_NEW . "' "
     . "AND NOT category = '" . $PCOM_PRIVATE . "' "
     . "ORDER BY addedDateTime DESC, sortId DESC "
-    . "LIMIT 50";
+    . "LIMIT $limit";
 
   psql_command($query) || return 0;
   my $iterator = psql_iterator();

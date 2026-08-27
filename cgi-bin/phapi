@@ -124,7 +124,11 @@ sub json_out {
 sub get_latest_info {
   my $out  = "";
 
-  $out .= pdb_get_latest();
+  my $count = parg_get("count");
+  if ($count eq "") {
+    $count = 500;
+  }
+  $out .= pdb_get_latest($count);
 
   return $out;
 }
