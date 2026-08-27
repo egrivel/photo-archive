@@ -1023,7 +1023,7 @@ sub pdb_create_sortid {
 sub pdb_get_latest {
   my $limit = $_[0];
 
-  if (!isset($limit)) {
+  if (!defined($limit)) {
     $limit = 50;
   }
   my $query = "";
