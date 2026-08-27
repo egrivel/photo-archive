@@ -10,8 +10,8 @@ use inc_all;
 use utf8;
 binmode(STDOUT, ":utf8");
 
-# Allow access from expo web testing
-print "Access-Control-Allow-Origin: http://localhost:19006\n";
+# Allow access from photo app
+print "Access-Control-Allow-Origin: *\n";
 # Also, make sure we properly declare the content as UTF-8
 print "Content-type: application/json;charset=utf-8\n\n";
 my $data = "";
@@ -125,7 +125,7 @@ sub get_latest_info {
   my $out  = "";
 
   $out .= pdb_get_latest();
-  
+
   return $out;
 }
 

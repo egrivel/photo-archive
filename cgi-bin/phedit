@@ -527,8 +527,23 @@ sub save_set_data {
             || ($editedWidth eq "") || ($editedHeight eq "")) {
             my $edited = pfs_get_edited_location($imageid);
             if ($edited eq "") {
-              $editedWidth = $origWidth;
-              $editedHeight = $origHeight;
+              my $orientation = pdb_get_orientation($imageId);
+              my $rotation = pdb_get_rotation($imageId);
+              if (($origWidth > $origHeight)
+                && ($rotation eq "90" || $rotation eq "270")
+                # most common situation: landscape original needs to be rotated
+                # because actual image is portrait
+                && (($orientation eq $PCOM_PORTRAIT)
+                # Freeform can be either landscape or portrait, so is valid for a
+                # portrait image
+                  || ($orientation eq $PCOM_FREEFORM)
+                  || ($orientation eq $PCOM_FREEFORM_P))) {
+                $editedWidth = $origHeight;
+                $editedHeight = $origWidth;
+              } else {
+                $editedWidth = $origWidth;
+                $editedHeight = $origHeight;
+              }
             } else {
               ($editedWidth, $editedHeight) = pfs_get_file_dimensions($edited);
             }
