@@ -1022,6 +1022,12 @@ sub pdb_create_sortid {
 
 sub pdb_get_latest {
   my $limit = $_[0];
+  my $cursor = $_[1];
+
+  if ($cursor =~ /[^\w'\-:, \(\)\.]/) {
+    # Cursor comes from the URL; if any invalid characters, wipe it out
+    $cursor = "";
+  }
 
   if (!defined($limit)) {
     $limit = 50;
@@ -1034,8 +1040,11 @@ sub pdb_get_latest {
     . "FROM images "
     # for now, hard-coded limits (must change to what the user has access to)
     . "WHERE NOT category = '" . $PCOM_NEW . "' "
-    . "AND NOT category = '" . $PCOM_PRIVATE . "' "
-    . "ORDER BY addedDateTime DESC, sortId DESC "
+    . "AND NOT category = '" . $PCOM_PRIVATE . "' ";
+  if ($cursor ne "") {
+    $query .= "AND (addedDateTime, sortId) < $cursor "
+  }
+  $query .="ORDER BY addedDateTime DESC, sortId DESC "
     . "LIMIT $limit";
 
   psql_command($query) || return 0;
@@ -1060,7 +1069,8 @@ sub pdb_get_latest {
     $result .= "\"description\": \"$description\", ";
     $result .= "\"editedWidth\": \"$editedWidth\", ";
     $result .= "\"editedHeight\": \"$editedHeight\", ";
-    $result .= "\"addedDateTime\": \"$addedDateTime\" ";
+    $result .= "\"addedDateTime\": \"$addedDateTime\", ";
+    $result .= "\"cursor\": \"('$addedDateTime', '$sortId')\" ";
     $result .= "}";
     $isFirst = 0;
   }

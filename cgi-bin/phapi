@@ -128,7 +128,8 @@ sub get_latest_info {
   if ($count eq "") {
     $count = 500;
   }
-  $out .= pdb_get_latest($count);
+  my $cursor = parg_get("cursor");
+  $out .= pdb_get_latest($count, $cursor);
 
   return $out;
 }
