@@ -1063,7 +1063,7 @@ sub pdb_get_latest {
 
     $result .= ", " if (!$isFirst);
     $result .= "{";
-    $result .= json_out("imageid", $imgageId) . ",\n";
+    $result .= json_out("imageid", $imageId) . ",\n";
     $result .= json_out("sortid", $sortId) . ",\n";
     $result .= json_out("title", $title) . ",\n";
     $result .= json_out("description", $description) . ",\n";
