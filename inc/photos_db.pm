@@ -1063,14 +1063,14 @@ sub pdb_get_latest {
 
     $result .= ", " if (!$isFirst);
     $result .= "{";
-    $result .= "\"imageid\": \"$imageId\", ";
-    $result .= "\"sortid\": \"$sortId\", ";
-    $result .= "\"title\": \"$title\", ";
-    $result .= "\"description\": \"$description\", ";
-    $result .= "\"editedWidth\": \"$editedWidth\", ";
-    $result .= "\"editedHeight\": \"$editedHeight\", ";
-    $result .= "\"addedDateTime\": \"$addedDateTime\", ";
-    $result .= "\"cursor\": \"('$addedDateTime', '$sortId')\" ";
+    $result .= json_out("imageId", $imgageId) . ",\n":
+    $result .= json_out("sortid", $sortId) . ",\n";
+    $result .= json_out("title", $title) . ",\n";
+    $result .= json_out("description", $description) . ",\n";
+    $result .= json_out("editedWidth", $editedWidth) . ",\n";
+    $result .= json_out("editedHeight", $editedHeight) . ",\n";
+    $result .= json_out("addedDateTime", $addedDateTime) . ",\n";
+    $result .= json_out("cursor", "('$addedDateTime', '$sortId')") . "\n";
     $result .= "}";
     $isFirst = 0;
   }
