@@ -191,7 +191,11 @@ sub compute_values {
       print "$imageId: edited dimensions are $editedWidth x $editedHeight\n";
     }
   }
-  print "Got file dimensions $editedWidth x $editedHeight for $edited\n" if ($gl_verbose);
+  if ($edited ne "") {
+    print "Got edited dimensions $editedWidth x $editedHeight for $edited\n" if ($gl_verbose);
+  } else {
+    print "No edited file\n";
+  }
 
   my $origTime = pfs_get_time($orig);
   my $rawTime = $origTime;
@@ -213,7 +217,7 @@ sub compute_values {
   }
 
   my $addedDateTime = format_timestamp($time);
-  print "$addedDateTime for this file\n" if ($gl_verbose);
+  print "Got added date-time $addedDateTime for this file\n" if ($gl_verbose);
 
   return ($origWidth, $origHeight, $editedWidth, $editedHeight, $addedDateTime);
 }

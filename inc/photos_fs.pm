@@ -240,6 +240,17 @@ sub pfs_get_freeform_location {
   return pfs_get_size_location($_[0], "custom");
 }
 
+sub pfs_get_photoapp_location {
+  my $image_id = $_[0];
+  my $size = $_[1];
+
+  my $set_id = pcom_get_set($image_id);
+  my $basedir = pfs_get_set_basedir($set_id) . "/custom";
+
+  my $fname = "$basedir/$image_id-s$size.jpg";
+  return $fname;
+}
+
 sub pfs_get_raw_location {
   my $imageID = $_[0];
 
@@ -280,6 +291,10 @@ sub pfs_get_raw_location {
 sub pfs_get_buffer_location {
   my $imageID = $_[0];
   my $size = $_[1];
+  my $sizeValue = $_[2];
+  if (!defined($sizeValue)) {
+    $sizeValue = "150";
+  }
 
   if ( ($size ne "thumbnail")
     && ($size ne $PCOM_THUMBNAIL_SQUARE)
@@ -290,7 +305,8 @@ sub pfs_get_buffer_location {
     && ($size ne "super")
     && ($size ne "freeform")
     && ($size ne "2k")
-    && ($size ne "4k")) {
+    && ($size ne "4k")
+    && ($size ne "size")) {
     # Invalid size, can't buffer
     return "";
   }
@@ -300,7 +316,7 @@ sub pfs_get_buffer_location {
   if ($size eq "thumbnail") {
     # Use directory name 'thumbnails' instead of 'thumbnail'
     $subdir = "thumbnails";
-  } elsif ($size eq "freeform") {
+  } elsif ($size eq "freeform" || $size eq "size") {
     # Use custom directory for freeform (ends up as "default" custom
     # image, without any size parameters)
     $subdir = "custom";
@@ -320,6 +336,8 @@ sub pfs_get_buffer_location {
     }
     if ($size eq $PCOM_THUMBNAIL_SQUARE) {
       return "$setdir/$subdir/$imageID-thsqu.jpg";
+    } elsif ($size eq "size") {
+      return "$setdir/$subdir/$imageID-s$sizeValue.jpg";
     } else {
       return "$setdir/$subdir/$imageID.jpg";
     }
@@ -909,7 +927,7 @@ sub pfs_cmd_resize {
   # filename to force a JPEG output
   $realresize = "";
   if (($realwidth > 0) && ($realheight > 0)) {
-    $realresize = " jpg:- | magick convert jpg:- -resize ${realwidth}x${realheight}! ";
+    $realresize = " jpg:- | magick jpg:- -resize ${realwidth}x${realheight}! ";
   }
 
   # Removing the color profile from the image. It seems the Vuescan
@@ -932,8 +950,18 @@ sub pfs_cmd_resize {
   }
 
   return
-    "magick convert -size $finalsize $fname$imgInstance $rotate -resize $scalesize $page -crop $finalsize $realresize $quality $sharpen $remove_profile jpg:- > $outfile; "
+    "magick -size $finalsize $fname$imgInstance $rotate -resize $scalesize $page -crop $finalsize $realresize $quality $sharpen $remove_profile jpg:- > $outfile; "
     . pfs_cmd_copy_exif($imageID, $outfile);
+}
+
+sub pfs_cmd_size {
+  my $imageid = $_[0];
+  my $rotation = $_[1];
+  my $outfile = $_[2];
+  my $width = $_[3];
+  my $height = $_[4];
+
+  return pfs_cmd_resize($imageId, $rotation, $outfile, $width, $height, 1);
 }
 
 sub pfs_cmd_large {
