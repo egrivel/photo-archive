@@ -13,15 +13,15 @@ require photos_util;
 
 put_init();
 
-my $gl_do_thumbnail = 0;
+my $gl_do_thumbnail = 1; #default on
 my $gl_do_normal = 0;
 my $gl_do_google = 0;
-my $gl_do_large = 1;
+my $gl_do_large = 1; # default on
 my $gl_do_square = 0;
-my $gl_do_photoapp = 1;
+my $gl_do_photoapp = 1; # default on
 
 # Default to include "m5" size
-my $gl_do_size = 1;
+my $gl_do_size = 1; # default on
 my $gl_size = "m5";
 my $gl_force = 0;
 
