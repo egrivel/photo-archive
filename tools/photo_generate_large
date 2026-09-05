@@ -475,21 +475,23 @@ sub help {
   print "Usage:\n";
   print "   photo_generate_large <options> <spec>\n";
   print "Options are:\n";
-  print " -google    create google-size photos\n";
-  print " -nogoogle  do not create google-size photos (default)\n";
-  print " -square    create squarey thumbnail-size photos\n";
-  print " -noquare   do not create square thumbnail-size photos (default)\n";
-  print " -normal    create normal-size photos\n";
-  print " -nonormal  do not create normal-size photos (default)\n";
-  print " -large     create large-size photos (default)\n";
-  print " -nolarge   do not create large-size photos\n";
+  print " -google       create google-size photos\n";
+  print " -nogoogle     do not create google-size photos (default)\n";
+  print " -square       create squarey thumbnail-size photos\n";
+  print " -noquare      do not create square thumbnail-size photos (default)\n";
+  print " -normal       create normal-size photos\n";
+  print " -nonormal     do not create normal-size photos (default)\n";
+  print " -large        create large-size photos (default)\n";
+  print " -nolarge      do not create large-size photos\n";
+  print " -photoapp     create photoapp sizes (default)\n";
+  print " -nophotoapp   do not create photoapp sizes\n";
   print "Spec can be one or more of:\n";
-  print " -all       process all photos in the database, starting in 2010\n";
-  print " -new       process the new photos in the database (category 'new')\n";
+  print " -all          process all photos in the database\n";
+  print " -new          process the new photos in the database (category 'new')\n";
   print " -all-digital  process all the digital photo sets in the database\n";
-  print " -all-p     process all the p* photo sets in the database\n";
-  print " -all-d     process all the d* photo sets in the database\n";
+  print " -all-p        process all the p* photo sets in the database\n";
+  print " -all-d        process all the d* photo sets in the database\n";
   print
-    " -all-film  process all the 001 through 399 film sets in the database\n";
-  print " set_id     process a specific set\n";
+    " -all-film     process all the 001 through 399 film sets in the database\n";
+  print " set_id        process a specific set\n";
 }
