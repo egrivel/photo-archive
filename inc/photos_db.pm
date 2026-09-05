@@ -1036,6 +1036,8 @@ sub pdb_get_latest {
   my $result = "";
 
   $query .= "SELECT imageid, sortid, title, description, "
+    . "datetime, persons, location, copyright, category, type, "
+    . "latlong, year, "
     . "editedWidth, editedHeight, addedDateTime "
     . "FROM images "
     # for now, hard-coded limits (must change to what the user has access to)
@@ -1057,6 +1059,14 @@ sub pdb_get_latest {
     my $sortId = psql_get_field(0, "sortid", $record);
     my $title = psql_get_field(0, "title", $record);
     my $description = psql_get_field(0, "description", $record);
+    my $dateTime = psql_get_field(0, "datetime", $record);
+    my $persons = psql_get_field(0, "persons", $record);
+    my $location = psql_get_field(0, "location", $record);
+    my $copyright = psql_get_field(0, "copyright", $record);
+    my $category = psql_get_field(0, "category", $record);
+    my $type = psql_get_field(0, "type", $record);
+    my $latlong = psql_get_field(0, "latlong", $record);
+    my $year = psql_get_field(0, "year", $record);
     my $editedWidth = psql_get_field(0, "editedWidth", $record);
     my $editedHeight = psql_get_field(0, "editedHeight", $record);
     my $addedDateTime = psql_get_field(0, "addedDateTime", $record);
@@ -1067,6 +1077,14 @@ sub pdb_get_latest {
     $result .= json_out("sortid", $sortId) . ",\n";
     $result .= json_out("title", $title) . ",\n";
     $result .= json_out("description", $description) . ",\n";
+    $result .= json_out("dateTime", $dateTime) . ",\n";
+    $result .= json_out("persons", $persons) . ",\n";
+    $result .= json_out("location", $location) . ",\n";
+    $result .= json_out("copyright", $copyright) . ",\n";
+    $result .= json_out("category", $category) . ",\n";
+    $result .= json_out("type", $type) . ",\n";
+    $result .= json_out("latlong", $latlong) . ",\n";
+    $result .= json_out("year", $year) . ",\n";
     $result .= json_out("editedWidth", $editedWidth) . ",\n";
     $result .= json_out("editedHeight", $editedHeight) . ",\n";
     $result .= json_out("addedDateTime", $addedDateTime) . ",\n";
