@@ -13,6 +13,7 @@ require photos_util;
 
 put_init();
 
+my $gl_do_thumbnail = 0;
 my $gl_do_normal = 0;
 my $gl_do_google = 0;
 my $gl_do_large = 1;
@@ -29,7 +30,7 @@ my $count = 0;
 while (defined($arg)) {
   $count++;
   if ($arg eq "-all") {
-    my $iter = pdb_iter_set_new("00101");
+    my $iter = pdb_iter_set_new("001");
     my $setid = pdb_iter_next($iter);
     while (defined($setid) && ($setid ne "")) {
       generate_set($setid);
@@ -91,6 +92,10 @@ while (defined($arg)) {
       generate_set($setid);
       $setid = pdb_iter_next($iter);
     }
+  } elsif ($arg eq "-thumbnail") {
+    $gl_do_thumbnail = 1;
+  } elsif ($arg eq "-nothumbnail") {
+    $gl_do_thumbnail = 0;
   } elsif ($arg eq "-google") {
     $gl_do_google = 1;
   } elsif ($arg eq "-nogoogle") {
@@ -353,17 +358,21 @@ sub generate_image {
     # generate_photoapp($imageid, 400);
   }
 
-  # Always do thumbnails
-  if (pfs_get_thumbnail_location($imageid) eq "") {
+  if ($gl_do_thumbnail) {
     my $outfile = pfs_get_buffer_location($imageid, "thumbnail");
     if ($outfile eq "") {
       print "Can't get thumbnail buffer location for $imageid\n";
     } else {
-      my $rotation = pdb_get_rotation($imageid);
-      my $cmd = pfs_cmd_thumbnail($imageid, $rotation, $outfile);
-      print $cmd, "\n";
-      system($cmd);
-      system("chmod a+w $outfile");
+      my $do_generate = 1;
+      # for now, always regenerate. In the future, only regenerate if something
+      # has changed
+      if ($do_generate) {
+        my $rotation = pdb_get_rotation($imageid);
+        my $cmd = pfs_cmd_thumbnail($imageid, $rotation, $outfile);
+        print $cmd, "\n";
+        system($cmd);
+        system("chmod a+w $outfile");
+      }
     }
   }
 }
@@ -471,20 +480,63 @@ sub generate_set {
   pdb_iter_done($img_iter);
 }
 
+sub help_type {
+  my $type = $_[0];
+  my $flag = $_[1];
+  my $descr = $_[2];
+  my $size = $_[3];
+
+  my $yestype = substr($type . "             ", 0, 12);
+  my $notype = substr("no$type" . "             ", 0, 12);
+
+  my $yessize = "on";
+  my $nosize = "off";
+  if (defined($size)) {
+    $yessize = $size;
+  }
+
+  my $out = "";
+  $out .= " -$yestype $descr";
+  if ($flag) {
+    $out .= " ($yessize)";
+  } else {
+    $out .= " (off)";
+  }
+  $out .= "\n";
+
+  $out .= " -$notype do not $descr";
+  if ($flag) {
+    $out .= " (off)";
+  } else {
+    $out .= " (on)";
+  }
+  $out .= "\n";
+
+  return $out;
+}
+
 sub help {
   print "Usage:\n";
   print "   photo_generate_large <options> <spec>\n";
   print "Options are:\n";
-  print " -google       create google-size photos\n";
-  print " -nogoogle     do not create google-size photos (default)\n";
-  print " -square       create squarey thumbnail-size photos\n";
-  print " -noquare      do not create square thumbnail-size photos (default)\n";
-  print " -normal       create normal-size photos\n";
-  print " -nonormal     do not create normal-size photos (default)\n";
-  print " -large        create large-size photos (default)\n";
-  print " -nolarge      do not create large-size photos\n";
-  print " -photoapp     create photoapp sizes (default)\n";
-  print " -nophotoapp   do not create photoapp sizes\n";
+  print help_type("thumbnail", $gl_do_thumbnail, "create thumbnails");
+  print help_type("google", $gl_do_google, "create Google-size photos");
+  print help_type("square", $gl_do_square, "create squarey thumbnail-size photos");
+  print help_type("normal", $gl_do_normal, "create normal-size photos");
+  print help_type("large", $gl_do_large, "create large-size photos");
+  print help_type("size", $gl_do_size, "create mobile sizes", $gl_size);
+  print help_type("photoapp", $gl_do_photoapp, "create photoapp sizes");
+
+  # print " -google       create google-size photos\n";
+  # print " -nogoogle     do not create google-size photos (default)\n";
+  # print " -square       create squarey thumbnail-size photos\n";
+  # print " -noquare      do not create square thumbnail-size photos (default)\n";
+  # print " -normal       create normal-size photos\n";
+  # print " -nonormal     do not create normal-size photos (default)\n";
+  # print " -large        create large-size photos (default)\n";
+  # print " -nolarge      do not create large-size photos\n";
+  # print " -photoapp     create photoapp sizes (default)\n";
+  # print " -nophotoapp   do not create photoapp sizes\n";
   print "Spec can be one or more of:\n";
   print " -all          process all photos in the database\n";
   print " -new          process the new photos in the database (category 'new')\n";
