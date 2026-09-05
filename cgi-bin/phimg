@@ -22,6 +22,7 @@ my $imageid = parg_get("image");
 my $width = "";
 my $height = "";
 my $mobile_size = "";
+my $photoapp_size = "";
 
 if ($type eq "custom") {
   $width = parg_get("width");
@@ -113,6 +114,28 @@ if ($type eq "custom") {
     $width = 960;
     $height = 540;
     $type = "custom";
+
+  # Support of photoapp sizes
+  } elsif (parg_get("s50") ne "") {
+    $imageid = parg_get("s50");
+    $type = "custom";
+    $photoapp_size = "50";
+  } elsif (parg_get("s100") ne "") {
+    $imageid = parg_get("s100");
+    $type = "custom";
+    $photoapp_size = "100";
+  } elsif (parg_get("s150") ne "") {
+    $imageid = parg_get("s150");
+    $type = "custom";
+    $photoapp_size = "150";
+  } elsif (parg_get("s200") ne "") {
+    $imageid = parg_get("s200");
+    $type = "custom";
+    $photoapp_size = "200";
+  } elsif (parg_get("s400") ne "") {
+    $imageid = parg_get("s400");
+    $type = "custom";
+    $photoapp_size = "400";
   }
 }
 
@@ -138,6 +161,10 @@ if (($imageid eq "random") || ($imageid eq "roku")) {
   $imageid = get_random_image_id($effective_user);
 }
 
+if ($photoapp_size ne "") {
+  display_photoapp($imageid, $photoapp_size);
+  exit(0);
+}
 if ($type eq $PCOM_CUSTOM) {
   my $orientation = parg_get("orientation");
   if ($orientation eq "") {
@@ -505,6 +532,65 @@ sub return_file_with_caption {
 
   # Note: files created with tempfile() are automatically deleted when the
   # script ends, so no need to unlink them.
+}
+
+sub display_photoapp {
+  my $imageid = $_[0];
+  my $size = $_[1];
+
+  if (!pcom_is_valid($imageid)) {
+    if ($imageid eq "") {
+      return_error("No image ID given");
+    } else {
+      return_error("Invalid image '$imageid'");
+    }
+    return;
+  }
+
+  my $fname = pfs_get_photoapp_location($imageid, $size);
+
+  if (! -f $fname) {
+    # Need to generate file
+    my $hasEdited = 0;
+    if (pfs_get_edited_location($imageid) ne "") {
+      $hasEdited = 1;
+    }
+
+    my $rotation = pdb_get_rotation($imageid);
+    my $edited_width = pdb_get_edited_width($imageid);
+    my $edited_height = pdb_get_edited_height($imageid);
+    if (!$edited_width || !$edited_height) {
+      print "Photo $imageid has no edited size: ($edited_width x $editedHeight)\n";
+      return;
+    }
+    if ($hasEdited || ($edited_width > $edited_height)) {
+      # Edited file is pre-rotated; also, no rotation if already
+      # landscape
+      $rotation = "";
+    }
+
+    my $generated_height = 2 * $size;
+    my $generated_width = $edited_width * $generated_height / $edited_height;
+    if (($rotation eq "90") || ($rotation eq "270")) {
+      my $temp = $generated_width;
+      $generated_width = $generated_height;
+      $generated_height = $temp;
+    }
+
+    my $shortval = $generated_height;
+    my $longval = $generated_width;
+    if ($shortval > $longval) {
+      $longval = $generated_height;
+      $shortval = $generated_width;
+    }
+
+    my $cmd = pfs_cmd_resize($imageid, $rotation, $fname,
+      $longval, $shortval, 1, 0, 0, 0, 1, 0);
+
+    system($cmd);
+  }
+
+  return_file($fname);
 }
 
 sub display_custom {

@@ -29,7 +29,7 @@ my $count = 0;
 while (defined($arg)) {
   $count++;
   if ($arg eq "-all") {
-    my $iter = pdb_iter_set_new("20100101");
+    my $iter = pdb_iter_set_new("00101");
     my $setid = pdb_iter_next($iter);
     while (defined($setid) && ($setid ne "")) {
       generate_set($setid);
@@ -155,7 +155,7 @@ sub generate_photoapp {
       my $hasEdited = 0;
       if (pfs_get_edited_location($imageid) ne "") {
         $edittime = pfs_get_time(pfs_get_edited_location($imageid));
-        $hasEdited = true;
+        $hasEdited = 1;
       } elsif (pfs_get_orig_location($imageid) ne "") {
         $edittime = pfs_get_time(pfs_get_orig_location($imageid));
       }
