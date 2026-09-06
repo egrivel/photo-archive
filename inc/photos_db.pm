@@ -1037,7 +1037,7 @@ sub pdb_get_latest {
 
   $query .= "SELECT imageid, sortid, title, description, "
     . "datetime, persons, location, copyright, category, type, "
-    . "latlong, year, "
+    . "latlong, year, quality, "
     . "editedWidth, editedHeight, addedDateTime "
     . "FROM images "
     # for now, hard-coded limits (must change to what the user has access to)
@@ -1067,6 +1067,7 @@ sub pdb_get_latest {
     my $type = psql_get_field(0, "type", $record);
     my $latlong = psql_get_field(0, "latlong", $record);
     my $year = psql_get_field(0, "year", $record);
+    my $quality = psql_get_field(0, "quality", $record);
     my $editedWidth = psql_get_field(0, "editedWidth", $record);
     my $editedHeight = psql_get_field(0, "editedHeight", $record);
     my $addedDateTime = psql_get_field(0, "addedDateTime", $record);
@@ -1085,6 +1086,7 @@ sub pdb_get_latest {
     $result .= json_out("type", $type) . ",\n";
     $result .= json_out("latlong", $latlong) . ",\n";
     $result .= json_out("year", $year) . ",\n";
+    $result .= json_out("quality", $quality) . ",\n";
     $result .= json_out("editedWidth", $editedWidth) . ",\n";
     $result .= json_out("editedHeight", $editedHeight) . ",\n";
     $result .= json_out("addedDateTime", $addedDateTime) . ",\n";
