@@ -39,6 +39,9 @@ my $gl_timezoneoffset = 0;
 # video time zone: hard-coded time zone for Pixel 8 video files, if not EST/EDT
 my $gl_video_time_zone = "";
 
+# if processing while going through args, no need to do default processing
+my $gl_did_processing = 0;
+
 while (defined($arg = shift)) {
   if ($arg eq "-test" || $arg eq "--test") {
     $gl_testmode = 1;
@@ -46,7 +49,7 @@ while (defined($arg = shift)) {
   } elsif ($arg eq "-silent" || $arg eq "--silent") {
     $gl_silent = 1;
     $gl_verbose = 0;
-  } elsif ($arg eq "-r") {
+  } elsif ($arg eq "-r" || $arg eq "-R" || $arg eq "--recursive") {
     $gl_recursive = 1;
   } elsif ($arg eq "-h" || $arg eq "-help" || $arg eq "--help" || $arg eq "-?")
   {
@@ -98,12 +101,33 @@ while (defined($arg = shift)) {
     $gl_sourcedir = $arg;
     $gl_sourcedir =~ s/\/$//;
     print "Set source directory to $arg\n";
+  } elsif (-f $arg) {
+    # Single file to process (particularly useful for testing)
+    if ($arg =~ /^(.*?)\/([^\/]+\.\w+)$/) {
+      my $dir = $1;
+      my $file = $2;
+      $dir =~ s/\/$//;
+      if ($dir eq "") {
+        $dir = ".";
+      }
+      if (! -d $dir) {
+        die "Argument $arg: looks like file name but invalid directory\n";
+      }
+      print "Got dir '$dir', file '$file'\n";
+      process_photo($dir, $file);
+      $gl_did_processing = 1;
+    } else {
+      process_photo(".", $arg);
+      $gl_did_processing = 1;
+    }
   } else {
     die "Unrecognized argument $arg\n";
   }
 }
 
-process($gl_sourcedir);
+if (!$gl_did_processing) {
+  process($gl_sourcedir);
+}
 exit(0);
 
 # --------------------------------------------------------------------------
@@ -251,7 +275,7 @@ sub process {
 
 sub help {
   print "Usage:\n";
-  print "  process_digital [options] [directory]\n";
+  print "  process_digital [options] [directory|photo file]\n";
   print "Processes all the photos for inclusion into the photo archive.\n";
   print "If no directory is given, the current directory is processed.\n";
   print "Options:\n";
@@ -453,7 +477,7 @@ sub process_photo {
 
   my $camera_model = "";
 
-  print "Process $dir/$fname\n" if ($gl_verbose);
+  print "Process file $dir/$fname\n" if ($gl_verbose);
   open(FILE, "exiftool -api largefilesupport=1 \"$dir/$fname\"|")
     || die "Cannot process '$dir/$fname'\n";
   while (<FILE>) {
@@ -992,7 +1016,12 @@ sub process_photo {
     create_directory("$set_directory/edited");
     create_directory("$set_directory/custom");
 
-    if (!$gl_testmode) {
+    if ($gl_testmode) {
+      print "Set database info for $imageid:\n";
+      print "   portrait=$do_portrait, rotate=$newer_rotate, latlong=$latlong,\n";
+      print "   time zone=$timezone, DST=$dst, is movie=$is_mov,\n";
+      print "   is kids=$is_kids, is freeform=$is_freeform.\n";
+    } else {
       set_database_info(
         $imageid, $do_portrait, $newer_rotate,
         $latlong, $timezone, $dst,

@@ -5,6 +5,9 @@
 
 use photos_common;
 
+# Using Time::Piece to deal with time stamps
+use Time::Piece;
+
 sub pfs_get_time {
   my $fname = $_[0];
   my @times = stat($_[0]);
@@ -507,7 +510,7 @@ sub pfs_get_file_dimensions {
         close SIZE;
       }
     } elsif ($fname =~ /\.mov$/ || $fname =~ /\.mp4$/i) {
-      if (open(SIZE, "exiftool $fname|")) {
+      if (open(SIZE, "exiftool \"$fname\"|")) {
         while (<SIZE>) {
           if (/Image Size\s+:\s+(\d+)x(\d+)\s*$/) {
             $width = $1;
@@ -517,7 +520,7 @@ sub pfs_get_file_dimensions {
         }
       }
     } else {
-      if (open(SIZE, "identify -quiet $fname|")) {
+      if (open(SIZE, "identify -quiet \"$fname\"|")) {
         while (<SIZE>) {
           if (/(\d+)x(\d+)/) {
             $width = $1;
@@ -1121,6 +1124,338 @@ sub pfs_delete_set {
   # removed
   system("rm -rf \"$basedir\"");
   return 1;
+}
+
+sub pfs_get_exif_data {
+  my $fname = $_[0];
+
+  my %data;
+
+  open(FILE, "exiftool -api largefilesupport=1 \"$fname\"|")
+    || die "Cannot get exif data from '$fname'\n";
+  while (<FILE>) {
+    chomp();
+    if (/^(.*?)\s*:\s*(.*?)\s*$/s) {
+      my $label = $1;
+      my $value = $2;
+      $data{$label} = $value;
+    } elsif (/./) {
+      print "$dir/$fname: unknown line '$_'\n";
+    }
+  }
+  close FILE;
+
+  return \%data;
+}
+
+sub get_days_in_month {
+  my $mon = $_[0];
+  my $year = $_[1];
+
+  my $daysInMonth = 31;
+  if ($mon eq "04" || $mon eq "06" || $mon eq "09" || $mon eq "11") {
+    $daysInMonth = 30;
+  } elsif ($mon eq "02") {
+    if (($year % 4) == 0) {
+      $daysInMonth = 29;
+    } else {
+      $daysInMonth = 28;
+    }
+  }
+
+  return $daysInMonth;
+}
+
+#
+# Identify a photo. This can be used to identify new photos coming into the
+# archive. It inspects the directory name, the file name, and the contents of
+# the file, and returns an object that represents the photo.
+#
+# Additional configuration can be passed in, like what time zone to use for the
+# processing (default is the local time zone) or whether or not to apply daylight
+# savings time (default is based on the photo's time and time zone).
+sub pfs_identify {
+  my $dir = $_[0];
+  my $fname = $_[1];
+
+  my %data;
+
+  $data{"directory"} = $dir;
+  $data{"fileName"} = $fname;
+
+  # print "getting exif data\n";
+  my $exifData = pfs_get_exif_data("$dir/$fname");
+  # print "got exif data:\n";
+  # foreach my $key (sort keys %$exifData) {
+  #   print "$key = '" . %$exifData{$key} . "'\n";
+  # }
+  # print "end exif data\n";
+
+  my $NIKON_D750 = "NIKON D750";
+  my $PIXEL_3 = "Pixel 3";
+  my $PIXEL_8 = "Pixel 8";
+  my $WHATSAPP = "WhatsApp";
+  my $SIGNAL = "Signal";
+  my $SCREENSHOT = "Screenshot";
+  my %validModels = (
+    $NIKON_D750 => 1,
+    $PIXEL_3 => 1,
+    $PIXEL_8 => 1,
+    $WHATSAPP => 1,
+    $SIGNAL => 1,
+    $SCREENSHOT => 1
+  );
+  my $model = "";
+  if (defined(%$exifData{"Camera Model Name"})) {
+    $model = %$exifData{"Camera Model Name"};
+  } elsif (defined(%$exifData{"Model"})) {
+    # D750 movies use this tag
+    $model = %$exifData{"Model"};
+  } elsif (defined(%$exifData{"Android Model"})) {
+    # Pixel 8 movies use this tag
+    $model = %$exifData{"Android Model"};
+  } elsif ($fname =~ /^PXL/) {
+    # must be an older model; the only older Pixel we have is
+    # a Pixel 3
+    $model = $PIXEL_3;
+  } elsif ($fname =~ /^WhatsApp/) {
+    # WhatsApp files don't have any useful information
+    $model = $WHATSAPP;
+  } elsif ($fname =~ /^signal/) {
+    # Signal files also don't have much useful information
+    $model = $SIGNAL;
+  } elsif ($fname =~ /^Screenshot/) {
+    # Android screenshots
+    $model = $SCREENSHOT;
+  } else {
+    print "Can't find model in '$dir/$fname'\n";
+  }
+  if (!defined($validModels{$model})) {
+    print "Don't know model $model\n";
+  }
+  $data{"model"} = $model;
+
+  my $timezone = "";
+  my $dst = "";
+  if (defined(%$exifData{"Timezone"})) {
+    $timezone = %$exifData{"Timezone"};
+  } elsif (defined(%$exifData{"Time Zone"})) {
+    $timezone = %$exifData{"Time Zone"};
+  }
+  if (defined(%$exifData{"Daylight Savings"})) {
+    $dst = %$exifData{"Daylight Savings"};
+    # Normalize on No/Yes
+    if ($dst eq "Off") {
+      $dst = "No";
+    } elsif ($dst eq "On") {
+      $dst = "Yes";
+    }
+  }
+
+  # Timestamp in the format "YYYY-MM-DD hh:mm:ss"
+  my $imageTimestamp = "";
+  if (defined(%$exifData{"Create Date"})) {
+    my $value = %$exifData{"Create Date"};
+    if ($value =~ /^(\d\d\d\d):(\d\d):(\d\d) (\d\d:\d\d:\d\d)/) {
+      # convert to standard timestamp format
+      $imageTimestamp = "$1-$2-$3 $4";
+      # Check if there is a timezone offset
+      if ($value =~ /([+-]\d\d:\d\d)/) {
+        my $derivedTimezone = $1;
+        if ($timezone eq "") {
+          $timezone = $derivedTimezone;
+        } elsif ($timezone ne $derivedTimezone) {
+          print "Create Date: Timezone: $timezone and $derivedTimezone\n";
+        }
+      }
+    } else {
+      print "$fname: unknown Create Date $value\n";
+    }
+  } elsif (defined(%$exifData{"Date/Time"})) {
+    # Use the Date/Time only if there is no Create Date. In case
+    # the photo is modified in-camera, the Date/Time will be the
+    # timestamp for the original photo (which would make this a
+    # duplicate), but the Create Date will be the real timestamp
+    # for this photo.
+    my $value = %$exifData{"Date/Time"};
+    if ($value =~ /^(\d\d\d\d):(\d\d):(\d\d) (\d\d:\d\d:\d\d)/) {
+      # convert to standard timestamp format
+      $imageTimestamp = "$1-$2-$3 $4";
+      # Check if there is a timezone offset
+      if ($value =~ /([+-]\d\d:\d\d)/) {
+        my $derivedTimezone = $1;
+        if ($timezone eq "") {
+          $timezone = $derivedTimezone;
+        } elsif ($timezone ne $derivedTimezone) {
+          print "Date/Time: Timezone: $timezone and $derivedTimezone\n";
+        }
+      }
+    } else {
+      print "$fname: unkown Date/Time $value\n";
+    }
+  } elsif (defined(%$exifData{"Date/Time Original"})) {
+      # Use the Date/Time if there is no Date/Time
+    my $value = %$exifData{"Date/Time Original"};
+    if ($value =~ /^(\d\d\d\d):(\d\d):(\d\d) (\d\d:\d\d:\d\d)/) {
+      # convert to standard timestamp format
+      $imageTimestamp = "$1-$2-$3 $4";
+      # Check if there is a timezone offset
+      if ($value =~ /([+-]\d\d:\d\d)/) {
+        my $derivedTimezone = $1;
+        if ($timezone eq "") {
+          $timezone = $derivedTimezone;
+        } elsif ($timezone ne $derivedTimezone) {
+          print "Date/Time Original: Timezone: $timezone and $derivedTimezone\n";
+        }
+      }
+    } else {
+      print "$fname: unknown Date/Time Original $value\n";
+    }
+  }
+  if (($model eq $PIXEL_3 || $model eq $PIXEL_8) && $timezone eq "" && $fname =~ /\.mp4$/) {
+    # The Pixel video format stores the time in UTC rather than local time.
+    # Need to convert the time back to local time
+    my $utc = $imageTimestamp;
+    my $time = Time::Piece->strptime($utc, '%Y-%m-%d %H:%M:%S');
+    my $local_time = localtime($time->epoch);
+    $imageTimestamp = $local_time->strftime('%Y-%m-%d %H:%M:%S');
+
+    # Now figure out the time zone, including potential DST. Use the `date`
+    # command to take the UTC input (with a 'T' in the middle and a 'Z' at the
+    # end) into the local time plus time zone
+    $utc =~ s/ /T/;
+    $utc .= "Z";
+    # format is YYYY-MM-DD hh:mm:ss format with time zone at the end
+    my $format = '+%Y-%m-%d %H:%M:%S %Z';
+    open(PIPE, "date \"$format\" --date=$utc|")
+      || die "Cannot determine time zone for $utc\n";
+    while (<PIPE>) {
+      # should just be a single line
+      chomp();
+      if (/^(\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d) (\w\w\w)$/) {
+        my $tz = $2;
+        if ($tz eq "EST") {
+          $timezone = '-05:00';
+          $dst = 'No';
+        } elsif ($tz eq "EDT") {
+          $timezone = '-05:00';
+          $dst = 'Yes';
+        }
+      }
+    }
+    close PIPE;
+  }
+  if ($imageTimestamp eq "" || $imageTimestamp eq "0000-00-00 00:00:00") {
+    if ($fname =~ /WhatsApp (Image|Video) (\d\d\d\d-\d\d-\d\d) at (\d\d)\.(\d\d)\.(\d\d)/) {
+      $imageTimestamp = "$2 $3:$4:$5";
+    } elsif ($fname =~ /signal-(\d\d\d\d-\d\d-\d\d)-(\d\d)(\d\d)(\d\d)/) {
+      $imageTimestamp = "$1 $2:$3:$4";
+    }
+  }
+
+  my $imageDate = "";
+  my $imageTime = "";
+  if ($imageTimestamp =~ /^(\d\d\d\d-\d\d-\d\d) (\d\d:\d\d:\d\d)$/) {
+    $imageDate = $1;
+    $imageTime = $2;
+  }
+  $data{"imageDate"} = $imageDate;
+  $data{"imageTime"} = $imageTime;
+  $data{"timezone"} = $timezone;
+  $data{"dst"} = $dst;
+
+  my $time = pfs_get_time("$dir/$fname");
+  my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime($time);
+  $year += 1900;
+  $mon++;
+  $mon = "0$mon" if ($mon < 10);
+  $mday = "0$mday" if ($mday < 10);
+  $hour = "0$hour" if ($hour < 10);
+  $min = "0$min" if ($min < 10);
+  $sec = "0$sec" if ($sec < 10);
+  my $addedDateTime = "$year-$mon-$mday $hour:$min:$sec";
+  $data{"addedDateTime"} = $addedDateTime;
+
+  $year = "";
+  if ($imageDate =~ /^(\d\d\d\d)/) {
+    $year = $1;
+  }
+  $data{"year"} = $year;
+
+  if ($fname =~ /\.((mov)|(mp4))$/i) {
+    $data{"type"} = "MOV";
+  } else {
+    $data{"type"} = "";
+  }
+
+  my $setId = "";
+  my $imageId = "";
+  if($imageDate =~ /(\d\d\d\d)-(\d\d)-(\d\d)/) {
+    $setId = "$1$2$3";
+    $imageId = "$1$2$3-";
+  }
+  if ($imageTime =~ /(\d\d):(\d\d):(\d\d)/) {
+    $imageId .= "$1$2$3";
+  }
+  my $sortId = pdb_create_sortid($imageId, $timezone, $dst);
+  $data{"setId"} = $setId;
+  $data{"imageId"} = $imageId;
+  $data{"sortId"} = $sortId;
+
+  my $rotation = "0";
+  if (defined(%$exifData{"Orientation"})) {
+    $value = %$exifData{"Orientation"};
+    if ($value eq "rotate 90" || $value eq "Rotate 90 CW") {
+      $rotation = "90"
+    } elsif ($value eq "rotate 270" || $value eq "Rotate 270 CW") {
+      $rotation = "270"
+    } elsif ($value eq "rotate 180") {
+      $rotation = "180";
+    } elsif ($value eq "Horizontal (normal)" || $value eq "Unknown (0)") {
+      # no rotation
+      $rotation = 0;
+    } else {
+      print "Unknown Orientation $value\n";
+    }
+  } elsif (defined(%$exifData{"Rotation"})) {
+    $value = %$exifData{"Rotation"};
+    if ($value eq "0" || $value eq "90" || $value eq "180" || $value eq "270") {
+      $rotation = $value;
+    } else {
+      print "Unknown Rotation $value\n";
+    }
+  }
+  $data{"rotation"} = $rotation;
+
+  my $latlong = "";
+  if (defined(%$exifData{"GPS Position"})) {
+    $latlong = %$exifData{"GPS Position"}
+  }
+  $data{"latlong"} = $latlong;
+
+  my ($width, $height) = pfs_get_file_dimensions("$dir/$fname");
+  $data{"origWidth"} = $width;
+  $data{"origHeight"} = $height;
+
+  my $editedWidth = $width;
+  my $editedHeight = $height;
+  if ($rotation eq "90" || $rotation eq "270") {
+    $editedWidth = $height;
+    $editedHeight = $width;
+  }
+  $data{"editedWidth"} = $editedWidth;
+  $data{"editedHeight"} = $editedHeight;
+
+  my $orientation = "landscape";
+  if ($editedHeight > $editedWidth) {
+    $orientation = "portrait";
+  }
+  $data{"orientation"} = $orientation;
+
+  # use:
+  #   $data = pfs_identify(...);
+  #   my $value = %$data{"name"}
+  return \%data;
 }
 
 return 1;

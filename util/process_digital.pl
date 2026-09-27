@@ -30,6 +30,9 @@ my $gl_timeoffset = 0;
 # time zone offset: correction for the time zone reported by the camera
 my $gl_timezoneoffset = 0;
 
+# if processing while going through args, no need to do default processing
+my $gl_did_processing = 0;
+
 while (defined($arg = shift)) {
   if ($arg eq "-test") {
     $gl_testmode = 1;
@@ -68,12 +71,29 @@ while (defined($arg = shift)) {
     $gl_sourcedir = $arg;
     $gl_sourcedir =~ s/\/$//;
     print "Set source directory to $arg\n";
+  } elsif (-f $arg) {
+    # Single file to process (particularly useful for testing)
+    if ($arg =~ /^(.*?)\/([^\/]*\/)?([^\/]+\.\w+)$/) {
+      my $dir = $1;
+      my $file = $2;
+      $dir =~ s/\/$//;
+      if ($dir eq "") {
+        $dir = ".";
+      }
+      if (! -d $dir) {
+        die "Argument $arg: looks like file name but invalid directory\n";
+      }
+      process_photo($dir, $file);
+      $gl_did_processing = 1;
+    }
   } else {
     die "Unrecognized argument $arg\n";
   }
 }
 
-process_directory($gl_sourcedir);
+if (!$gl_did_processing) {
+  process_directory($gl_sourcedir);
+}
 
 sub process_directory {
   my $dir = $_[0];
@@ -439,7 +459,9 @@ sub process_photo {
 
     if ($gl_testmode) {
       my $sortid = pdb_create_sortid($imageid, $timezone, $dst);
-      print "Image $fname: image ID $imageid --> sort ID $sortid\n";
+      print "Image $fname --> image ID $imageid, sort ID $sortid\n";
+      print "   portrait = $do_portrait, rotate = $newer_rotate, latlong = $latlong\n";
+      print "   timezone = $timezone, DST = $dst, is movie = $is_mov, is kids = $is_kids\n";
       return;
     }
 

@@ -62,6 +62,8 @@ if ($action eq "all") {
 } elsif ($action eq "log") {
   my $message = parg_get("message");
   $data = do_log($message);
+} elsif ($action eq "persons") {
+  $data = get_person_list();
 }
 
 if ($data eq "") {
@@ -604,4 +606,38 @@ sub do_log {
     close FILE;
     return "{\"OK\": 1}";
   }
+}
+
+sub get_person_list {
+  my %persons = ppers_get_person_list(1);
+
+  my $out = "";
+  $out .= "{\n";
+  $out .= "\"list\": [\n";
+  foreach my $key (sort (keys %persons)) {
+    $sorted{$persons{$key}."|".$key} = $key;
+  }
+  my $isFirst = 1;
+  foreach my $key (sort (keys %sorted)) {
+    my $name = $key;
+    my $descr = "";
+    my $persid = "";
+    my $count = 0;
+    if ($name =~ s/\|(.*)\|(.*)\|(.*?)$//) {
+      $descr = $1;
+      $count = $2;
+      $persid = $3;
+      if (!$isFirst) {
+        $out .= ",\n";
+      }
+      $out .= "{\n";
+      $out .= "\"name\": \"$name\",\n";
+      $out .= "\"descr\": \"$descr\"\n";
+      $out .= "}";
+      $isFirst = 0;
+    }
+  }
+  $out .= "\n";
+  $out .= "]\n";
+  $out .= "}\n";
 }
