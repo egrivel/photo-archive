@@ -1417,6 +1417,19 @@ sub pdb_iter_filter_freeform {
   $iter_filter[$iter] .= "OR orientation = '$PCOM_FREEFORM_L') ";
 }
 
+sub pdb_iter_filter_sql {
+  my $iter = $_[0];
+  my $sql = $_[1];
+
+  # This function is called internally and we trust that the SQL passed in is
+  # valid
+  if ($iter_filter[$iter] ne "") {
+    $iter_filter[$iter] .= " AND ($sql)";
+  } else {
+    $iter_filter[$iter] = $sql;
+  }
+}
+
 sub pdb_do_iter {
   my $iter = $_[0];
   my $query = $_[1];

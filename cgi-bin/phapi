@@ -1,5 +1,6 @@
 #!/usr/bin/perl -w -I .
 
+use JSON::PP;
 # Provide an API to get information from the photo archive
 use inc_all;
 
@@ -64,6 +65,8 @@ if ($action eq "all") {
   $data = do_log($message);
 } elsif ($action eq "persons") {
   $data = get_person_list();
+} elsif ($action eq "search2") {
+  $data = do_search(parg_get("data"));
 }
 
 if ($data eq "") {
@@ -640,4 +643,156 @@ sub get_person_list {
   $out .= "\n";
   $out .= "]\n";
   $out .= "}\n";
+}
+
+sub parseSearchExpression {
+  my $nodeRef = $_[0];
+  my $sql = "";
+
+  my $type = %$nodeRef{"type"};
+  if ($type eq "STRING") {
+    my $value = %$nodeRef{"value"};
+    $value = psql_encode($value);
+    $sql = "(title LIKE '\%$value\%' OR description LIKE '\%$value\%')";
+  } elsif (($type eq "AND") || ($type eq "OR")) {
+    my $left = %$nodeRef{"left"};
+    my $right = %$nodeRef{"right"};
+    if (defined($left) && defined($right)) {
+      my $leftSql = parseSearchExpression($left);
+      my $rightSql = parseSearchExpression($right);
+      $sql = "($leftSql $type $rightSql)";
+    } elsif (defined($left)) {
+      # left only
+      $sql = parseSearchExpression($left);
+    } elsif (defined($right)) {
+      # shouldn't happen, but what the heck
+      $sql = parseSearchExpression($right);
+    }
+  } elsif ($type eq "NOT") {
+    my $left = %$nodeRef{"left"};
+    if (defined($left)) {
+      my $leftSql = parseSearchExpression($left);
+      $sql = "(NOT $leftSql)";
+    }
+  } elsif ($type eq "DATE") {
+    my $value = %$nodeRef{"value"};
+    if (defined($value)) {
+      if ($value =~ /^(\d\d\d\d)-(\d\d)-(\d\d)$/) {
+        $value = "$1$2$3";
+        # Date search presumes a digital photo, and for them, the data is the
+        # set Id...
+        $sql = "(setid = '$value')";
+      }
+    }
+  } elsif ($type eq "YEAR") {
+    my $value = %$nodeRef{"value"};
+    if (defined($value)) {
+      if ($value =~ /^(\d\d\d\d)$/) {
+        $sql = "(year = '$value')";
+      }
+    }
+  } elsif ($type eq "QUALITY") {
+    my $value = %$nodeRef{"value"};
+    if (defined($value)) {
+      if ($value =~ /^>(\d)$/) {
+        $sql = "(quality > $1)";
+      } elsif ($value =~ /^<(\d)$/) {
+        $sql = "(quality < $1)";
+      }
+    }
+  } elsif ($type eq "PERSON") {
+    my $personName = %$nodeRef{"value"};
+    my $id = ppers_get_id($personName, 0);
+    if ($id) {
+      my $filter = ppers_get_filter($id);
+      $sql = "(imageid in $filter)";
+    }
+  }
+
+  return $sql;
+}
+
+sub photo_get_info {
+  my $imageId = $_[0];
+  my $result = "";
+
+  my $sortId = pdb_get_sortid($imageId);
+  my $title = pdb_get_title($imageId);
+  my $description = pdb_get_description($imageId);
+  my $orientation = pdb_get_orientation($imageId);
+  my $dateTime = pdb_get_datetime($imageId);
+  my $persons = pdb_get_persons($imageId);
+  my $location = pdb_get_location($imageId);
+  my $copyright = pdb_get_copyright($imageId);
+  my $category = pdb_get_category($imageId);
+  my $type = pdb_get_type($imageId);
+  my $latlong = pdb_get_latlong($imageId);
+  my $year = pdb_get_year($imageId);
+  my $quality = pdb_get_quality($imageId);
+  my $editedWidth = pdb_get_edited_width($imageId);
+  my $editedHeight = pdb_get_edited_height($imageId);
+  my $addedDateTime = pdb_get_added_date_time($imageId);
+
+  $result .= "{";
+  $result .= json_out("imageid", $imageId) . ",\n";
+  $result .= json_out("sortid", $sortId) . ",\n";
+  $result .= json_out("title", $title) . ",\n";
+  $result .= json_out("description", $description) . ",\n";
+  $result .= json_out("dateTime", $dateTime) . ",\n";
+  $result .= json_out("persons", $persons) . ",\n";
+  $result .= json_out("location", $location) . ",\n";
+  $result .= json_out("copyright", $copyright) . ",\n";
+  $result .= json_out("category", $category) . ",\n";
+  $result .= json_out("type", $type) . ",\n";
+  $result .= json_out("latlong", $latlong) . ",\n";
+  $result .= json_out("year", $year) . ",\n";
+  $result .= json_out("quality", $quality) . ",\n";
+  $result .= json_out("editedWidth", $editedWidth) . ",\n";
+  $result .= json_out("editedHeight", $editedHeight) . ",\n";
+  $result .= json_out("addedDateTime", $addedDateTime) . ",\n";
+  $result .= json_out("cursor", "('$addedDateTime', '$sortId')") . "\n";
+  $result .= "}";
+
+  return $result;
+}
+
+sub do_search {
+  my $search = $_[0];
+  if (!defined($search) || $search eq "") {
+    return "[]";
+  }
+
+  my $jsonRef = decode_json($search);
+  my $sql = parseSearchExpression($jsonRef);
+  if ($sql eq "") {
+    return "\"search not supported\"";
+  }
+  my $value = %$jsonRef{"value"};
+  my $out = "";
+  $out .= "{\n";
+  $out .= json_out("message", "doing search") . ",\n";
+  $out .= json_out("search", psql_encode($search)) . ",\n";
+  $out .= json_out("data", $sql) . ",\n";
+
+  $out .= "\"photos\": [\n";
+  my $iter = pdb_iter_new("00101", 50, 0);
+  pdb_iter_filter_sql($iter, $sql);
+  my $isFirst = 1;
+  my $imageId = pdb_iter_next($iter);
+  my $count = 0;
+  my $limit = 50;
+  while (defined($imageId) && ($imageId ne "")) {
+    if (!$isFirst) {
+      $out .= ",";
+    }
+    $isFirst = 0;
+    $out .= photo_get_info($imageId);
+    $count++;
+    last if ($count >= $limit);
+    $imageId = pdb_iter_next($iter);
+  }
+  $out .= "]\n";
+  $out .= "}\n";
+
+  return $out;
 }
