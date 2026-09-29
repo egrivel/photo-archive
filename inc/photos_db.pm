@@ -1430,6 +1430,15 @@ sub pdb_iter_filter_sql {
   }
 }
 
+sub pdb_iter_cursor {
+  my $iter = $_[0];
+  my $cursor = $_[1];
+
+  # Use the sort ID we already use for getting the next/previous
+  # to implement the cursor functionality
+  $iter_sortid[$iter] = $cursor;
+}
+
 sub pdb_do_iter {
   my $iter = $_[0];
   my $query = $_[1];

@@ -714,6 +714,7 @@ sub parseSearchExpression {
 
 sub photo_get_info {
   my $imageId = $_[0];
+  my $useAddedDateTime = $_[1];
   my $result = "";
 
   my $sortId = pdb_get_sortid($imageId);
@@ -750,7 +751,7 @@ sub photo_get_info {
   $result .= json_out("editedWidth", $editedWidth) . ",\n";
   $result .= json_out("editedHeight", $editedHeight) . ",\n";
   $result .= json_out("addedDateTime", $addedDateTime) . ",\n";
-  $result .= json_out("cursor", "('$addedDateTime', '$sortId')") . "\n";
+  $result .= json_out("cursor", "$sortId") . "\n";
   $result .= "}";
 
   return $result;
@@ -758,6 +759,14 @@ sub photo_get_info {
 
 sub do_search {
   my $search = $_[0];
+  my $cursor = parg_get("cursor");
+  my $limit = parg_get("limit");
+  if (!defined($limit) || $limit eq "") {
+    $limit = 50;
+  } else {
+    $limit = $limit + 0;
+  }
+
   if (!defined($search) || $search eq "") {
     return "[]";
   }
@@ -775,23 +784,32 @@ sub do_search {
   $out .= json_out("data", $sql) . ",\n";
 
   $out .= "\"photos\": [\n";
-  my $iter = pdb_iter_new("00101", 50, 0);
+  my $iter = pdb_iter_new("00101", $limit + 1, 0);
   pdb_iter_filter_sql($iter, $sql);
+  if (defined($cursor) && $cursor ne "") {
+    pdb_iter_cursor($iter, $cursor);
+  }
   my $isFirst = 1;
   my $imageId = pdb_iter_next($iter);
   my $count = 0;
-  my $limit = 50;
   while (defined($imageId) && ($imageId ne "")) {
-    if (!$isFirst) {
-      $out .= ",";
+    if ($count < $limit) {
+      if (!$isFirst) {
+        $out .= ",";
+      }
+      $out .= photo_get_info($imageId, 0);
     }
     $isFirst = 0;
-    $out .= photo_get_info($imageId);
     $count++;
-    last if ($count >= $limit);
+    last if ($count >= ($limit + 1));
     $imageId = pdb_iter_next($iter);
   }
-  $out .= "]\n";
+  $out .= "],\n";
+  if ($count >= ($limit + 1)) {
+    $out .= "\"hasMore\": true";
+  } else {
+    $out .= "\"hasMore\": false";
+  }
   $out .= "}\n";
 
   return $out;
