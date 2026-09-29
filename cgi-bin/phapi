@@ -784,7 +784,12 @@ sub do_search {
   $out .= json_out("data", $sql) . ",\n";
 
   $out .= "\"photos\": [\n";
+
   my $iter = pdb_iter_new("00101", $limit + 1, 0);
+  # Make sure only those photos the user should see are coming back
+  pdb_iter_filter_category($iter, put_types());
+  pdb_iter_filter_min_quality($iter, put_quality());
+
   pdb_iter_filter_sql($iter, $sql);
   if (defined($cursor) && $cursor ne "") {
     pdb_iter_cursor($iter, $cursor);
