@@ -11,15 +11,12 @@ use inc_all;
 use utf8;
 binmode(STDOUT, ":utf8");
 
-# Allow access from photo app
-print "Access-Control-Allow-Origin: *\n";
-# Also, make sure we properly declare the content as UTF-8
-print "Content-type: application/json;charset=utf-8\n\n";
 my $data = "";
 
 put_init();
-# The logout function effectively "logs in" the guest user
-pusr_logout();
+put_restore_session(parg_get("sessionId"));
+# # The logout function effectively "logs in" the guest user
+# pusr_logout();
 
 my $action = parg_get("action");
 if ($action eq "all") {
@@ -67,11 +64,21 @@ if ($action eq "all") {
   $data = get_person_list();
 } elsif ($action eq "search2") {
   $data = do_search(parg_get("data"));
+} elsif ($action eq "login") {
+  $data = do_login(parg_get("data"));
 }
+
+# Allow access from photo app
+print "Access-Control-Allow-Origin: *\n";
+# Also, make sure we properly declare the content as UTF-8
+print "Content-type: application/json;charset=utf-8\n";
+print "\n";
 
 if ($data eq "") {
   print "{\"error\":\"No Action or unrecognized action\"}";
 } else {
+  my $sessionid = pht_read_sessionid();
+  $data =~ s/\s*}\n?$/,\n"sessionId":"$sessionid"\n}\n/s;
   print $data;
 }
 
@@ -815,6 +822,30 @@ sub do_search {
   } else {
     $out .= "\"hasMore\": false";
   }
+  $out .= "}\n";
+
+  return $out;
+}
+
+sub do_login {
+  my $user = parg_get("name");
+  my $pwd = parg_get("password");
+
+  my $out = "";
+  $out .= "{\n";
+
+  if (pusr_login($user, $pwd)) {
+    # Why removing this? Will it automatically get set later?
+    pses_set($PUSR_IMAGE_SIZE, "");
+    pses_set($PUSR_VIEW_QUALITY, "");
+    pses_set("user", $user);
+    $out .= json_out("message", "Login successful") . ",\n";
+    $out .= json_out("user", $user) . ",\n";
+    $out .= json_out("name", pusr_get_fullname()) . "\n";
+  } else {
+    $out .= "\"message\": \"Login for $user failed.\"";
+  }
+
   $out .= "}\n";
 
   return $out;

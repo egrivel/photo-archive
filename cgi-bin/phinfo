@@ -9,7 +9,7 @@ use inc_all;
 use Image::ExifTool 'ImageInfo';
 
 put_init();
-put_restore_session();
+put_restore_session(pht_get_sessionid());
 
 my $imageid = parg_get("imageid");
 disp_info_page($imageid);

@@ -14,7 +14,7 @@ push @INC, "$localdir/../inc";
 require "photos_util.pm";
 
 put_init();
-put_restore_session();
+put_restore_session(pht_get_sessionid());
 
 #pht_set_systemmessage("Parts of the photo archive are currently unavailable due to a hard drive crash on May 4. The archive is in the process of being restored from a backup. I expect the archive to be completely back by May 9, 2012.<br />Even after the complete restore, please expect delays in the rendering of the photos since the cache has to be re-built. I apologize for the inconvenience &mdash; <em>Eric Grivel</em>");
 #pht_set_systemmessage("The photo archive has been restored as far as possible. You may find that the first time a set or photo is displayed, it takes extra long to display that set or photo because the cache is being re-build. I apologize for the inconvenience &mdash; <em>Eric Grivel</em>");

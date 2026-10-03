@@ -24,37 +24,38 @@ my $put_has_required;
 # Initializes everything
 #
 sub put_init {
-    psql_init();
-    parg_init();
-    pdb_init();
-    pht_init();
-    pses_init();
-    pusr_init();
+  psql_init();
+  parg_init();
+  pdb_init();
+  pht_init();
+  pses_init();
+  pusr_init();
 }
 
 sub put_restore_session {
-    # Restore the session
-    my $session = pht_get_sessionid();
-    if ($session eq "") {
-        $session = pses_new();
-        pht_set_sessionid($session);
-    } else {
-        pses_restore($session);
-    }
+  # Restore the session
+  my $session = $_[0];
+  if ($session eq "") {
+    $session = pses_new();
+    pht_set_sessionid($session);
+  } else {
+    pses_restore($session);
+    pht_set_sessionid($session);
+  }
 
-    # Set the IP address of the user of this session
-    if (defined($ENV{"REMOTE_ADDR"} && ($ENV{"REMOTE_ADDR"} ne ""))) {
-        pses_set("client", $ENV{"REMOTE_ADDR"});
-    }
+  # Set the IP address of the user of this session
+  if (defined($ENV{"REMOTE_ADDR"} && ($ENV{"REMOTE_ADDR"} ne ""))) {
+    pses_set("client", $ENV{"REMOTE_ADDR"});
+  }
 
-    # If a user is logged in, re-login the user
-    my $user = pses_get("user");
-    if ($user ne "") {
-        pusr_reload($user);
-    } else {
-        # Otherwise, load the "guest"  settings
-        pusr_reload($PUSR_GUEST_ACCOUNT);
-    }
+  # If a user is logged in, re-login the user
+  my $user = pses_get("user");
+  if ($user ne "") {
+    pusr_reload($user);
+  } else {
+    # Otherwise, load the "guest"  settings
+    pusr_reload($PUSR_GUEST_ACCOUNT);
+  }
 }
 
 sub put_login_link {

@@ -14,61 +14,73 @@ for ($arg_nr = 0; defined($ARGV[$arg_nr]); $arg_nr++) {
 }
 
 sub url_decode {
-   my $text = $_[0];
-   $text =~ s/\+/ /g;
+  my $text = $_[0];
+  $text =~ s/\+/ /g;
 
-   # Convert %XX from hex numbers to alphanumeric
-   $text =~ s/%(..)/pack("C",hex($1))/ge;
+  # Convert %XX from hex numbers to alphanumeric
+  $text =~ s/%(..)/pack("C",hex($1))/ge;
 
-   # Decode the series of octets into an internal Perl string
-   return decode('UTF-8', $text);
+  # Decode the series of octets into an internal Perl string
+  return decode('UTF-8', $text);
 }
 
 sub parg_init {
-    my $query = "";
-    if (defined($ENV{"REQUEST_METHOD"})) {
-        my $method = uc($ENV{"REQUEST_METHOD"});
-        if ($method eq "POST") {
-            my $content_length = $ENV{"CONTENT_LENGTH"};
-            while (<>) {
-                $query .= $_;
-                last if (length($query) >= $content_length);
-            }
-        } elsif ($method eq "GET") {
-            if (defined($ENV{"QUERY_STRING"})) {
-                $query = $ENV{"QUERY_STRING"};
-            }
-        }
-    } else {
-        # if no request method, maybe command line?
-        $query = $parg_cmdline;
+  my $query = "";
+  if (defined($ENV{"REQUEST_METHOD"})) {
+    my $method = uc($ENV{"REQUEST_METHOD"});
+    if ($method eq "POST") {
+      my $content_length = $ENV{"CONTENT_LENGTH"};
+      while (<>) {
+        $query .= $_;
+        last if (length($query) >= $content_length);
+      }
+    } elsif ($method eq "GET") {
+      if (defined($ENV{"QUERY_STRING"})) {
+        $query = $ENV{"QUERY_STRING"};
+      }
     }
-    pcom_log($PCOM_DEBUG, "Query: '$query'");
+  } else {
+    # if no request method, maybe command line?
+    $query = $parg_cmdline;
+  }
+  pcom_log($PCOM_DEBUG, "Query: '$query'");
+  if ($query =~ /^{/) {
+    # JSON request, not yet supported (should support...)
+    my $jsonRef = decode_json($query);
+    foreach my $key (keys %$jsonRef) {
+      my $value = %$jsonRef{$key};
+      $parg_list{$key} = $value;
+      if ($key =~ /^do\.(.*)$/) {
+        $parg_button = $1;
+      }
+    }
+  } else {
     my @query = split(/\&/, $query);
     for (my $i = 0; defined($query[$i]); $i++) {
-        my $name = "";
-        my $value = "";
-        if ($query[$i] =~ /^(.*?)=(.*)$/) {
-            $name = url_decode($1);
-            $value = url_decode($2);
-        } else {
-            $name = url_decode($query[$i]);
-        }
-        if ($name ne "") {
-            $parg_list{$name} = $value;
-        }
-        if ($name =~ /^do\.(.*)$/) {
-            $parg_button = $1;
-        }
+      my $name = "";
+      my $value = "";
+      if ($query[$i] =~ /^(.*?)=(.*)$/) {
+        $name = url_decode($1);
+        $value = url_decode($2);
+      } else {
+        $name = url_decode($query[$i]);
+      }
+      if ($name ne "") {
+        $parg_list{$name} = $value;
+      }
+      if ($name =~ /^do\.(.*)$/) {
+        $parg_button = $1;
+      }
     }
+  }
 }
 
 sub parg_get {
-    my $name = $_[0];
-    if (defined($parg_list{$name})) {
-        return $parg_list{$name};
-    }
-    return "";
+  my $name = $_[0];
+  if (defined($parg_list{$name})) {
+    return $parg_list{$name};
+  }
+  return "";
 }
 
 #

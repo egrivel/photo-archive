@@ -3,7 +3,7 @@
 use inc_all;
 
 put_init();
-put_restore_session();
+put_restore_session(pht_get_sessionid());
 
 my $gl_error = "";
 my $return = pses_get("return");

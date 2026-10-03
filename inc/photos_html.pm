@@ -17,7 +17,9 @@ sub pht_init {
 }
 
 sub pht_set_sessionid {
-  $pht_sessionid = $_[0];
+  my $sessionid = $_[0];
+  pcom_log("set session id to $sessionid");
+  $pht_sessionid = $sessionid;
 }
 
 #
@@ -27,7 +29,7 @@ sub pht_set_sessionid {
 # Note 2: once the session ID has been retrieved from the request, there
 # is no need to set it again. Of course, it is always possible to set it
 # to something else.
-#
+# Note 3: use pht_read_sessionid to retrieve the stored session ID.
 sub pht_get_sessionid {
   # First check for an explicit session ID in the request
   my $arg = parg_get("_session");
@@ -51,6 +53,11 @@ sub pht_get_sessionid {
       }
     }
   }
+  return $pht_sessionid;
+}
+
+# Read the session ID (retrieve the stored session ID).
+sub pht_read_sessionid {
   return $pht_sessionid;
 }
 

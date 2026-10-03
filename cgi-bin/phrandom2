@@ -10,7 +10,7 @@ push @INC, "$localdir/../inc";
 require "photos_util.pm";
 
 put_init();
-put_restore_session();
+put_restore_session(pht_get_sessionid());
 
 # Indicate that the session is used by a random display series
 pses_type("random");

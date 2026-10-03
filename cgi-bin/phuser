@@ -26,7 +26,7 @@ my @settings = ($PUSR_VIEW_TYPES, $PUSR_VIEW_QUALITY, $PUSR_VIEW_MAX_QUALITY, $P
 
 
 put_init();
-put_restore_session();
+put_restore_session(pht_get_sessionid());
 
 my $user = pusr_get_userid();
 if (($user eq "") || ($user eq $PUSR_GUEST_ACCOUNT)) {
