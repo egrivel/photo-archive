@@ -1035,14 +1035,21 @@ sub pdb_get_latest {
   my $query = "";
   my $result = "";
 
+  my $categoryFilter = "";
+  my $categories = put_types();
+  while ($categories ne "") {
+    $categoryFilter .= " OR " if ($categoryFilter ne "");
+    if ($categories =~ s/^(.)//) {
+      $categoryFilter .= "category='$1'";
+    }
+  }
   $query .= "SELECT imageid, sortid, title, description, "
     . "datetime, persons, location, copyright, category, type, "
     . "latlong, year, quality, "
     . "editedWidth, editedHeight, addedDateTime "
     . "FROM images "
     # for now, hard-coded limits (must change to what the user has access to)
-    . "WHERE NOT category = '" . $PCOM_NEW . "' "
-    . "AND NOT category = '" . $PCOM_PRIVATE . "' ";
+    . "WHERE $categoryFilter ";
   if ($cursor ne "") {
     $query .= "AND (addedDateTime, sortId) < $cursor "
   }
