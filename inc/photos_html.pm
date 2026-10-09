@@ -18,7 +18,7 @@ sub pht_init {
 
 sub pht_set_sessionid {
   my $sessionid = $_[0];
-  pcom_log("set session id to $sessionid");
+  pcom_log($PCOM_DEBUG, "set session id to $sessionid");
   $pht_sessionid = $sessionid;
 }
 

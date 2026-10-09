@@ -66,7 +66,13 @@ if ($action eq "all") {
   $data = do_search(parg_get("data"));
 } elsif ($action eq "login") {
   $data = do_login(parg_get("data"));
+} elsif ($action eq "logout") {
+  $data = do_logout();
+} elsif ($action eq "userInfo") {
+  # info about the logged-in user
+  $data = do_user_info();
 }
+
 
 # Allow access from photo app
 print "Access-Control-Allow-Origin: *\n";
@@ -849,4 +855,78 @@ sub do_login {
   $out .= "}\n";
 
   return $out;
+}
+
+sub do_logout {
+  pusr_logout();
+  pses_set("user", $PUSR_GUEST_ACCOUNT);
+
+  my $out = "";
+  $out .= "{\n";
+  $out .= json_out("message", "Logout successful") . "\n";
+  $out .= "}\n";
+
+  return $out;
+}
+
+sub get_right {
+  my $allowed = $_[0];
+  my $value = $_[1];
+  my $label = $_[2];
+
+  if (pusr_allowed($value)) {
+    $allowed .= ",\n" if ($allowed ne "");
+    $allowed .= "  \"$label\"";
+  }
+
+  return $allowed;
+}
+sub do_user_info {
+  my $userId = pusr_get_userid();
+  my $fullName = pusr_get_fullname();
+  my $allowed = "";
+
+  $allowed = get_right($allowed, $PUSR_SEE_REGULAR, "SEE_REGULAR");
+  $allowed = get_right($allowed, $PUSR_SEE_PRIVATE ,"SEE_PRIVATE");
+  $allowed = get_right($allowed, $PUSR_SEE_EXPERIMENTAL, "SEE_EXPERIMENTAL");
+  $allowed = get_right($allowed, $PUSR_SEE_NICOLINE, "SEE_NICOLINE");
+  $allowed = get_right($allowed, $PUSR_SEE_KIDS, "SEE_KIDS");
+  $allowed = get_right($allowed, $PUSR_SEE_OTHERS, "SEE_OTHERS");
+  $allowed = get_right($allowed, $PUSR_SEE_THEO, "SEE_THEO");
+  $allowed = get_right($allowed, $PUSR_SEE_PARENTS, "SEE_PARENTS");
+  $allowed = get_right($allowed, $PUSR_SEE_NEW, "SEE_NEW");
+
+  $allowed = get_right($allowed, $PUSR_EDIT_REGULAR, "EDIT_REGULAR");
+  $allowed = get_right($allowed, $PUSR_EDIT_PRIVATE, "EDIT_PRIVATE");
+  $allowed = get_right($allowed, $PUSR_EDIT_EXPERIMENTAL, "EDIT_EXPERIMENTAL");
+  $allowed = get_right($allowed, $PUSR_EDIT_NICOLINE, "EDIT_NICOLINE");
+  $allowed = get_right($allowed, $PUSR_EDIT_KIDS, "EDIT_KIDS");
+  $allowed = get_right($allowed, $PUSR_EDIT_OTHERS, "EDIT_OTHERS");
+  $allowed = get_right($allowed, $PUSR_EDIT_THEO, "EDIT_THEO");
+  $allowed = get_right($allowed, $PUSR_EDIT_PARENTS, "EDIT_PARENTS");
+  $allowed = get_right($allowed, $PUSR_EDIT_NEW, "EDIT_NEW");
+
+  $allowed = get_right($allowed, $PUSR_GET_ORIG, "GET_ORIG");
+  $allowed = get_right($allowed, $PUSR_GET_RAW, "GET_RAW");
+
+  $allowed = get_right($allowed, $PUSR_MAINTAIN_SELF, "MAINTAIN_SELF");
+  $allowed = get_right($allowed, $PUSR_MAINTAIN_USERS, "MAINTAIN_USERS");
+  $allowed = get_right($allowed, $PUSR_MAINTAIN_PERSONS, "MAINTAIN_PERSONS");
+  $allowed = get_right($allowed, $PUSR_MAINTAIN_ALL, "MAINTAIN_ALL");
+
+  if ($allowed eq "") {
+    $allowed = "[]";
+  } else {
+    $allowed = "[\n$allowed\n]";
+  }
+
+  $out = "";
+  $out .= "{\n";
+  $out .= json_out("userId", $userId) . ",\n";
+  $out .= json_out("fullName", $fullName) . ",\n";
+  $out .= "\"allowed\": $allowed\n";
+  $out .= "}\n";
+
+  return $out;
+
 }
