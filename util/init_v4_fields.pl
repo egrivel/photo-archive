@@ -194,7 +194,7 @@ sub compute_values {
   if ($edited ne "") {
     print "Got edited dimensions $editedWidth x $editedHeight for $edited\n" if ($gl_verbose);
   } else {
-    print "No edited file\n";
+    print "No edited file\n" if ($gl_verbose);
   }
 
   my $origTime = pfs_get_time($orig);

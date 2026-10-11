@@ -9,6 +9,11 @@ sub set_database_info {
   my $is_kids = $_[7];
   my $is_freeform = $_[8];
   my $do_force = $_[9];
+  my $origWidth = $_[10];
+  my $origHeight = $_[11];
+  my $editedWidth = $_[12];
+  my $editedHeight = $_[13];
+  my $addedDateTime = $_[14];
   my @monthnames = (
     "", "January", "February", "March", "April", "May",
     "June", "July", "August", "September", "October", "November",
@@ -94,6 +99,12 @@ sub set_database_info {
         $rotation = 270;
       }
       pdb_set_rotation($rotation);
+      pdb_set_orig_width($origWidth);
+      pdb_set_orig_height($origHeight);
+      pdb_set_edited_width($editedWidth);
+      pdb_set_edited_height($editedHeight);
+      pdb_set_added_date_time($addedDateTime);
+
       pdb_close_image();
     } elsif ($imageid =~ /^(\w\d\d)(\d\d\w?)$/) {
       pdb_open_image($imageid);
@@ -124,6 +135,11 @@ sub set_database_info {
         $rotation = 270;
       }
       pdb_set_rotation($rotation);
+      pdb_set_orig_width($origWidth);
+      pdb_set_orig_height($origHeight);
+      pdb_set_edited_width($editedWidth);
+      pdb_set_edited_height($editedHeight);
+      pdb_set_added_date_time($addedDateTime);
       pdb_close_image();
     } else {
       warn "Cannot recognize image format '$imageid' to add to database\n";

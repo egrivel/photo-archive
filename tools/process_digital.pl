@@ -421,6 +421,159 @@ sub get_type {
   return "unknown";
 }
 
+sub compute_values {
+  my $imageId = $_[0];
+
+  my $orig = pfs_get_orig_location($imageId);
+  my $raw = pfs_get_raw_location($imageId);
+  if ($orig eq "") {
+    $orig = $raw;
+  }
+  my $edited = pfs_get_edited_location($imageId);
+
+  if (($orig eq "") && ($edited ne "")) {
+    # It looks like some variations (..a, ..b etc. suffixes) have been saved
+    # as edited files without corresponding original. Warn on that; at some
+    # point, the archive should be cleaned up to move these edited to become
+    # the original.
+    $orig = $edited;
+    print "$imageId: using edited as original.\n" if ($gl_verbose);
+  }
+
+  if ($orig eq "") {
+    print "$imageId: cannot find orig; every image should have an original.\n";
+    return;
+  }
+
+  ($origWidth, $origHeight) = pfs_get_file_dimensions($orig);
+  print "Got file dimensions $origWidth x $origHeight for $orig\n" if ($gl_verbose);
+  if (!$origWidth || !$origHeight) {
+    print "$imageId: orig dimensions are $origWidth x $origHeight\n";
+  }
+
+  my $rotation = pdb_get_rotation($imageId);
+  # Orientation values:
+  # $PCOM_LANDSCAPE = "landscape";
+  # $PCOM_PORTRAIT = "portrait";
+  # $PCOM_FREEFORM = "freeform";
+  # $PCOM_FREEFORM_P = "freeform-p";
+  # $PCOM_FREEFORM_L = "freeform-l";
+  my $orientation = pdb_get_orientation($imageId);
+
+  my $editedWidth = "";
+  my $editedHeight = "";
+  if ($edited eq "") {
+    # No edited file to get dimensions from, so default to copying the orig
+    # values
+    if ($origWidth && $origHeight) {
+      # Try using the original's dimensions to determine what the edited
+      # dimensions would be.
+
+      if ($origHeight > $origWidth) {
+        # Original is already portrait, so use directly. Rotation should be
+        # ignored for portrait originals. However, check with the recorded
+        # orientation
+        if (($orientation eq $PCOM_PORTRAIT)
+          # Freeform can be either landscape or portrait, so is valid for a
+          # portrait image
+          || ($orientation eq $PCOM_FREEFORM)
+          || ($orientation eq $PCOM_FREEFORM_P)) {
+          $editedWidth = $origWidth;
+          $editedHeight = $origHeight;
+        } else {
+          print "$imageId: portrait original, no edited, recorded as landscape.\n";
+        }
+      } else {
+        # Original is landscape, potentially the rotation applies. Only rotation
+        # values of 90 or 270 indicate changing of orientation, all others leave
+        # the orientation in place
+        if (($rotation eq "90") || ($rotation eq "270")) {
+          # The rotation says to rotate the original before rendering. Checking
+          # to see that the orientation matches
+          if (($orientation eq $PCOM_PORTRAIT)
+            # Freeform can be either landscape or portrait, so is valid for a
+            # portrait image
+            || ($orientation eq $PCOM_FREEFORM)
+            || ($orientation eq $PCOM_FREEFORM_P)) {
+            $editedWidth = $origHeight;
+            $editedHeight = $origWidth;
+          } else {
+            print "$imageId: has rotation set but orientation is landscape.\n";
+          }
+        } else {
+          # No rotation, so should stay landscape. Checking to see that the
+          # orientation matches
+          if (($orientation eq $PCOM_LANDSCAPE)
+            # Freeform can be either landscape or portrait, so is valid for a
+            # landscape image
+            || ($orientation eq $PCOM_FREEFORM)
+            || ($orientation eq $PCOM_FREEFORM_L)) {
+            $editedWidth = $origWidth;
+            $editedHeight = $origHeight;
+          } else {
+            print "$imageId: has rotation set but orientation is landscape.\n";
+          }
+        }
+      }
+    } else {
+      print "$imageId: no edited file, and no valid orig dimensions.\n";
+    }
+  } else {
+    ($editedWidth, $editedHeight) = pfs_get_file_dimensions($edited);
+    if ($editedWidth && $editedHeight) {
+      # Check if the orientation matches
+      if ($editedHeight > $editedWidth) {
+        if (($orientation ne $PCOM_PORTRAIT)
+          # Freeform can be either landscape or portrait, so is valid for a
+          # portrait image
+          && ($orientation ne $PCOM_FREEFORM)
+          && ($orientation ne $PCOM_FREEFORM_P)) {
+          print "$imageId: edited is portrait but recorded as landscape.\n";
+        }
+      } elsif ($editedWidth > $editedHeight) {
+        if (($orientation ne $PCOM_LANDSCAPE)
+          # Freeform can be either landscape or portrait, so is valid for a
+          # landscape image
+          && ($orientation ne $PCOM_FREEFORM)
+          && ($orientation ne $PCOM_FREEFORM_L)) {
+          print "$imageId: edited is landscape but recorded as portrait.\n";
+        }
+      }
+    } else {
+      print "$imageId: edited dimensions are $editedWidth x $editedHeight\n";
+    }
+  }
+  if ($edited ne "") {
+    print "Got edited dimensions $editedWidth x $editedHeight for $edited\n" if ($gl_verbose);
+  } else {
+    print "No edited file\n";
+  }
+
+  my $origTime = pfs_get_time($orig);
+  my $rawTime = $origTime;
+  if ($raw ne "") {
+    $rawTime = pfs_get_time($raw);
+  }
+  my $time = $origTime;
+  if ($rawTime < $time) {
+    $time = $rawTime;
+  }
+  if ($edited ne "") {
+    my $editedTime = pfs_get_time($edited);
+    if ($editedTime < $time) {
+      $time = $edited;
+    }
+  }
+  if (!$time) {
+    print "$imageId: no time found\n";
+  }
+
+  my $addedDateTime = format_timestamp($time);
+  print "Got added date-time $addedDateTime for this file\n" if ($gl_verbose);
+
+  return ($origWidth, $origHeight, $editedWidth, $editedHeight, $addedDateTime);
+}
+
 sub process_photo {
   my $dir = $_[0];
   my $fname = $_[1];
@@ -1016,16 +1169,23 @@ sub process_photo {
     create_directory("$set_directory/edited");
     create_directory("$set_directory/custom");
 
+    my ($origWidth, $origHeight, $editedWidth, $editedHeight, $addedDateTime)
+      = compute_values($imageid);
+
     if ($gl_testmode) {
       print "Set database info for $imageid:\n";
       print "   portrait=$do_portrait, rotate=$newer_rotate, latlong=$latlong,\n";
       print "   time zone=$timezone, DST=$dst, is movie=$is_mov,\n";
-      print "   is kids=$is_kids, is freeform=$is_freeform.\n";
+      print "   is kids=$is_kids, is freeform=$is_freeform,\n";
+      print "   origWidth=$origWidth, origHeight=$origHeight, $editedWidth=$editedWidth,\n";
+      print "   editedHeight=$editedHeight, addedDateTime=$addedDateTime.\n";
     } else {
       set_database_info(
         $imageid, $do_portrait, $newer_rotate,
         $latlong, $timezone, $dst,
-        $is_mov, $is_kids, $is_freeform
+        $is_mov, $is_kids, $is_freeform, 0,
+        $origWidth, $origHeight, $editedWidth, $editedHeight,
+        $addedDateTime
       );
     }
 

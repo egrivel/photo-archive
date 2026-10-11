@@ -11,6 +11,28 @@ use inc_all;
 use utf8;
 binmode(STDOUT, ":utf8");
 
+# Support for categories. For now, categories are based on _sets_ not individual
+# photos. Each category links to one or more sets which go to one or more photos.
+#
+# I'm hesitant to continue with the "sets" concept, but I'm also hesitant to
+# drop them. They make a lot of sense for the bulk of the archive, either
+# based on physical films or on collections of daily photos. Maybe I will end
+# up keeping the sets (they may change to "folders"?) and using the other
+# attributes for searching/filtering. I'm not sure yet.
+#
+# OK, we're going to call them "Groups" of "folders", where the folders
+# represent sets
+$GTYPE_YEAR = "Year";
+$GTYPE_OTHER = "Other";
+
+#$G_CHRONO = "Chronological";   # years
+$G_BY_FRANK = "g-frank";       # f.. sets
+$G_BY_MARK = "g-mark";         # m.. sets
+$G_BY_PARENTS = "g-parents";   # d.. and p.. sets
+$G_ALBUMS = "g-albums";        # a.. sets
+$G_MISCELLANEOUS = "g-misc";   # x.. sets
+
+
 my $data = "";
 
 put_init();
@@ -71,6 +93,15 @@ if ($action eq "all") {
 } elsif ($action eq "userInfo") {
   # info about the logged-in user
   $data = do_user_info();
+} elsif ($action eq "groups") {
+  # get the list of available groups
+  $data = get_group_list();
+} elsif ($action eq "folders") {
+  # get the list of folders in a group
+  $data = get_folders_list(parg_get("groupId"));
+} elsif ($action eq "photos") {
+  # get the list of photos in a folder
+  $data = get_folder_photos_list(parg_get("folderId"));
 }
 
 
@@ -929,4 +960,143 @@ sub do_user_info {
 
   return $out;
 
+}
+
+sub get_group_list {
+  my $query = "SELECT UNIQUE(year) FROM sets WHERE year < 3000 ORDER BY year DESC";
+
+  my $out = "";
+  $out .= "{\n";
+
+  $out .= "\"list\": [\n";
+  my $isFirst = 1;
+  if (psql_command($query)) {
+    my $iterator = psql_iterator();
+    my $record = psql_next_record($iterator);
+    while (defined($record)) {
+      my $year = psql_get_field(0, "year", $record);
+      $out .= ",\n" if (!$isFirst);
+      $out .= "  {\n";
+      $out .= "    \"type\": \"$GTYPE_YEAR\",\n";
+      $out .= "    \"groupId\": \"$year\",\n";
+      $out .= "    \"label\": \"$year\"\n";
+      $out .= "  }";
+      $isFirst = 0;
+      $record = psql_next_record($iterator);
+    }
+  }
+
+  # Add the hard-coded categories
+  $out .= ",\n" if (!$isFirst);
+  # Photos in set fxx
+  $out .= "  {\n";
+  $out .= "    \"type\": \"$GTYPE_OTHER\",\n";
+  $out .= "    \"groupId\": \"$G_BY_FRANK\",\n";
+  $out .= "    \"label\": \"Frank’s Photos\"\n";
+  $out .= "  },\n";
+  # Photos in sets mxx
+  $out .= "  {\n";
+  $out .= "    \"type\": \"$GTYPE_OTHER\",\n";
+  $out .= "    \"groupId\": \"$G_BY_MARK\",\n";
+  $out .= "    \"label\": \"Mark’s Photos\"\n";
+  $out .= "  },\n";
+  # photos in sets dxx and pxx
+  $out .= "  {\n";
+  $out .= "    \"type\": \"$GTYPE_OTHER\",\n";
+  $out .= "    \"groupId\": \"$G_BY_PARENTS\",\n";
+  $out .= "    \"label\": \"Photos of my parents\"\n";
+  $out .= "  },\n";
+  # photos in sets axx
+  $out .= "  {\n";
+  $out .= "    \"type\": \"$GTYPE_OTHER\",\n";
+  $out .= "    \"groupId\": \"$G_ALBUMS\",\n";
+  $out .= "    \"label\": \"Albums\"\n";
+  $out .= "  },\n";
+  # photos in sets xxx
+  $out .= "  {\n";
+  $out .= "    \"type\": \"$GTYPE_OTHER\",\n";
+  $out .= "    \"groupId\": \"$G_MISCELLANEOUS\",\n";
+  $out .= "    \"label\": \"Miscellaneous\"\n";
+  $out .= "  }\n";
+  $out .= "]\n";
+  $out .= "}\n";
+
+  return $out;
+}
+
+sub get_folders_list {
+  my $group = $_[0];
+
+  if ($group =~ /^\d\d\d\d$/) {
+    $select = "year = '$group'";
+  } elsif ($group eq $G_BY_FRANK) {
+    $select = "setid LIKE 'f%'";
+  } elsif ($group eq $G_BY_MARK) {
+    $select = "setid LIKE 'm%'";
+  } elsif ($group eq $G_BY_PARENTS) {
+    $select = "(setid LIKE 'd%' OR setid LIKE 'p%')";
+  } elsif ($group eq $G_ALBUMS) {
+    $select = "setid LIKE 'a%'";
+  } elsif ($group eq $G_MISCELLANEOUS) {
+    $select = "setid LIKE 'x%'";
+  } else {
+    return "{\"error\": \"No valid group\"}";
+  }
+
+  my $query = "SELECT setid, description FROM sets WHERE $select ORDER BY sortid DESC";
+
+  my $out = "";
+  $out .= "{\n";
+
+  $out .= "\"list\": [\n";
+  my $isFirst = 1;
+  if (psql_command($query)) {
+    my $iterator = psql_iterator();
+    my $record = psql_next_record($iterator);
+    while (defined($record)) {
+      my $setid = psql_get_field(0, "setid", $record);
+      my $descr = psql_get_field(1, "description", $record);
+      $out .= ",\n" if (!$isFirst);
+      $out .= "  {\n";
+      $out .= "    \"folderId\": \"$setid\",\n";
+      $out .= "    \"description\": \"$descr\"\n";
+      $out .= "  }";
+      $isFirst = 0;
+      $record = psql_next_record($iterator);
+    }
+  }
+  $out .= "\n]\n}\n";
+
+  return $out;
+}
+
+sub get_folder_photos_list {
+  my $folder = $_[0];
+
+  if (!defined($folder) || !($folder =~ /^\w+$/)) {
+    return "{\"error\": \"No valid folder\"}";
+  }
+
+  my $query = "SELECT * FROM images WHERE setid='$folder' ORDER BY sortid DESC";
+
+  my $out = "";
+  $out .= "{\n";
+
+  $out .= "\"list\": [\n";
+  my $isFirst = 1;
+  if (psql_command($query)) {
+    my $iterator = psql_iterator();
+    my $record = psql_next_record($iterator);
+    while (defined($record)) {
+      my $imageId = psql_get_field(0, "imageid", $record);
+      my $descr = psql_get_field(1, "description", $record);
+      $out .= ",\n" if (!$isFirst);
+      $out .= photo_get_info($imageId, 0);
+      $isFirst = 0;
+      $record = psql_next_record($iterator);
+    }
+  }
+  $out .= "\n]\n}\n";
+
+  return $out;
 }
