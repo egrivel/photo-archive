@@ -1885,6 +1885,32 @@ sub pdb_get_image_data {
   return $result;
 }
 
+sub pdb_get_image_data_json {
+  my $imageid = $_[0];
+  my $result = "";
+
+  if (pdb_image_info($imageid)) {
+    my $i;
+    for ($i = 0; defined($image_fields4[$i]); $i++) {
+      $result .= ",\n" if ($i);
+      my $field = $image_fields4[$i];
+      my $value = $image_data{$field};
+      # For JSON data, need to escape any double quote in the data by preceding
+      # it with a backslash. Also handle the &quot; values that may be in the
+      # database to escape double quotes;
+      $value =~ s/"/&quot;/gs;
+      $value =~ s/&quot;/\\"/gs;
+      $result .= "\"$field\": \"$value\"";
+      if ($field eq "imageid") {
+        # Also provide the image ID with capitalization
+        $result .= ",\n";
+        $result .= "\"imageId\": \"$value\"";
+      }
+    }
+  }
+  return $result;
+}
+
 sub pdb_get_set_data {
   my $setid = $_[0];
   my $result = "";
@@ -1895,6 +1921,32 @@ sub pdb_get_set_data {
       $result .= ", " if ($i);
       my $field = $set_fields[$i];
       $result .= "$field='" . psql_encode($set_data{$field}) . "'";
+    }
+  }
+  return $result;
+}
+
+sub pdb_get_set_data_json {
+  my $setid = $_[0];
+  my $result = "";
+
+  if (pdb_set_info($setid)) {
+    my $i;
+    for ($i = 0; defined($set_fields[$i]); $i++) {
+      $result .= ",\n" if ($i);
+      my $field = $set_fields[$i];
+      my $value = $set_data{$field};
+      # For JSON data, need to escape any double quote in the data by preceding
+      # it with a backslash. Also handle the &quot; values that may be in the
+      # database to escape double quotes;
+      $value =~ s/"/&quot;/gs;
+      $value =~ s/&quot;/\\"/gs;
+      $result .= "\"$field\": \"$value\"";
+      if ($field eq "setid") {
+        # also provide the set ID with the new folderId name
+        $result .= ",\n";
+        $result .= "\"folderId\": \"$value\"";
+      }
     }
   }
   return $result;

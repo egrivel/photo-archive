@@ -962,6 +962,48 @@ sub do_user_info {
 
 }
 
+sub hasGroup {
+  my $group = $_[0];
+
+  if ($group =~ /^\d\d\d\d$/) {
+    $select = "year = '$group'";
+  } elsif ($group eq $G_BY_FRANK) {
+    $select = "setid LIKE 'f%'";
+  } elsif ($group eq $G_BY_MARK) {
+    $select = "setid LIKE 'm%'";
+  } elsif ($group eq $G_BY_PARENTS) {
+    $select = "(setid LIKE 'd%' OR setid LIKE 'p%')";
+  } elsif ($group eq $G_ALBUMS) {
+    $select = "setid LIKE 'a%'";
+  } elsif ($group eq $G_MISCELLANEOUS) {
+    $select = "setid LIKE 'x%'";
+  } else {
+    return 0;
+  }
+
+  my $categoryFilter = "";
+  my $categories = put_types();
+  while ($categories ne "") {
+    $categoryFilter .= " OR " if ($categoryFilter ne "");
+    if ($categories =~ s/^(.)//) {
+      $categoryFilter .= "category='$1'";
+    }
+  }
+
+  # Make sure there is at least one set in this group
+  my $query = "SELECT setid FROM sets WHERE ($categoryFilter) AND $select LIMIT 1";
+
+  if (psql_command($query)) {
+    my $iterator = psql_iterator();
+    my $record = psql_next_record($iterator);
+    if (defined($record)) {
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
 sub get_group_list {
   my $query = "SELECT UNIQUE(year) FROM sets WHERE year < 3000 ORDER BY year DESC";
 
@@ -987,37 +1029,66 @@ sub get_group_list {
   }
 
   # Add the hard-coded categories
-  $out .= ",\n" if (!$isFirst);
+
   # Photos in set fxx
-  $out .= "  {\n";
-  $out .= "    \"type\": \"$GTYPE_OTHER\",\n";
-  $out .= "    \"groupId\": \"$G_BY_FRANK\",\n";
-  $out .= "    \"label\": \"Frank’s Photos\"\n";
-  $out .= "  },\n";
+  if (hasGroup($G_BY_FRANK)) {
+    $out .= ",\n" if (!$isFirst);
+
+    $out .= "  {\n";
+    $out .= "    \"type\": \"$GTYPE_OTHER\",\n";
+    $out .= "    \"groupId\": \"$G_BY_FRANK\",\n";
+    $out .= "    \"label\": \"Frank’s Photos\"\n";
+    $out .= "  }";
+    $isFirst = 0;
+  }
+
   # Photos in sets mxx
-  $out .= "  {\n";
-  $out .= "    \"type\": \"$GTYPE_OTHER\",\n";
-  $out .= "    \"groupId\": \"$G_BY_MARK\",\n";
-  $out .= "    \"label\": \"Mark’s Photos\"\n";
-  $out .= "  },\n";
+  if (hasGroup($G_BY_MARK)) {
+    $out .= ",\n" if (!$isFirst);
+
+    $out .= "  {\n";
+    $out .= "    \"type\": \"$GTYPE_OTHER\",\n";
+    $out .= "    \"groupId\": \"$G_BY_MARK\",\n";
+    $out .= "    \"label\": \"Mark’s Photos\"\n";
+    $out .= "  }";
+    $isFirst = 0;
+  }
+
   # photos in sets dxx and pxx
-  $out .= "  {\n";
-  $out .= "    \"type\": \"$GTYPE_OTHER\",\n";
-  $out .= "    \"groupId\": \"$G_BY_PARENTS\",\n";
-  $out .= "    \"label\": \"Photos of my parents\"\n";
-  $out .= "  },\n";
+  if (hasGroup($G_BY_PARENTS)) {
+    $out .= ",\n" if (!$isFirst);
+
+    $out .= "  {\n";
+    $out .= "    \"type\": \"$GTYPE_OTHER\",\n";
+    $out .= "    \"groupId\": \"$G_BY_PARENTS\",\n";
+    $out .= "    \"label\": \"Photos of my parents\"\n";
+    $out .= "  }";
+    $isFirst = 0;
+  }
+
   # photos in sets axx
-  $out .= "  {\n";
-  $out .= "    \"type\": \"$GTYPE_OTHER\",\n";
-  $out .= "    \"groupId\": \"$G_ALBUMS\",\n";
-  $out .= "    \"label\": \"Albums\"\n";
-  $out .= "  },\n";
+  if (hasGroup($G_ALBUMS)) {
+    $out .= ",\n" if (!$isFirst);
+
+    $out .= "  {\n";
+    $out .= "    \"type\": \"$GTYPE_OTHER\",\n";
+    $out .= "    \"groupId\": \"$G_ALBUMS\",\n";
+    $out .= "    \"label\": \"Albums\"\n";
+    $out .= "  }";
+    $isFirst = 0;
+  }
+
   # photos in sets xxx
-  $out .= "  {\n";
-  $out .= "    \"type\": \"$GTYPE_OTHER\",\n";
-  $out .= "    \"groupId\": \"$G_MISCELLANEOUS\",\n";
-  $out .= "    \"label\": \"Miscellaneous\"\n";
-  $out .= "  }\n";
+  if (hasGroup($G_MISCELLANEOUS)) {
+    $out .= ",\n" if (!$isFirst);
+
+    $out .= "  {\n";
+    $out .= "    \"type\": \"$GTYPE_OTHER\",\n";
+    $out .= "    \"groupId\": \"$G_MISCELLANEOUS\",\n";
+    $out .= "    \"label\": \"Miscellaneous\"\n";
+    $out .= "  }";
+    $isFirst = 0;
+  }
   $out .= "]\n";
   $out .= "}\n";
 
@@ -1043,7 +1114,16 @@ sub get_folders_list {
     return "{\"error\": \"No valid group\"}";
   }
 
-  my $query = "SELECT setid, description FROM sets WHERE $select ORDER BY sortid DESC";
+  my $categoryFilter = "";
+  my $categories = put_types();
+  while ($categories ne "") {
+    $categoryFilter .= " OR " if ($categoryFilter ne "");
+    if ($categories =~ s/^(.)//) {
+      $categoryFilter .= "category='$1'";
+    }
+  }
+
+  my $query = "SELECT setid FROM sets WHERE ($categoryFilter) AND $select ORDER BY sortid DESC";
 
   my $out = "";
   $out .= "{\n";
@@ -1055,11 +1135,9 @@ sub get_folders_list {
     my $record = psql_next_record($iterator);
     while (defined($record)) {
       my $setid = psql_get_field(0, "setid", $record);
-      my $descr = psql_get_field(1, "description", $record);
       $out .= ",\n" if (!$isFirst);
       $out .= "  {\n";
-      $out .= "    \"folderId\": \"$setid\",\n";
-      $out .= "    \"description\": \"$descr\"\n";
+      $out .= pdb_get_set_data_json($setid) . "\n";
       $out .= "  }";
       $isFirst = 0;
       $record = psql_next_record($iterator);
@@ -1077,7 +1155,16 @@ sub get_folder_photos_list {
     return "{\"error\": \"No valid folder\"}";
   }
 
-  my $query = "SELECT * FROM images WHERE setid='$folder' ORDER BY sortid DESC";
+  my $categoryFilter = "";
+  my $categories = put_types();
+  while ($categories ne "") {
+    $categoryFilter .= " OR " if ($categoryFilter ne "");
+    if ($categories =~ s/^(.)//) {
+      $categoryFilter .= "category='$1'";
+    }
+  }
+
+  my $query = "SELECT imageid FROM images WHERE setid='$folder' AND ($categoryFilter) ORDER BY sortid ASC";
 
   my $out = "";
   $out .= "{\n";
@@ -1089,9 +1176,10 @@ sub get_folder_photos_list {
     my $record = psql_next_record($iterator);
     while (defined($record)) {
       my $imageId = psql_get_field(0, "imageid", $record);
-      my $descr = psql_get_field(1, "description", $record);
       $out .= ",\n" if (!$isFirst);
-      $out .= photo_get_info($imageId, 0);
+      $out .= "  {\n";
+      $out .= pdb_get_image_data_json($imageId) . "\n";
+      $out .= "  }";
       $isFirst = 0;
       $record = psql_next_record($iterator);
     }
