@@ -1005,7 +1005,9 @@ sub hasGroup {
 }
 
 sub get_group_list {
-  my $query = "SELECT UNIQUE(year) FROM sets WHERE year < 3000 ORDER BY year DESC";
+  my $query = "SELECT UNIQUE(year) FROM sets "
+    . "WHERE (year > 1800) AND (year < 3000) "
+    . "ORDER BY year ASC";
 
   my $out = "";
   $out .= "{\n";
