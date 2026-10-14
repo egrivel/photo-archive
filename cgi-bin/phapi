@@ -1125,7 +1125,7 @@ sub get_folders_list {
     }
   }
 
-  my $query = "SELECT setid FROM sets WHERE ($categoryFilter) AND $select ORDER BY sortid DESC";
+  my $query = "SELECT setid FROM sets WHERE ($categoryFilter) AND $select ORDER BY sortid ASC";
 
   my $out = "";
   $out .= "{\n";
