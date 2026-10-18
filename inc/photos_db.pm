@@ -1060,7 +1060,6 @@ sub pdb_get_latest {
   $query .="ORDER BY addedDateTime DESC, sortId DESC "
     . "LIMIT $limit";
 
-  print $query . "\n\n";
   psql_command($query) || return 0;
   my $iterator = psql_iterator();
   my $record;
