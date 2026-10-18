@@ -207,12 +207,49 @@ sub generate_photoapp {
         $longval, $shortval, 1, 0, 0, 0, 1, 0);
 
       system($cmd);
+      $cmd = "chmod 666 $outfile";
+      system($cmd);
     }
   }
 }
 
 sub generate_image {
   my $imageid = $_[0];
+
+  # Check the photo sizes; if any of the photo sizes changed, need to
+  # regenerate the cache
+  my $orig = pfs_get_orig_location($imageid);
+  my $raw = pfs_get_raw_location($imageid);
+  if ($orig eq "") {
+    $orig = $raw;
+  }
+  my ($origWidth, $origHeight) = pfs_get_file_dimensions($orig);
+  my $edited = pfs_get_edited_location($imageid);
+  my $editedWidth = $origWidth;
+  my $editedHeight = $origHeight;
+  if ($edited ne "") {
+    ($editedWidth, $editedHeight) = pfs_get_file_dimensions($edited);
+  }
+
+  pdb_open_image($imageid);
+  my $oldOrigWidth = pdb_get_orig_width($imageId);
+  my $oldOrigHeight = pdb_get_orig_height($imageId);
+  my $oldEditedWidth = pdb_get_edited_width($imageId);
+  my $oldEditedHeight = pdb_get_edited_height($imageId);
+  if (($oldOrigWidth ne $origWidth)
+    || ($oldOrigHeight ne $origHeight)
+    || ($oldEditedWidth ne $editedWidth)
+    || ($oldEditedHeight ne $editedHeight)) {
+    pdb_set_orig_width($origWidth);
+    pdb_set_orig_height($origHeight);
+    pdb_set_edited_width($editedWidth);
+    pdb_set_edited_height($editedHeight);
+    pdb_close_image();
+
+    # Some size changed, need to regenerate the image. Note that this works
+    # even for sizes that aren't explicitly regenerated below
+    pfs_discard_cache($imageid);
+  }
 
   if ($gl_do_large) {
     my $outfile = pfs_get_buffer_location($imageid, "large");

@@ -1058,6 +1058,15 @@ sub pfs_trash_image {
   }
 }
 
+sub delete_if_exists {
+  my $fname = $_[0];
+
+  if (($fname ne "") && (-f $fname)) {
+    pcom_log($PCOM_DEBUG, "Delete file '$fname'");
+    pcom_rm($fname);
+  }
+}
+
 sub pfs_discard_cache {
   my $imageID = $_[0];
 
@@ -1090,6 +1099,26 @@ sub pfs_discard_cache {
     pcom_log($PCOM_DEBUG, "Delete file '$thumbnailfile'");
     pcom_rm($thumbnailfile);
   }
+
+  # Note that this does not delete files from the 'custom' folder.... do
+  # all of them as well
+  delete_if_exists(pfs_get_google_location($imageID));
+  delete_if_exists(pfs_get_thumbnail_square_location($imageID));
+  delete_if_exists(pfs_get_mobile_location($imageID, "m1"));
+  delete_if_exists(pfs_get_mobile_location($imageID, "m2"));
+  delete_if_exists(pfs_get_mobile_location($imageID, "m3"));
+  delete_if_exists(pfs_get_mobile_location($imageID, "m4"));
+  delete_if_exists(pfs_get_mobile_location($imageID, "m5"));
+  delete_if_exists(pfs_get_photoapp_location($imageID, 50));
+  delete_if_exists(pfs_get_photoapp_location($imageID, 100));
+  delete_if_exists(pfs_get_photoapp_location($imageID, 150));
+  delete_if_exists(pfs_get_photoapp_location($imageID, 250));
+  delete_if_exists(pfs_get_photoapp_location($imageID, 400));
+
+  # get the Roku special size
+  my $setdir = pfs_get_setdir($imageID);
+  my $fname = "$setdir/custom/$imageID-1280-720-l.jpg";
+  delete_if_exists($fname);
 }
 
 # Try to delete a set from the file system.
