@@ -1047,15 +1047,20 @@ sub pdb_get_latest {
     . "datetime, persons, location, copyright, category, type, "
     . "latlong, year, quality, "
     . "editedWidth, editedHeight, addedDateTime "
-    . "FROM images "
-    # for now, hard-coded limits (must change to what the user has access to)
-    . "WHERE $categoryFilter ";
+    . "FROM images WHERE ";
+  if ($categoryFilter ne "") {
+    $query .= "($categoryFilter) ";
+  }
   if ($cursor ne "") {
-    $query .= "AND (addedDateTime, sortId) < $cursor "
+    if ($categoryFilter ne "") {
+      $query .= "AND ";
+    }
+    $query .= "((addedDateTime, sortId) < $cursor) "
   }
   $query .="ORDER BY addedDateTime DESC, sortId DESC "
     . "LIMIT $limit";
 
+  print $query . "\n\n";
   psql_command($query) || return 0;
   my $iterator = psql_iterator();
   my $record;
