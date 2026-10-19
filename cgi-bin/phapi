@@ -735,6 +735,13 @@ sub parseSearchExpression {
         $sql = "(year = '$value')";
       }
     }
+  } elsif ($type eq "YEAR_RANGE") {
+    my $value = %$nodeRef{"value"};
+    if (defined($value)) {
+      if ($value =~ /^(\d\d\d\d)-(\d\d\d\d)$/) {
+        $sql = "(year >= '$1' AND year <= $2)";
+      }
+    }
   } elsif ($type eq "QUALITY") {
     my $value = %$nodeRef{"value"};
     if (defined($value)) {
