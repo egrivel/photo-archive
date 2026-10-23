@@ -472,6 +472,27 @@ sub put_get_class {
     return $class;
 }
 
+sub put_get_groupid {
+  my $setid = $_[0];
+
+  my $groupid = "";
+  if ($setid =~ /^f/) {
+    $groupid = "g-frank";
+  } elsif ($setid =~ /^m/) {
+    $groupid = "g-mark";
+  } elsif ($setid =~ /^[dp]/) {
+    $groupid = "g-parents";
+  } elsif ($setid =~ /^a/) {
+    $groupid = "g-albums";
+  } elsif ($setid =~ /^x/) {
+    $groupid = "g-misc";
+  } elsif ($setid =~ /^(\d\d\d\d)/) {
+    $groupid = $1;
+  }
+
+  return $groupid;
+}
+
 # Get the next image, based on the current image, and taking into account
 # the user preferences
 sub put_get_next {

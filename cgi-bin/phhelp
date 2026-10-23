@@ -182,7 +182,16 @@ functionality as person tags, except that they start with a
 the Artificial Intelligence (AI) photo tagger at imagga.com) to filter the
 search results. One or more tags can be presented in a comma-separated list.
 If more than one tag is given, images that have ANY of the tags will be
-included in the search result.</p>"
+included in the search result.</p>",
+
+# Page #15: Status
+"Status
+<p>The status identifies who has access to the photo or set. A <b>New</b> status
+means that the photo or set has not yet been categorized and can only be
+accessed by the administrator. <b>Available</b> is the standard status of a
+categorized photo or set. A photo or set that is <b>Restricted</b> can only be
+seen by those who have access to restricted photos and sets in the archive.
+</p>",
 );
 
 put_init();

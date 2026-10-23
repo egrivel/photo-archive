@@ -52,7 +52,16 @@ $PUSR_IMAGE_SIZE = "imgsize";
 $PUSR_EDIT_SIZE = "editsize";
 $PUSR_DISPLAY_QUAL = "dispqual";    # display quality in browse
 
-my @user_fields = ("userid", "fullname", "password", "rights", "settings",);
+my @user_fields = (
+  "userid",
+  "fullname",
+  "password",
+  "rights",
+  "settings",
+  "canSeeNew",
+  "canSeeRestricted",
+  "canEdit",
+);
 
 my $cur_user = "";
 my %user_data = ();
@@ -69,7 +78,20 @@ sub pusr_create_tables {
   my $name = $_[1];
   my $password = $_[2];
   my $encrypted_password = crypt($password, "abcde");
-  psql_create_table("users", \@user_fields);
+
+  psql_init();
+  my $query = "CREATE TABLE users (";
+  $query .= "  userid CHAR(31), ";
+  $query .= "  fullname TEXT, ";
+  $query .= "  password TEXT, ";
+  $query .= "  rights TEXT, ";
+  $query .= "  settings TEXT, ";
+  $query .= "  canSeeNew CHAR(1), ";
+  $query .= "  canSeeRestricted CHAR(1), ";
+  $query .= "  canEdit CHAR(1), ";
+  $query .= "  PRIMARY KEY(userid)";
+  $query .= ")";
+  psql_command($query);
 
   # Cause the first user to be created
   $cur_edit_user = $user;
@@ -80,6 +102,9 @@ sub pusr_create_tables {
     "SrSpSeSnStSdErEpEeEnEtEdMsMuMaSkSwEwGoGrCoEkMpSoEoCq";
   $cur_edit_data{"settings"} =
     "dispqual=1:type_mask=rpenkotdw:quality=0:maxquality=5:imgsize=large:editsize=large";
+  $cur_edit_data{"canSeeNew"} = "Y";
+  $cur_edit_data{"canSeeRestricted"} = "Y";
+  $cur_edit_data{"canEdit"} = "Y";
   pusr_edit_close();
 
   # Cause the guest user to be created
@@ -89,16 +114,31 @@ sub pusr_create_tables {
   $cur_edit_data{"password"} = "";
   $cur_edit_data{"rights"} = "SrStSd";
   $cur_edit_data{"settings"} = "type_mask=rtd:quality=2:imgsize=default";
+  $cur_edit_data{"canSeeNew"} = "N";
+  $cur_edit_data{"canSeeRestricted"} = "N";
+  $cur_edit_data{"canEdit"} = "N";
   pusr_edit_close();
 
   # Cause the "test" process user to be created
   $cur_edit_user = "tester";
   $cur_edit_data{"userid"} = $cur_edit_user;
-  $cur_edit_data{"fullname"} = "Guest Account";
+  $cur_edit_data{"fullname"} = "Test Account";
   $cur_edit_data{"password"} = "abFXMoa4CDRlc";
   $cur_edit_data{"rights"} = "SwEw";
   $cur_edit_data{"settings"} = "type_mask=rtd:quality=3:imgsize=default";
+  $cur_edit_data{"canSeeNew"} = "Y";
+  $cur_edit_data{"canSeeRestricted"} = "N";
+  $cur_edit_data{"canEdit"} = "N";
   pusr_edit_close();
+}
+
+sub pusr_table_to_1_5 {
+  # Adding the new fields
+  my $query = "ALTER TABLE users ";
+  $query .= "ADD COLUMN canSeeNew CHAR(1) AFTER settings, ";
+  $query .= "ADD COLUMN canSeeRestricted CHAR(1) AFTER canSeeNew, ";
+  $query .= "ADD COLUMN canEdit CHAR(1) AFTER canSeeRestricted";
+  psql_command($query);
 }
 
 sub pusr_drop_tables {
@@ -414,6 +454,45 @@ sub pusr_edit_get_setting {
     }
   }
   return $value;
+}
+
+sub pusr_get_can_see_new {
+  if ($cur_edit_data{"canSeeNew"} eq "") {
+    return "N";
+  }
+  return $cur_edit_data{"canSeeNew"};
+}
+
+sub pusr_set_can_see_new {
+  if ($_[0] =~ /^[YN]$/) {
+    $cur_edit_data{"canSeeNew"} = $_[0];
+  }
+}
+
+sub pusr_get_can_see_restricted {
+  if ($cur_edit_data{"canSeeRestricted"} eq "") {
+    return "N";
+  }
+  return $cur_edit_data{"canSeeRestricted"};
+}
+
+sub pusr_set_can_see_restricted {
+  if ($_[0] =~ /^[YN]$/) {
+    $cur_edit_data{"canSeeRestricted"} = $_[0];
+  }
+}
+
+sub pusr_get_can_edit {
+  if ($cur_edit_data{"canEdit"} eq "") {
+    return "N";
+  }
+  return $cur_edit_data{"canEdit"};
+}
+
+sub pusr_set_can_edit {
+  if ($_[0] =~ /^[YN]$/) {
+    $cur_edit_data{"canEdit"} = $_[0];
+  }
 }
 
 sub pusr_edit_close {

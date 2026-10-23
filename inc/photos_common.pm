@@ -68,6 +68,15 @@ $PCOM_M4_HEIGHT = 720;
 $PCOM_M5_WIDTH = 1920;
 $PCOM_M5_HEIGHT = 1080;
 
+# Statuses
+$PCOM_STAT_NEW = "NEW";
+$PCOM_STAT_AVAILABLE = "AVAIL";
+$PCOM_STAT_RESTRICTED = "RESTR";
+
+# Group types
+$PCOM_GRP_YEAR = "Year";
+$PCOM_GRP_OTHER = "Other";
+
 @quicktags = ();
 my $quicktags_txt = get_quicktags();
 while ($quicktags_txt =~ s/^\s*([^, ]+)[, ]*//) {

@@ -317,6 +317,9 @@ sub prefill_image_data {
     $person_ids =~ s/^;\s*//;
   }
   parg_set("persons", $persons);
+
+  my $status = pdb_get_status($imageid);
+  parg_set("status", $status);
 }
 
 sub prefill_set_data {
@@ -334,6 +337,15 @@ sub prefill_set_data {
   parg_set("category",  pdb_get_setcategory($setid));
   parg_set("year",      pdb_get_setyear($setid));
   parg_set("copyright", pdb_get_setcopyright($setid));
+
+  my $status = pdb_get_setstatus($setid);
+  parg_set("status", $status);
+  my $groupid = pdb_get_setgroupid($setid);
+  if ($groupId eq "") {
+    # if no group ID yet, set the group ID based on the set ID
+    $groupid = put_get_groupid($setid);
+  }
+  parg_set("groupid", $groupid);
 }
 
 sub prefill_set_images {
@@ -363,6 +375,10 @@ sub prefill_set_images {
       # category is also 'new', nothing changes)
       $category = parg_get("category");
     }
+    my $status = pdb_get_status($imageid);
+    if (($status eq "") || ($status eq $PCOM_STAT_NEW)) {
+      $status = parg_get("status");
+    }
     if (pusr_allowed($PUSR_EDIT . $category)) {
       # Only if the user is allowed to edit this type of image
       parg_set("imageid-$count",     $imageid);
@@ -371,6 +387,7 @@ sub prefill_set_images {
       parg_set("category-$count",    $category);
       parg_set("quality-$count",     pdb_get_quality($imageid));
       parg_set("description-$count", pdb_get_description($imageid));
+      parg_set("status-$count",      $status);
       $count++;
     }
     $imageid = pdb_iter_next($iter);
@@ -422,6 +439,7 @@ sub save_image_data {
   pdb_set_copyright(parg_get("copyright"));
   pdb_set_latlong(parg_get("latlong")) if ($do_latlong);
   pdb_set_persons(parg_get("persons"));
+  pdb_set_status(parg_get("status"));
   # If this is a movie, set the type (this is needed when adding a new image
   # manually, which creates the row in the database)
   my $setdir = pfs_get_setdir($imageid);
@@ -462,6 +480,8 @@ sub save_set_data {
     pdb_set_setcategory(parg_get("category"));
     pdb_set_setyear(parg_get("year"));
     pdb_set_setcopyright(parg_get("copyright"));
+    pdb_set_setstatus(parg_get("status"));
+    pdb_set_setgroupid(parg_get("groupid"));
     pdb_close_set();
   }
   my $nr_images = parg_get("nr_images");
@@ -506,6 +526,7 @@ sub save_set_data {
             $qual = $PCOM_QUAL_OK;
           }
           pdb_set_quality($qual);
+          pdb_set_status("status-$i");
 
           my $origWidth = pdb_get_orig_width($imageid);
           my $origHeight = pdb_get_orig_height($imageid);
@@ -589,6 +610,7 @@ sub disp_image {
     disp_error("Image not found");
     return;
   }
+  my @statuses = ("NEW:New", "AVAIL:Available", "RESTR:Restricted");
 
   set_categories(\@category);
 
@@ -625,6 +647,7 @@ sub disp_image {
   put_form_textlong("Persons/Tags" . put_help_link(13), "persons", 0, "p");
   put_form_textlong("Lattitude / longtitude", "latlong") if ($do_latlong);
   put_form_radio("Category" . put_help_link(1), "category", @category);
+  put_form_radio("Status" . put_help_link(15), "status", @statuses);
   put_form_radio("Quality" . put_help_link(2),  "quality",  @quality);
   # display width and height,
   put_form_width_height("Original", "origWidth", "origHeight");
@@ -651,6 +674,8 @@ sub disp_set {
     "k:kids",    "t:Theo",    "d:parents"
   );
   my @quality = ("0:dud", "1:bad", "2:default", "3:OK", "4:good", "5:great");
+  my @statuses = ("NEW:New", "AVAIL:Available", "RESTR:Restricted");
+
   set_categories(\@category);
 
   pht_set_pagetype("form editpage");
@@ -668,7 +693,9 @@ sub disp_set {
     put_form_textlong("Description", "description");
     # put_form_textlong("Comment", "comment");
     put_form_radio("Category" . put_help_link(1), "category", @category);
+    put_form_radio("Status" . put_help_link(15), "status", @statuses);
     put_form_textlong("Copyright", "copyright");
+    put_form_protected("Group", "groupid");
     put_form_hidden("showImages");
     $showImages = parg_get("showImages");
     put_form_default_button("save");
@@ -730,6 +757,7 @@ sub disp_set {
       }
       put_form_textlong("Description", "description-$i");
       put_form_radio("Category" . put_help_link(1), "category-$i", @category);
+      put_form_radio("Status" . put_help_link(15), "status-$i", @statuses);
       put_form_radio("Quality" . put_help_link(2),  "quality-$i",  @quality);
       if (pcom_is_digital($imageid)) {
         put_form_checkboxes("&nbsp;", "delete-$i", "delete this image");

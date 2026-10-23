@@ -51,13 +51,52 @@ my @image_fields4 = (
   "type",
 );
 
+# List of image fields starting with database version 1.4
+my @image_fields5 = (
+  "imageid",
+  "sortid",
+  "setid",    # used to get images of a set
+  "title",
+  "datetime",
+  "year",
+  "description",
+  "comment",
+  "orientation",
+  "location",
+  "category",
+  "origWidth",
+  "origHeight",
+  "editedWidth",
+  "editedHeight",
+  "addedDateTime",
+  "quality",
+  "rotation",
+  "copyright",
+  "latlong",
+  "persons",
+  "type",
+  "status",
+);
+
 my @set_fields = (
   "setid", "sortid", "datetime", "title",
   "description", "comment", "category", "year",
   "copyright",
 );
 
+my @set_fields5 = (
+  "setid", "sortid", "datetime", "title",
+  "description", "comment", "category", "year",
+  "copyright",
+  "status",
+  "groupId",
+);
+
 my @tag_fields = ("imageid", "source", "tag", "confidence");
+
+my @group_fields = (
+  "groupId", "type", "description",
+);
 
 my $cur_image = "";
 my $cur_set = "";
@@ -112,6 +151,21 @@ sub pdb_add_tag_table {
   return "OK";
 }
 
+sub pdb_add_group_table {
+  my $query =
+      "CREATE TABLE groups ("
+    . "groupId     CHAR(16), "
+    . "type        CHAR(16), "
+    . "description TEXT, "
+    . "updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, "
+    . "PRIMARY KEY(groupId) "
+    . ")";
+  print "$query\n\n";
+  psql_command($query);
+
+  return "OK";
+}
+
 sub pdb_create_tables {
   return "no init" if (!pdb_init());
 
@@ -125,18 +179,21 @@ sub pdb_create_tables {
   psql_command($query);
 
   pdb_add_tag_table();
+  pdb_add_group_table();
 
   # The create table command basically only handles text fields. Starting with
   # version 1.3, we are adding number and date-time fields which are not
   # supported by the psql_create_table function. In the future, we want to
   # have custom SQL to create the table right the first time, but for now,
   # just call the migration function.
-  pdb_image_table_to_1_3();
+  pdb_image_table_to_1_4();
+  pdb_image_table_to_1_5();
+  pdb_set_table_to_1_5();
 
   return "OK";
 }
 
-# Upgrade the image table from 1.2 to 1.3, which meant adding the
+# Upgrade the image table from 1.3 to 1.4, which meant adding the
 # following fields:
 #  - origWidth
 #  - origHeight
@@ -147,7 +204,7 @@ sub pdb_create_tables {
 # to add an index including the sortid, I will first need to convert
 # the sortid from a TEXT to a CHAR(31) type... Note: I checked the
 # actual photo archive, and the longest sort ID there is 22 characters.
-sub pdb_image_table_to_1_3 {
+sub pdb_image_table_to_1_4 {
   my $query = "ALTER TABLE images "
     . "ADD COLUMN origWidth INT(1) AFTER category, "
     . "ADD COLUMN origHeight INT(1) AFTER origWidth, "
@@ -164,6 +221,23 @@ sub pdb_image_table_to_1_3 {
 
   $query = "CREATE INDEX added ON images(addedDateTime, sortId)";
 
+  psql_command($query);
+}
+
+sub pdb_image_table_to_1_5 {
+  my $query = "ALTER TABLE images "
+    . "ADD COLUMN status CHAR(6) AFTER type ";
+
+  print "$query\n\n";
+  psql_command($query);
+}
+
+sub pdb_set_table_to_1_5 {
+  my $query = "ALTER TABLE sets "
+    . "ADD COLUMN status CHAR(6) AFTER copyright, "
+    . "ADD COLUMN groupId CHAR(16) AFTER status ";
+
+  print "$query\n\n";
   psql_command($query);
 }
 
@@ -251,8 +325,8 @@ sub pdb_image_info {
     $image_exists = 0;
   }
 
-  for ($i = 0; defined($image_fields4[$i]); $i++) {
-    my $field = $image_fields4[$i];
+  for ($i = 0; defined($image_fields5[$i]); $i++) {
+    my $field = $image_fields5[$i];
     my $value = psql_get_field($i, $field, $record);
     $image_data{$field} = $value;
   }
@@ -278,11 +352,15 @@ sub pdb_set_info {
   my $set_exists = 1;
   if (!defined($record)) {
     $set_exists = 0;
-  }
-  for ($i = 0; defined($set_fields[$i]); $i++) {
-    my $field = $set_fields[$i];
-    my $value = psql_get_field($i, $field, $record);
-    $set_data{$field} = $value;
+  } else {
+    for ($i = 0; defined($set_fields5[$i]); $i++) {
+      my $field = $set_fields5[$i];
+      my $value = psql_get_field($i, $field, $record);
+      # if ($field eq "groupId") {
+      #   print "value for group: '$value'\n";
+      # }
+      $set_data{$field} = $value;
+    }
   }
 
   $cur_set = $setid;
@@ -394,6 +472,11 @@ sub pdb_get_type {
   return $image_data{"type"};
 }
 
+sub pdb_get_status {
+  return "" if (!pdb_image_info($_[0]));
+  return $image_data{"status"};
+}
+
 sub pdb_get_setsortid {
   return "" if (!pdb_set_info($_[0]));
   return $set_data{"sortid"};
@@ -432,6 +515,16 @@ sub pdb_get_setyear {
 sub pdb_get_setcopyright {
   return "" if (!pdb_set_info($_[0]));
   return $set_data{"copyright"};
+}
+
+sub pdb_get_setstatus {
+  return "" if (!pdb_set_info($_[0]));
+  return $set_data{"status"};
+}
+
+sub pdb_get_setgroupid {
+  return "" if (!pdb_set_info($_[0]));
+  return $set_data{"groupId"};
 }
 
 sub pdb_image_has_tags {
@@ -540,8 +633,8 @@ sub pdb_open_image {
 
   pdb_image_info($imageID);
   my $i;
-  for ($i = 0; defined($image_fields4[$i]); $i++) {
-    my $field_name = $image_fields4[$i];
+  for ($i = 0; defined($image_fields5[$i]); $i++) {
+    my $field_name = $image_fields5[$i];
     if (defined($image_data{$field_name})) {
       $save_image_data{$field_name} = $image_data{$field_name};
     } else {
@@ -554,7 +647,7 @@ sub pdb_open_image {
     }
   }
   $cur_save_image = $imageID;
-  $save_image_data{$image_fields4[0]} = $imageID;
+  $save_image_data{$image_fields5[0]} = $imageID;
   $cur_image_changed = 0;
 }
 
@@ -728,6 +821,13 @@ sub pdb_set_type {
   }
 }
 
+sub pdb_set_status {
+  if ($save_image_data{"status"} ne $_[0]) {
+    $save_image_data{"status"} = $_[0];
+    $cur_image_changed = 1;
+  }
+}
+
 sub pdb_close_image {
   if (($cur_save_image ne "") && $cur_image_changed) {
     # Check if the image exists
@@ -744,8 +844,8 @@ sub pdb_close_image {
     }
     # Loop through the fields setting the values
     my $was_data = 0;
-    for ($i = 0; defined($image_fields4[$i]); $i++) {
-      my $field_name = $image_fields4[$i];
+    for ($i = 0; defined($image_fields5[$i]); $i++) {
+      my $field_name = $image_fields5[$i];
       if (defined($save_image_data{$field_name})) {
         $query .= ", " if ($was_data);
         $was_data = 1;
@@ -803,11 +903,11 @@ sub pdb_open_set {
 
   pdb_set_info($setid);
   my $i;
-  for ($i = 0; defined($set_fields[$i]); $i++) {
-    $save_set_data{$set_fields[$i]} = $set_data{$set_fields[$i]};
+  for ($i = 0; defined($set_fields5[$i]); $i++) {
+    $save_set_data{$set_fields5[$i]} = $set_data{$set_fields5[$i]};
   }
   $cur_save_set = $setid;
-  $save_set_data{$set_fields[0]} = $setid;
+  $save_set_data{$set_fields5[0]} = $setid;
 }
 
 sub pdb_set_setsortid {
@@ -845,6 +945,14 @@ sub pdb_set_setyear {
   $save_set_data{"year"} = $_[0];
 }
 
+sub pdb_set_setstatus {
+  $save_set_data{"status"} = $_[0];
+}
+
+sub pdb_set_setgroupid {
+  $save_set_data{"groupId"} = $_[0];
+}
+
 sub pdb_close_set {
   if ($cur_save_set ne "") {
     my $query = "SELECT setid FROM sets WHERE setid='$cur_save_set'";
@@ -857,15 +965,15 @@ sub pdb_close_set {
       $query = "UPDATE sets SET ";
       $end = " WHERE setid = '$cur_save_set'";
     }
-    for ($i = 0; defined($set_fields[$i]); $i++) {
+    for ($i = 0; defined($set_fields5[$i]); $i++) {
       $query .= "," if ($i);
-      my $value = psql_encode($save_set_data{$set_fields[$i]});
+      my $value = psql_encode($save_set_data{$set_fields5[$i]});
       if (!defined($value)) {
         print
-          "WARNING: Query $query, field $i ($set_fields[$i]), no defined value\n";
+          "WARNING: Query $query, field $i ($set_fields5[$i]), no defined value\n";
         $value = '';
       }
-      $query .= " $set_fields[$i]='$value' ";
+      $query .= " $set_fields5[$i]='$value' ";
     }
     $query .= "$end;";
     psql_command($query);
@@ -1846,13 +1954,13 @@ sub pdb_latest_set {
 sub pdb_dump_tables {
   my $setid = $_[0];
   if (defined($setid)) {
-    psql_dump_table("sets", -1, \@set_fields, $setid);
-    psql_dump_table("images", -1, \@image_fields4, $setid);
+    psql_dump_table("sets", -1, \@set_fields5, $setid);
+    psql_dump_table("images", -1, \@image_fields5, $setid);
   } else {
-    psql_dump_table("images", 1, \@image_fields4);
+    psql_dump_table("images", 1, \@image_fields5);
     print
       "CREATE INDEX setcat ON images (setid(8), category(3), imageid(16));\n";
-    psql_dump_table("sets", 1, \@set_fields);
+    psql_dump_table("sets", 1, \@set_fields5);
   }
   return "OK";
 }
@@ -1860,8 +1968,8 @@ sub pdb_dump_tables {
 sub pdb_dump_set {
   my $setid = $_[0];
 
-  psql_dump_records("images", "setid='$setid'", \@image_fields4);
-  psql_dump_records("sets", "setid='$setid'", \@set_fields);
+  psql_dump_records("images", "setid='$setid'", \@image_fields5);
+  psql_dump_records("sets", "setid='$setid'", \@set_fields5);
 
   return "OK";
 }
@@ -1872,9 +1980,9 @@ sub pdb_get_image_data {
 
   if (pdb_image_info($imageid)) {
     my $i;
-    for ($i = 0; defined($image_fields4[$i]); $i++) {
+    for ($i = 0; defined($image_fields5[$i]); $i++) {
       $result .= ", " if ($i);
-      my $field_name = $image_fields4[$i];
+      my $field_name = $image_fields5[$i];
       my $value = $image_data{$field};
       if (pdb_is_numeric_field($field_name)) {
         # Strip all non-number characters.
@@ -1895,9 +2003,9 @@ sub pdb_get_image_data_json {
 
   if (pdb_image_info($imageid)) {
     my $i;
-    for ($i = 0; defined($image_fields4[$i]); $i++) {
+    for ($i = 0; defined($image_fields5[$i]); $i++) {
       $result .= ",\n" if ($i);
-      my $field = $image_fields4[$i];
+      my $field = $image_fields5[$i];
       my $value = $image_data{$field};
       # For JSON data, need to escape any double quote in the data by preceding
       # it with a backslash. Also handle the &quot; values that may be in the
@@ -1921,9 +2029,9 @@ sub pdb_get_set_data {
 
   if (pdb_set_info($setid)) {
     my $i;
-    for ($i = 0; defined($set_fields[$i]); $i++) {
+    for ($i = 0; defined($set_fields5[$i]); $i++) {
       $result .= ", " if ($i);
-      my $field = $set_fields[$i];
+      my $field = $set_fields5[$i];
       $result .= "$field='" . psql_encode($set_data{$field}) . "'";
     }
   }
@@ -1936,9 +2044,9 @@ sub pdb_get_set_data_json {
 
   if (pdb_set_info($setid)) {
     my $i;
-    for ($i = 0; defined($set_fields[$i]); $i++) {
+    for ($i = 0; defined($set_fields5[$i]); $i++) {
       $result .= ",\n" if ($i);
-      my $field = $set_fields[$i];
+      my $field = $set_fields5[$i];
       my $value = $set_data{$field};
       # For JSON data, need to escape any double quote in the data by preceding
       # it with a backslash. Also handle the &quot; values that may be in the
@@ -2368,6 +2476,35 @@ sub pdb_sync_all_years {
   my $text = pdb_get_all_years_hash_text(0);
   my $new_hash = phash_do_hash($text);
   phash_set_value("years", "years", $new_hash);
+}
+
+# start out with a simple write; long-term, we want full edit ability
+sub pdb_write_group {
+  my $type = $_[0];
+  my $groupId = $_[1];
+  my $description = $_[2];
+
+  my $query = "SELECT groupId FROM groups WHERE groupId='$groupId'";
+  psql_command($query);
+  my $record = psql_next_record(psql_iterator());
+
+  my $end = "";
+  if (defined($record)) {
+    # exists, update
+    $query = "UPDATE groups SET ";
+    $end = " WHERE groupId = '$groupId'";
+  } else {
+    # Add the group
+    $query = "INSERT INTO groups SET ";
+    $end = "";
+  }
+
+  $query .= "groupId='$groupId', ";
+  $query .= "type='$type', ";
+  $query .= "description='$description' ";
+  $query .= $end;
+
+  psql_command($query);
 }
 
 return 1;

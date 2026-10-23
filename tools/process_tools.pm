@@ -41,6 +41,8 @@ sub set_database_info {
     pdb_set_setcopyright("");
     pdb_set_setdescription("");
     pdb_set_setcomment("");
+    pdb_set_setgroupid(put_get_groupid($setid));
+    pdb_set_setstatus($PCOM_STAT_NEW);
 
     pdb_set_setsortid(pdb_create_setsortid($setid));
     if ($imageid =~ /^(\d\d\d\d)(\d\d)(\d\d)\-(\d\d)(\d\d)(\d\d)/) {
@@ -104,6 +106,7 @@ sub set_database_info {
       pdb_set_edited_width($editedWidth);
       pdb_set_edited_height($editedHeight);
       pdb_set_added_date_time($addedDateTime);
+      pdb_set_status($PCOM_STAT_NEW);
 
       pdb_close_image();
     } elsif ($imageid =~ /^(\w\d\d)(\d\d\w?)$/) {
