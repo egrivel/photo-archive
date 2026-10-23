@@ -41,26 +41,27 @@ sub set_database_info {
     pdb_set_setcopyright("");
     pdb_set_setdescription("");
     pdb_set_setcomment("");
-    pdb_set_setgroupid(put_get_groupid($setid));
     pdb_set_setstatus($PCOM_STAT_NEW);
 
     pdb_set_setsortid(pdb_create_setsortid($setid));
+    my $year = "";
     if ($imageid =~ /^(\d\d\d\d)(\d\d)(\d\d)\-(\d\d)(\d\d)(\d\d)/) {
       my $year = int($1);
       my $month = int($2);
       my $day = int($3);
       my $monthname = $monthnames[$month];
       pdb_set_setdatetime("$monthname $day, $year");
-      pdb_set_setyear($year);
     } elsif ($imageid =~ /^(\w\d\d)(\d\d\w?)$/) {
       pdb_set_setdatetime("");
-      pdb_set_setyear(pcom_get_year($setid));
+      $year = pcom_get_year($setid);
     }
     if ($is_kids) {
       pdb_set_setcategory($PCOM_KIDS);
     } else {
       pdb_set_setcategory($PCOM_NEW);
     }
+    pdb_set_setyear($year);
+    pdb_set_setgroupid(put_get_groupid($setid, $year));
     pdb_close_set();
   }
 

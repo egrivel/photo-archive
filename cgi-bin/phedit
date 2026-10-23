@@ -343,7 +343,7 @@ sub prefill_set_data {
   my $groupid = pdb_get_setgroupid($setid);
   if ($groupId eq "") {
     # if no group ID yet, set the group ID based on the set ID
-    $groupid = put_get_groupid($setid);
+    $groupid = put_get_groupid($setid, pdb_get_setyear($setid));
   }
   parg_set("groupid", $groupid);
 }

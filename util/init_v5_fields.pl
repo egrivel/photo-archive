@@ -138,8 +138,8 @@ sub do_set {
     $status = $PCOM_STAT_NEW;
   }
 
-  my $groupId = put_get_groupid($setId);
   my $year = pdb_get_setyear($setId);
+  my $groupId = put_get_groupid($setId, $year);
 
   pdb_set_setstatus($status);
   pdb_set_setgroupid($groupId);

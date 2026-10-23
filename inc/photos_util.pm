@@ -474,6 +474,10 @@ sub put_get_class {
 
 sub put_get_groupid {
   my $setid = $_[0];
+  my $year = $_[0];
+  if (!defined($year)) {
+    $year = "";
+  }
 
   my $groupid = "";
   if ($setid =~ /^f/) {
@@ -488,6 +492,8 @@ sub put_get_groupid {
     $groupid = "g-misc";
   } elsif ($setid =~ /^(\d\d\d\d)/) {
     $groupid = $1;
+  } elsif ($setid =~/^(\d\d\d)$/) {
+    $groupid = $year;
   }
 
   return $groupid;
