@@ -139,6 +139,7 @@ sub do_set {
   }
 
   my $groupId = put_get_groupid($setId);
+  my $year = pdb_get_setyear($setId);
 
   pdb_set_setstatus($status);
   pdb_set_setgroupid($groupId);
