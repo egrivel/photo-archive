@@ -138,7 +138,7 @@ sub do_set {
     $status = $PCOM_STAT_NEW;
   }
 
-  my $groupid = put_get_groupid($setId);
+  my $groupId = put_get_groupid($setId);
 
   pdb_set_setstatus($status);
   pdb_set_setgroupid($groupId);
