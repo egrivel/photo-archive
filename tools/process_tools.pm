@@ -46,7 +46,7 @@ sub set_database_info {
     pdb_set_setsortid(pdb_create_setsortid($setid));
     my $year = "";
     if ($imageid =~ /^(\d\d\d\d)(\d\d)(\d\d)\-(\d\d)(\d\d)(\d\d)/) {
-      my $year = int($1);
+      $year = int($1);
       my $month = int($2);
       my $day = int($3);
       my $monthname = $monthnames[$month];

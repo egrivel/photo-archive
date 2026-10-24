@@ -474,7 +474,7 @@ sub put_get_class {
 
 sub put_get_groupid {
   my $setid = $_[0];
-  my $year = $_[0];
+  my $year = $_[1];
   if (!defined($year)) {
     $year = "";
   }
