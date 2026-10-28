@@ -1211,7 +1211,7 @@ sub process_photo {
       }
     } elsif ($fname =~ /\.png$/i) {
       # Get the JPG first
-      run_cmd("magick convert \"$dir/$fname\" \"$set_directory/tif/$imageid.jpg\"");
+      run_cmd("magick \"$dir/$fname\" \"$set_directory/tif/$imageid.jpg\"");
       move_file("$dir/$fname", "$set_directory/tif/$imageid.png");
     } elsif ($fname =~ /\.nef$/i) {
       # Extract the JPG first

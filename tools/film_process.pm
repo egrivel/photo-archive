@@ -105,7 +105,7 @@ sub get_command {
         }
     }
 
-    return "magick convert -size $size $infile $rotate -resize $resize -crop $size $proc_quality $proc_sharpen $outfile";
+    return "magick -size $size $infile $rotate -resize $resize -crop $size $proc_quality $proc_sharpen $outfile";
 }
 
 return 1;

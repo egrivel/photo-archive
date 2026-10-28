@@ -627,7 +627,7 @@ sub pfs_cmd_orig {
   # To get the original file, the only issue is to get a conversion from
   # the raw format to JPEG
   my $fname = pfs_get_raw_location($imageID);
-  $cmd = "magick convert $fname jpg:- > $outfile; ";
+  $cmd = "magick $fname jpg:- > $outfile; ";
   if ($fname =~ /\.nef$/i) {
     $cmd = "exiftool -b -JpgFromRaw $fname > $outfile; ";
   }
