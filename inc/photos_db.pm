@@ -2507,4 +2507,22 @@ sub pdb_write_group {
   psql_command($query);
 }
 
+sub pdb_get_group_info {
+  my $groupId = $_[0];
+
+  my $query = "";
+  $query .= "SELECT type, description ";
+  $query .= "FROM groups ";
+  $query .= "WHERE groupId = '$groupId'";
+
+  psql_command($query);
+  my $record = psql_next_record(psql_iterator());
+  my $type = psql_get_field(0, "type", $record);
+  my $description = psql_get_field(1, "description", $record);
+
+  my @result = ($type, $description);
+
+  return \@result;
+};
+
 return 1;

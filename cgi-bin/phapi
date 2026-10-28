@@ -22,16 +22,6 @@ binmode(STDOUT, ":utf8");
 #
 # OK, we're going to call them "Groups" of "folders", where the folders
 # represent sets
-$GTYPE_YEAR = "Year";
-$GTYPE_OTHER = "Other";
-
-#$G_CHRONO = "Chronological";   # years
-$G_BY_FRANK = "g-frank";       # f.. sets
-$G_BY_MARK = "g-mark";         # m.. sets
-$G_BY_PARENTS = "g-parents";   # d.. and p.. sets
-$G_ALBUMS = "g-albums";        # a.. sets
-$G_MISCELLANEOUS = "g-misc";   # x.. sets
-
 
 my $data = "";
 
@@ -970,21 +960,10 @@ sub do_user_info {
 }
 
 sub hasGroup {
-  my $group = $_[0];
+  my $groupiD = $_[0];
 
-  if ($group =~ /^\d\d\d\d$/) {
-    $select = "year = '$group'";
-  } elsif ($group eq $G_BY_FRANK) {
-    $select = "setid LIKE 'f%'";
-  } elsif ($group eq $G_BY_MARK) {
-    $select = "setid LIKE 'm%'";
-  } elsif ($group eq $G_BY_PARENTS) {
-    $select = "(setid LIKE 'd%' OR setid LIKE 'p%')";
-  } elsif ($group eq $G_ALBUMS) {
-    $select = "setid LIKE 'a%'";
-  } elsif ($group eq $G_MISCELLANEOUS) {
-    $select = "setid LIKE 'x%'";
-  } else {
+  if (!($groupId =~ /^[\w-]+$/)) {
+    # Group ID not in the right format
     return 0;
   }
 
@@ -998,7 +977,11 @@ sub hasGroup {
   }
 
   # Make sure there is at least one set in this group
-  my $query = "SELECT setid FROM sets WHERE ($categoryFilter) AND $select LIMIT 1";
+  my $query = "";
+  $query .= "SELECT setid FROM sets ";
+  $query .= "WHERE ($categoryFilter) ";
+  $query .= "AND groupid = '$groupId' ";
+  $query .= "LIMIT 1";
 
   if (psql_command($query)) {
     my $iterator = psql_iterator();
@@ -1012,92 +995,52 @@ sub hasGroup {
 }
 
 sub get_group_list {
-  my $query = "SELECT UNIQUE(year) FROM sets "
-    . "WHERE (year > 1800) AND (year < 3000) "
-    . "ORDER BY year ASC";
+  my $categoryFilter = "";
+  my $categories = put_types();
+  while ($categories ne "") {
+    $categoryFilter .= " OR " if ($categoryFilter ne "");
+    if ($categories =~ s/^(.)//) {
+      $categoryFilter .= "category='$1'";
+    }
+  }
+
+  my $query = "";
+  $query .= "SELECT UNIQUE(groupid) FROM sets ";
+  $query .= "WHERE ($categoryFilter) ";
+  $query .= "ORDER BY groupid ASC";
+
+  # Get the list of all the groups before doing queries to get
+  # the group details
+  my @list = ();
+  my $nr_groups = 0;
+  if (psql_command($query)) {
+    my $iterator = psql_iterator();
+    my $record = psql_next_record($iterator);
+    while (defined($record)) {
+      my $groupId = psql_get_field(0, "groupid", $record);
+      $list[$nr_groups++] = $groupId;
+      $record = psql_next_record($iterator);
+    }
+  }
 
   my $out = "";
   $out .= "{\n";
 
   $out .= "\"list\": [\n";
-  my $isFirst = 1;
-  if (psql_command($query)) {
-    my $iterator = psql_iterator();
-    my $record = psql_next_record($iterator);
-    while (defined($record)) {
-      my $year = psql_get_field(0, "year", $record);
-      $out .= ",\n" if (!$isFirst);
-      $out .= "  {\n";
-      $out .= "    \"type\": \"$GTYPE_YEAR\",\n";
-      $out .= "    \"groupId\": \"$year\",\n";
-      $out .= "    \"label\": \"$year\"\n";
-      $out .= "  }";
-      $isFirst = 0;
-      $record = psql_next_record($iterator);
-    }
-  }
-
-  # Add the hard-coded categories
-
-  # Photos in set fxx
-  if (hasGroup($G_BY_FRANK)) {
-    $out .= ",\n" if (!$isFirst);
-
+  my $i;
+  for ($i = 0; $i < $nr_groups; $i++) {
+    $out .= ",\n" if ($i);
+    my $groupId = $list[$i];
+    my $resultRef = pdb_get_group_info($groupId);
+    my $type = @$resultRef[0];
+    my $label = @$resultRef[1];
     $out .= "  {\n";
-    $out .= "    \"type\": \"$GTYPE_OTHER\",\n";
-    $out .= "    \"groupId\": \"$G_BY_FRANK\",\n";
-    $out .= "    \"label\": \"Frank’s Photos\"\n";
+    $out .= "    \"type\": \"$type\",\n";
+    $out .= "    \"groupId\": \"$groupId\",\n";
+    $out .= "    \"label\": \"$label\"\n";
     $out .= "  }";
-    $isFirst = 0;
   }
 
-  # Photos in sets mxx
-  if (hasGroup($G_BY_MARK)) {
-    $out .= ",\n" if (!$isFirst);
-
-    $out .= "  {\n";
-    $out .= "    \"type\": \"$GTYPE_OTHER\",\n";
-    $out .= "    \"groupId\": \"$G_BY_MARK\",\n";
-    $out .= "    \"label\": \"Mark’s Photos\"\n";
-    $out .= "  }";
-    $isFirst = 0;
-  }
-
-  # photos in sets dxx and pxx
-  if (hasGroup($G_BY_PARENTS)) {
-    $out .= ",\n" if (!$isFirst);
-
-    $out .= "  {\n";
-    $out .= "    \"type\": \"$GTYPE_OTHER\",\n";
-    $out .= "    \"groupId\": \"$G_BY_PARENTS\",\n";
-    $out .= "    \"label\": \"Photos of my parents\"\n";
-    $out .= "  }";
-    $isFirst = 0;
-  }
-
-  # photos in sets axx
-  if (hasGroup($G_ALBUMS)) {
-    $out .= ",\n" if (!$isFirst);
-
-    $out .= "  {\n";
-    $out .= "    \"type\": \"$GTYPE_OTHER\",\n";
-    $out .= "    \"groupId\": \"$G_ALBUMS\",\n";
-    $out .= "    \"label\": \"Albums\"\n";
-    $out .= "  }";
-    $isFirst = 0;
-  }
-
-  # photos in sets xxx
-  if (hasGroup($G_MISCELLANEOUS)) {
-    $out .= ",\n" if (!$isFirst);
-
-    $out .= "  {\n";
-    $out .= "    \"type\": \"$GTYPE_OTHER\",\n";
-    $out .= "    \"groupId\": \"$G_MISCELLANEOUS\",\n";
-    $out .= "    \"label\": \"Miscellaneous\"\n";
-    $out .= "  }";
-    $isFirst = 0;
-  }
   $out .= "]\n";
   $out .= "}\n";
 
@@ -1105,22 +1048,11 @@ sub get_group_list {
 }
 
 sub get_folders_list {
-  my $group = $_[0];
+  my $groupId = $_[0];
 
-  if ($group =~ /^\d\d\d\d$/) {
-    $select = "year = '$group'";
-  } elsif ($group eq $G_BY_FRANK) {
-    $select = "setid LIKE 'f%'";
-  } elsif ($group eq $G_BY_MARK) {
-    $select = "setid LIKE 'm%'";
-  } elsif ($group eq $G_BY_PARENTS) {
-    $select = "(setid LIKE 'd%' OR setid LIKE 'p%')";
-  } elsif ($group eq $G_ALBUMS) {
-    $select = "setid LIKE 'a%'";
-  } elsif ($group eq $G_MISCELLANEOUS) {
-    $select = "setid LIKE 'x%'";
-  } else {
-    return "{\"error\": \"No valid group\"}";
+  if (!($groupId =~ /^[\w-]+$/)) {
+    # Group ID not in the right format, return empty list
+    return "{\"list\": []}";
   }
 
   my $categoryFilter = "";
@@ -1132,7 +1064,11 @@ sub get_folders_list {
     }
   }
 
-  my $query = "SELECT setid FROM sets WHERE ($categoryFilter) AND $select ORDER BY sortid ASC";
+  my $query = "";
+  $query .= "SELECT setid FROM sets ";
+  $query .= "WHERE ($categoryFilter) ";
+  $query .= "AND groupid = '$groupId' ";
+  $query .= "ORDER BY sortid ASC";
 
   my $out = "";
   $out .= "{\n";
