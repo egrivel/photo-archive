@@ -341,7 +341,7 @@ sub prefill_set_data {
   my $status = pdb_get_setstatus($setid);
   parg_set("status", $status);
   my $groupid = pdb_get_setgroupid($setid);
-  if ($groupId eq "") {
+  if ($groupid eq "") {
     # if no group ID yet, set the group ID based on the set ID
     $groupid = put_get_groupid($setid, pdb_get_setyear($setid));
   }
@@ -526,7 +526,7 @@ sub save_set_data {
             $qual = $PCOM_QUAL_OK;
           }
           pdb_set_quality($qual);
-          pdb_set_status("status-$i");
+          pdb_set_status(parg_get("status-$i"));
 
           my $origWidth = pdb_get_orig_width($imageid);
           my $origHeight = pdb_get_orig_height($imageid);
