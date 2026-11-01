@@ -143,37 +143,63 @@ if (!$count) {
 }
 exit;
 
+sub should_regenerate {
+  my $imageid = $_[0];
+  my $outfile = $_[1];
+
+  # Always regenerate if forced
+  if ($gl_force) {
+    print "$imageid: force $outfile\n";
+    return 1;
+  }
+
+  # always regenerate if outfile doesn't exist
+  if (! -f $outfile) {
+    print "$imageid: doesn't exist: $outfile\n";
+    return 1;
+  }
+
+  # check timestamps
+  my $edittime = 0;
+  if (pfs_get_edited_location($imageid) ne "") {
+    $edittime = pfs_get_time(pfs_get_edited_location($imageid));
+  } elsif (pfs_get_orig_location($imageid) ne "") {
+    $edittime = pfs_get_time(pfs_get_orig_location($imageid));
+  }
+  if (pfs_get_time($outfile) < $edittime) {
+    # target file is older than edited/original, so regenerate
+    print "$imageid: file too old, regenerate $outfile\n";
+    return 1;
+  }
+
+  my $edited_width = pdb_get_edited_width($imageid);
+  my $edited_height = pdb_get_edited_height($imageid);
+  my $is_portrait = ($edited_height > $edited_width);
+
+  my ($actual_width, $actual_height) = pfs_get_file_dimensions($outfile);
+  my $actual_portrait = ($actual_height > $actual_width);
+
+  if (($actual_portrait && !$is_portrait)
+      || ($is_portrait && !$actual_portrait)) {
+    # orientation changed
+    print "$imageid: changed orientation, regenerate $outfile\n";
+    return 1;
+  }
+
+  return 0;
+}
+
 sub generate_photoapp {
   my $imageid = $_[0];
   my $size_name = $_[1];
 
   my $outfile = pfs_get_photoapp_location($imageid, $size_name);
 
-  my $do_generate = 0;
   if ($outfile eq "") {
     print "Can't get size $size_name buffer location for $imageid\n";
   } else {
-    if (-f $outfile && !$gl_force) {
-      # File already exist, check if it is up-to-date
+    my $do_generate = should_regenerate($imageid, $outfile);
 
-      my $edittime = 0;
-      my $hasEdited = 0;
-      if (pfs_get_edited_location($imageid) ne "") {
-        $edittime = pfs_get_time(pfs_get_edited_location($imageid));
-        $hasEdited = 1;
-      } elsif (pfs_get_orig_location($imageid) ne "") {
-        $edittime = pfs_get_time(pfs_get_orig_location($imageid));
-      }
-      if (pfs_get_time($outfile) >= $edittime) {
-        # Generated file is newer than edited one, so no need
-        # to re-generate
-        print "File $outfile already up-to-date\n";
-      } else {
-        $do_generate = 1;
-      }
-    } else {
-      $do_generate = 1;
-    }
     if ($do_generate) {
       my $rotation = pdb_get_rotation($imageid);
       my $edited_width = pdb_get_edited_width($imageid);
@@ -225,21 +251,41 @@ sub generate_image {
   }
   my ($origWidth, $origHeight) = pfs_get_file_dimensions($orig);
   my $edited = pfs_get_edited_location($imageid);
+  my $rotation = pdb_get_rotation($imageid);
   my $editedWidth = $origWidth;
   my $editedHeight = $origHeight;
+  if ($rotation eq "90" || $rotation eq "270") {
+    # edited file is rotated compared to original
+    $editedWidth = $origHeight;
+    $editedHeight = $origWidth;
+  }
   if ($edited ne "") {
     ($editedWidth, $editedHeight) = pfs_get_file_dimensions($edited);
   }
 
   pdb_open_image($imageid);
-  my $oldOrigWidth = pdb_get_orig_width($imageId);
-  my $oldOrigHeight = pdb_get_orig_height($imageId);
-  my $oldEditedWidth = pdb_get_edited_width($imageId);
-  my $oldEditedHeight = pdb_get_edited_height($imageId);
+  my $oldOrigWidth = pdb_get_orig_width($imageid);
+  my $oldOrigHeight = pdb_get_orig_height($imageid);
+  my $oldEditedWidth = pdb_get_edited_width($imageid);
+  my $oldEditedHeight = pdb_get_edited_height($imageid);
   if (($oldOrigWidth ne $origWidth)
     || ($oldOrigHeight ne $origHeight)
     || ($oldEditedWidth ne $editedWidth)
     || ($oldEditedHeight ne $editedHeight)) {
+    print "$imageid: Some size changed, discard cache\n";
+    if ($origWidth ne $oldOrigWidth) {
+      print "Orig width changed $oldOrigWidth -> $origWidth\n";
+    }
+    if ($origHeight ne $oldOrigHeight) {
+      print "Orig width changed $oldOrigHeight -> $origHeight\n";
+    }
+    if ($editedWidth ne $oldEditedWidth) {
+      print "Edited width changed $oldEditedWidth -> $editedWidth\n";
+    }
+    if ($editedHeight ne $oldEditedHeight) {
+      print "Edited height changed $oldEditedHeight -> $editedHeight\n";
+    }
+    # Update the database with the corrected values
     pdb_set_orig_width($origWidth);
     pdb_set_orig_height($origHeight);
     pdb_set_edited_width($editedWidth);
@@ -257,6 +303,7 @@ sub generate_image {
       print "Can't get large buffer location for $imageid\n";
     } else {
       if (pfs_get_large_location($imageid) eq "") {
+	print "$imageid: large location is empty\n";
         my $rotation = pdb_get_rotation($imageid);
         my $cmd = pfs_cmd_large($imageid, $rotation, $outfile);
         print $cmd, "\n";
@@ -401,6 +448,7 @@ sub generate_image {
       print "Can't get thumbnail buffer location for $imageid\n";
     } else {
       my $do_generate = 1;
+      $do_generate = should_regenerate($imageid, $outfile);
       # for now, always regenerate. In the future, only regenerate if something
       # has changed
       if ($do_generate) {
