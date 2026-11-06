@@ -425,20 +425,28 @@ sub get_image_info {
     return "{\"error\":\"Not found\"}\n";
   }
 
-  my $copyright = pdb_get_copyright($imageId);
-  my $datetime = pdb_get_datetime($imageId);
-  my $description = pdb_get_description($imageId);
-  my $latlong = pdb_get_latlong($imageId);
-  my $location = pdb_get_location($imageId);
-  my $next = put_get_next($imageId);
-  my $orientation = pdb_get_orientation($imageId);
-  my $personIdList = ppers_get_persons_in_image($imageId);
-  my $persons = pdb_get_persons($imageId);
-  my $prev = put_get_prev($imageId);
-  my $quality = pdb_get_quality($imageId);
+  my $sortId = pdb_get_sortid($imageId);
   my $setId = pdb_get_setid($imageId);
   my $title = pdb_get_title($imageId);
+  my $datetime = pdb_get_datetime($imageId);
   my $year = pdb_get_year($imageId);
+  my $description = pdb_get_description($imageId);
+  my $orientation = pdb_get_orientation($imageId);
+  my $location = pdb_get_location($imageId);
+  my $editedWidth = pdb_get_edited_width($imageId);
+  my $editedHeight = pdb_get_edited_height($imageId);
+  my $addedDateTime = pdb_get_added_date_time($imageId);
+  my $quality = pdb_get_quality($imageId);
+  my $rotation = pdb_get_rotation($imageId);
+  my $copyright = pdb_get_copyright($imageId);
+  my $latlong = pdb_get_latlong($imageId);
+  my $personIdList = ppers_get_persons_in_image($imageId);
+  my $persons = pdb_get_persons($imageId);
+  my $type = pdb_get_type($imageId);
+  my $status = pdb_get_status($imageId);
+
+  my $next = put_get_next($imageId);
+  my $prev = put_get_prev($imageId);
 
   # The file name is needed to get the image dimensions. Start the with "m5"
   # mobile file, this is the one that'll be returned. If that file isn't
@@ -462,23 +470,30 @@ sub get_image_info {
 
   $out .= "{\n";
   $out .= json_out("imageId", $imageId) . ",\n";
-  $out .= json_out("category", $category) . ",\n";
-  $out .= json_out("copyright", $copyright) . ",\n";
-  $out .= json_out("datetime", $datetime) . ",\n";
-  $out .= json_out("description", $description) . ",\n";
-  $out .= json_out("height", $height) . ",\n";
-  $out .= json_out("latlong", $latlong) . ",\n";
-  $out .= json_out("location", $location) . ",\n";
-  $out .= json_out("next", $next) . ",\n";
-  $out .= json_out("orientation", $orientation) . ",\n";
-  $out .= json_out("personIdList", $personIdList) . ",\n";
-  $out .= json_out("persons", $persons) . ",\n";
-  $out .= json_out("prev", $prev) . ",\n";
-  $out .= json_out("quality", $quality) . ",\n";
+  $out .= json_out("sortId", $sortId) . ",\n";
   $out .= json_out("setId", $setId) . ",\n";
   $out .= json_out("title", $title) . ",\n";
+  $out .= json_out("datetime", $datetime) . ",\n";
+  $out .= json_out("year", $year) . ",\n";
+  $out .= json_out("description", $description) . ",\n";
+  $out .= json_out("orientation", $orientation) . ",\n";
+  $out .= json_out("location", $location) . ",\n";
+  $out .= json_out("category", $category) . ",\n";
+  $out .= json_out("editedWidth", $editedWidth) . ",\n";
+  $out .= json_out("editedHeight", $editedHeight) . ",\n";
+  $out .= json_out("addedDateTime", $addedDateTime) . ",\n";
+  $out .= json_out("quality", $quality) . ",\n";
+  $out .= json_out("rotation", $rotation) . ",\n";
+  $out .= json_out("copyright", $copyright) . ",\n";
+  $out .= json_out("latlong", $latlong) . ",\n";
+  $out .= json_out("personIdList", $personIdList) . ",\n";
+  $out .= json_out("persons", $persons) . ",\n";
+  $out .= json_out("type", $status) . ",\n";
+  $out .= json_out("status", $type) . ",\n";
+  $out .= json_out("height", $height) . ",\n";
   $out .= json_out("width", $width) . ",\n";
-  $out .= json_out("year", $year) . "\n";
+  $out .= json_out("next", $next) . ",\n";
+  $out .= json_out("prev", $prev) . "\n";
 
   $out .= "}\n";
 
