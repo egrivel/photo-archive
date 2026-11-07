@@ -1169,28 +1169,7 @@ sub process_photo {
     create_directory("$set_directory/edited");
     create_directory("$set_directory/custom");
 
-    my ($origWidth, $origHeight, $editedWidth, $editedHeight, $addedDateTime)
-      = compute_values($imageid);
-
-    if ($gl_testmode) {
-      print "Set database info for $imageid:\n";
-      print "   portrait=$do_portrait, rotate=$newer_rotate, latlong=$latlong,\n";
-      print "   time zone=$timezone, DST=$dst, is movie=$is_mov,\n";
-      print "   is kids=$is_kids, is freeform=$is_freeform,\n";
-      print "   origWidth=$origWidth, origHeight=$origHeight, $editedWidth=$editedWidth,\n";
-      print "   editedHeight=$editedHeight, addedDateTime=$addedDateTime.\n";
-    } else {
-      set_database_info(
-        $imageid, $do_portrait, $newer_rotate,
-        $latlong, $timezone, $dst,
-        $is_mov, $is_kids, $is_freeform, 0,
-        $origWidth, $origHeight, $editedWidth, $editedHeight,
-        $addedDateTime
-      );
-    }
-
     # Move over the files we are processing
-
     if ($fname =~ /\.jpe?g$/i) {
       move_file("$dir/$fname", "$set_directory/tif/$imageid.jpg");
       # If we also have a NEF file, move that as well
@@ -1269,6 +1248,26 @@ sub process_photo {
     }
     if ($edited_file ne "") {
       move_file("$dir/$edited_file", "$set_directory/edited/$imageid.jpg");
+    }
+
+    my ($origWidth, $origHeight, $editedWidth, $editedHeight, $addedDateTime)
+      = compute_values($imageid);
+
+    if ($gl_testmode) {
+      print "Set database info for $imageid:\n";
+      print "   portrait=$do_portrait, rotate=$newer_rotate, latlong=$latlong,\n";
+      print "   time zone=$timezone, DST=$dst, is movie=$is_mov,\n";
+      print "   is kids=$is_kids, is freeform=$is_freeform,\n";
+      print "   origWidth=$origWidth, origHeight=$origHeight, $editedWidth=$editedWidth,\n";
+      print "   editedHeight=$editedHeight, addedDateTime=$addedDateTime.\n";
+    } else {
+      set_database_info(
+        $imageid, $do_portrait, $newer_rotate,
+        $latlong, $timezone, $dst,
+        $is_mov, $is_kids, $is_freeform, 0,
+        $origWidth, $origHeight, $editedWidth, $editedHeight,
+        $addedDateTime
+      );
     }
   }
   print "\n" if ($gl_verbose || $gl_testmode);

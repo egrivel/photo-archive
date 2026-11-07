@@ -1250,6 +1250,9 @@ sub pfs_identify {
   } elsif ($fname =~ /^WhatsApp/) {
     # WhatsApp files don't have any useful information
     $model = $WHATSAPP;
+  } elsif ($fname =~ /^VID-\d\d\d\d\d\d\d\d-WA\d+\.mp4$/) {
+    # Saved WhatsApp video files
+    $model = $WHATSAPP;
   } elsif ($fname =~ /^signal/) {
     # Signal files also don't have much useful information
     $model = $SIGNAL;
@@ -1283,7 +1286,8 @@ sub pfs_identify {
 
   # Timestamp in the format "YYYY-MM-DD hh:mm:ss"
   my $imageTimestamp = "";
-  if (defined(%$exifData{"Create Date"})) {
+  if (defined(%$exifData{"Create Date"})
+      && %$exifData{"Create Date"} ne "0000:00:00 00:00:00") {
     my $value = %$exifData{"Create Date"};
     if ($value =~ /^(\d\d\d\d):(\d\d):(\d\d) (\d\d:\d\d:\d\d)/) {
       # convert to standard timestamp format
@@ -1379,6 +1383,8 @@ sub pfs_identify {
       $imageTimestamp = "$2 $3:$4:$5";
     } elsif ($fname =~ /signal-(\d\d\d\d-\d\d-\d\d)-(\d\d)(\d\d)(\d\d)/) {
       $imageTimestamp = "$1 $2:$3:$4";
+    } elsif ($fname =~ /VID-(\d\d\d\d)(\d\d)(\d\d)-WA\d+/) {
+      $imageTimestamp = "$1-$2-$3 00:00:00";
     }
   }
 

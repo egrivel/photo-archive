@@ -303,7 +303,7 @@ sub generate_image {
       print "Can't get large buffer location for $imageid\n";
     } else {
       if (pfs_get_large_location($imageid) eq "") {
-	print "$imageid: large location is empty\n";
+	      print "$imageid: large location is empty\n";
         my $rotation = pdb_get_rotation($imageid);
         my $cmd = pfs_cmd_large($imageid, $rotation, $outfile);
         print $cmd, "\n";
@@ -320,22 +320,22 @@ sub generate_image {
         if ($orig ne "") {
           $outfile =~ s/\.jpg/.mp4/;
 
-          my $do_generate = 1;
-          if (-f $outfile) {
-            # File already exist, check if it is up-to-date
-            my $edittime = 0;
-            if (pfs_get_edited_location($imageid) ne "") {
-              $edittime = pfs_get_time(pfs_get_edited_location($imageid));
-            } elsif (pfs_get_orig_location($imageid) ne "") {
-              $edittime = pfs_get_time(pfs_get_orig_location($imageid));
-            }
-            if (pfs_get_time($outfile) >= $edittime) {
-              # Generated file is newer than edited one, so no need
-              # to re-generate
-              print "File $outfile already up-to-date\n";
-              $do_generate = 0;
-            }
-          }
+          my $do_generate = should_regenerate($imageid, $outfile);
+          # if (-f $outfile) {
+          #   # File already exist, check if it is up-to-date
+          #   my $edittime = 0;
+          #   if (pfs_get_edited_location($imageid) ne "") {
+          #     $edittime = pfs_get_time(pfs_get_edited_location($imageid));
+          #   } elsif (pfs_get_orig_location($imageid) ne "") {
+          #     $edittime = pfs_get_time(pfs_get_orig_location($imageid));
+          #   }
+          #   if (pfs_get_time($outfile) >= $edittime) {
+          #     # Generated file is newer than edited one, so no need
+          #     # to re-generate
+          #     print "File $outfile already up-to-date\n";
+          #     $do_generate = 0;
+          #   }
+          # }
 
           if ($do_generate) {
             my $cmd = pfs_cmd_large_movie($imageid, $orientation);
