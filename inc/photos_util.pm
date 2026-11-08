@@ -801,4 +801,20 @@ sub put_get_all_hash_text {
   $text .= "persons: $persons_hash\n";
   $text .= "years: $years_hash\n";
 }
+
+sub put_format_timestamp {
+  my $time = $_[0];
+
+  my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime($time);
+  $year += 1900;
+  $mon++;
+  $mon = "0$mon" if ($mon < 10);
+  $mday = "0$mday" if ($mday < 10);
+  $hour = "0$hour" if ($hour < 10);
+  $min = "0$min" if ($min < 10);
+  $sec = "0$sec" if ($sec < 10);
+
+  return "$year-$mon-$mday $hour:$min:$sec";
+}
+
 return 1;

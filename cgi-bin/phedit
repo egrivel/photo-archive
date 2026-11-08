@@ -296,7 +296,7 @@ sub prefill_image_data {
   # if the photo is no longer new.
   my $addedDateTime = pdb_get_added_date_time($imageid);
   if (!defined($addedDateTime) || ($addedDateTime eq "")) {
-    $addedDateTime = format_timestamp(time());
+    $addedDateTime = put_format_timestamp(time());
   }
   parg_set("addedDateTime", $addedDateTime);
 
@@ -393,21 +393,6 @@ sub prefill_set_images {
     $imageid = pdb_iter_next($iter);
   }
   parg_set("nr_images", $count);
-}
-
-sub format_timestamp {
-  my $time = $_[0];
-
-  my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime($time);
-  $year += 1900;
-  $mon++;
-  $mon = "0$mon" if ($mon < 10);
-  $mday = "0$mday" if ($mday < 10);
-  $hour = "0$hour" if ($hour < 10);
-  $min = "0$min" if ($min < 10);
-  $sec = "0$sec" if ($sec < 10);
-
-  return "$year-$mon-$mday $hour:$min:$sec";
 }
 
 sub save_image_data {
@@ -576,7 +561,7 @@ sub save_set_data {
           # Set the added date time.
           my $addedDateTime = pdb_get_added_date_time($imageid);
           if (!defined($addedDateTime) || ($addedDateTime eq "")) {
-            $addedDateTime = format_timestamp(time());
+            $addedDateTime = put_format_timestamp(time());
             pdb_set_added_date_time($addedDateTime);
           }
 

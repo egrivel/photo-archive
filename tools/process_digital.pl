@@ -29,6 +29,8 @@ my $gl_silent = 0;    # silent + testmode doesn't write out commands
 my $gl_recursive = 0;
 my $gl_phone = 0;
 
+my $do_force = 0;
+
 # time offset: correction for the clock in the camera being off: the offset
 # adjust the time reported by the camera to the actual clock time
 my $gl_timeoffset = 0;
@@ -97,6 +99,8 @@ while (defined($arg = shift)) {
     $gl_phone = 1;
   } elsif ($arg eq "-verbose" || $arg eq "--verbose") {
     $gl_verbose = 1;
+  } elsif ($arg eq "-f" || $arg eq "--force") {
+    $do_force = 1;
   } elsif (-d $arg) {
     $gl_sourcedir = $arg;
     $gl_sourcedir =~ s/\/$//;
@@ -568,7 +572,7 @@ sub compute_values {
     print "$imageId: no time found\n";
   }
 
-  my $addedDateTime = format_timestamp($time);
+  my $addedDateTime = put_format_timestamp($time);
   print "Got added date-time $addedDateTime for this file\n" if ($gl_verbose);
 
   return ($origWidth, $origHeight, $editedWidth, $editedHeight, $addedDateTime);

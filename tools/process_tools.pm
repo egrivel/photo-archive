@@ -21,6 +21,7 @@ sub set_database_info {
   );
 
   if (!defined($do_force)) {
+    print "Turn off do force\n";
     $do_force = 0;
   }
 
@@ -65,6 +66,9 @@ sub set_database_info {
     pdb_close_set();
   }
 
+  # We know we are adding an image, so make sure pdb_image_info doesn't
+  # return a cached image info
+  pdb_clear_image();
   if ($do_force || !pdb_image_info($imageid)) {
     if ($imageid =~ /^(\d\d\d\d)(\d\d)(\d\d)\-(\d\d)(\d\d)(\d\d)/) {
       pdb_open_image($imageid);

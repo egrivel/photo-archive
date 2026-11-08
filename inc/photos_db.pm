@@ -310,7 +310,7 @@ sub pdb_image_info {
   return 0 if (!pcom_is_valid($imageid));
   return 1 if ($imageid eq $cur_image);
   return 0 if (!pdb_init());
-
+  
   my $image_exists = 1;
   my $query = "SELECT * FROM images WHERE imageid='$imageid';";
   psql_command($query) || return 0;
@@ -324,6 +324,7 @@ sub pdb_image_info {
     # the %image_data hash is properly initialized.
     $image_exists = 0;
   }
+
 
   for ($i = 0; defined($image_fields5[$i]); $i++) {
     my $field = $image_fields5[$i];
@@ -881,6 +882,12 @@ sub pdb_close_image {
       $cur_image = "";
     }
   }
+  $cur_save_image = "";
+  $cur_image_changed = 0;
+}
+
+sub pdb_clear_image {
+  $cur_image = "";
   $cur_save_image = "";
   $cur_image_changed = 0;
 }

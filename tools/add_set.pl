@@ -246,7 +246,7 @@ sub compute_values {
     print "$imageId: no time found\n";
   }
 
-  my $addedDateTime = format_timestamp($time);
+  my $addedDateTime = put_format_timestamp($time);
   print "Got added date-time $addedDateTime for this file\n" if ($gl_verbose);
 
   return ($origWidth, $origHeight, $editedWidth, $editedHeight, $addedDateTime);
