@@ -418,17 +418,46 @@ sub display {
       # is marked as rotated, that rotation must be applied before returning the
       # image. We want the result of that to be cached as "-edited" in the
       # custom folder.
-      #
-      # Note: this is only a problem if the .jpg file in the tif/ directory
-      # does not properly specify the rotation in the exif data. If the
-      # rotation is properly specified, the browser will do the rotation.
-      # But we have to handle situations where the rotation is missing or
-      # incorrect in the exif, and is specified/overridden in the database.
+
+      $fname = pfs_get_orig_location($imageID);
       my $rotation = pdb_get_rotation($imageID);
-      if ($rotation ne '90' && $rotation ne '180' && $rotation ne '270') {
-        # No need to apply rotation, can return the existing orig file
-        $fname = pfs_get_orig_location($imageID);
-        $size = PCOM_ORIG;
+      if ($rotation eq "90" || $rotation eq "270") {
+        # Rotation indicates the original may need to be rotated
+        my $editedWidth = pdb_get_edited_width($imageID);
+        my $editedHeight = pdb_get_edited_height($imageID);
+        my ($width, $height) = pfs_get_file_dimensions($fname);
+        my $orientation = pdb_get_orientation($imageID);
+        if ($orientation eq $PCOM_LANDSCAPE || $orientation eq $PCOM_FREEFORM_L) {
+          if ($width > $height) {
+            # can use the orig file
+          } else {
+            $fname = "";
+          }
+        } elsif ($orientation eq $PCOM_PORTRAIT || $orient eq $PCOM_FREEFORM_P) {
+          if ($height > $width) {
+            # can use the orig file
+          } else {
+            $fname = "";
+          }
+        } elsif ($editedWidth > $editedHeight) {
+          if ($width > $height) {
+            # can use the orig file
+          } else {
+            $fname = "";
+          }
+        } elsif ($editedHeight > $editedWidth) {
+          if ($height > $width) {
+            # can use the orig file
+          } else {
+            $fname = "";
+          }
+        } else {
+          if ($height == $width) {
+            # can use the orig file
+          } else {
+            $fname = "";
+          }
+        }
       }
     }
 
