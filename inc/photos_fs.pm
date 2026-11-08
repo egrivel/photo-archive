@@ -309,7 +309,8 @@ sub pfs_get_buffer_location {
     && ($size ne "freeform")
     && ($size ne "2k")
     && ($size ne "4k")
-    && ($size ne "size")) {
+    && ($size ne "size")
+    && ($size ne "edited")) {
     # Invalid size, can't buffer
     return "";
   }
@@ -319,9 +320,9 @@ sub pfs_get_buffer_location {
   if ($size eq "thumbnail") {
     # Use directory name 'thumbnails' instead of 'thumbnail'
     $subdir = "thumbnails";
-  } elsif ($size eq "freeform" || $size eq "size") {
+  } elsif ($size eq "freeform" || $size eq "size" || $size eq "edited") {
     # Use custom directory for freeform (ends up as "default" custom
-    # image, without any size parameters)
+    # image, without any size parameters), as well as edited
     $subdir = "custom";
   }
 
@@ -341,6 +342,8 @@ sub pfs_get_buffer_location {
       return "$setdir/$subdir/$imageID-thsqu.jpg";
     } elsif ($size eq "size") {
       return "$setdir/$subdir/$imageID-s$sizeValue.jpg";
+    } elsif ($size eq "edited") {
+      return "$setdir/$subdir/$imageID-edited.jpg";
     } else {
       return "$setdir/$subdir/$imageID.jpg";
     }

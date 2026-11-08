@@ -413,14 +413,34 @@ sub display {
     # fall back on the original version
     $fname = pfs_get_edited_location($imageID);
     if ($fname eq "") {
-      # If there is no edited version, we're getting the original,
-      # so make the size variable reflect that. This handles the
-      # situation that there is no buffered version of the original
-      # available, and a version of the original must be
-      # generated.
-      $fname = pfs_get_orig_location($imageID);
-      $size = $PCOM_ORIG;
+      # If asking for the edited version, but there is no edited version
+      # available, we need to fall back on the original. However, if the image
+      # is marked as rotated, that rotation must be applied before returning the
+      # image. We want the result of that to be cached as "-edited" in the
+      # custom folder.
+      #
+      # Note: this is only a problem if the .jpg file in the tif/ directory
+      # does not properly specify the rotation in the exif data. If the
+      # rotation is properly specified, the browser will do the rotation.
+      # But we have to handle situations where the rotation is missing or
+      # incorrect in the exif, and is specified/overridden in the database.
+      my $rotation = pdb_get_rotation($imageID);
+      if ($rotation ne '90' && $rotation ne '180' && $rotation ne '270') {
+        # No need to apply rotation, can return the existing orig file
+        $fname = pfs_get_orig_location($imageID);
+        $size = PCOM_ORIG;
+      }
     }
+
+    # if ($fname eq "") {
+    #   # If there is no edited version, we're getting the original,
+    #   # so make the size variable reflect that. This handles the
+    #   # situation that there is no buffered version of the original
+    #   # available, and a version of the original must be
+    #   # generated.
+    #   $fname = pfs_get_orig_location($imageID);
+    #   $size = $PCOM_ORIG;
+    # }
   } elsif ($size eq $PCOM_LARGE) {
     $fname = pfs_get_large_location($imageID);
   } elsif ($size eq $PCOM_NORMAL) {
@@ -481,6 +501,10 @@ sub display {
     $cmd = pfs_cmd_thumbnail_square($imageID, $rotation, $outfile);
   } elsif ($size eq $PCOM_FREEFORM) {
     $cmd = pfs_cmd_freeform($imageID, $rotation, $outfile);
+  } elsif ($size eq "edited") {
+    $origWidth = pdb_get_orig_width($imageID);
+    $origHeight = pdb_get_orig_height($imageID);
+    $cmd = pfs_cmd_resize($imageID, $rotation, $outfile, $origWidth, $origHeight, 0);
   }
   if ($cmd eq "") {
     return_error("Cannot generate image $imageID in size $size");
