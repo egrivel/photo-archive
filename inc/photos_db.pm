@@ -632,6 +632,9 @@ sub pdb_open_image {
   my $imageID = $_[0];
   return if (!pcom_is_valid($imageID));
 
+  # Reset existing image data
+  %save_image_data = ();
+
   pdb_image_info($imageID);
   my $i;
   for ($i = 0; defined($image_fields5[$i]); $i++) {
@@ -907,6 +910,9 @@ sub pdb_rename_image {
 
 sub pdb_open_set {
   my $setid = $_[0];
+
+  # Reset existing set data
+  %save_set_data = ();
 
   pdb_set_info($setid);
   my $i;

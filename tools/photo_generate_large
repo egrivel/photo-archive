@@ -24,6 +24,7 @@ my $gl_do_photoapp = 1; # default on
 my $gl_do_size = 1; # default on
 my $gl_size = "m5";
 my $gl_force = 0;
+my $gl_silent = 0;
 
 my $arg = shift;
 my $count = 0;
@@ -38,16 +39,24 @@ while (defined($arg)) {
     }
   } elsif (($arg eq "-force") || ($arg eq "--force") || ($arg eq "-f")) {
     $gl_force = 1;
+  } elsif (($arg eq "-silent") || ($arg eq "--silent") || ($arg eq "-s")) {
+    $gl_silent = 1;
   } elsif ($arg eq "-new") {
     # For now, default to also do "m5" size
+    my @do_images = ();
+    my $nr_images = 0;
     $gl_do_size = 1;
     $gl_size = "m5";
     my $iter = pdb_iter_new("20070101-000000", 500);
     pdb_iter_filter_category($iter, $PCOM_NEW);
     my $imageid = pdb_iter_next($iter);
     while (defined($imageid) && ($imageid ne "")) {
-      generate_image($imageid);
+      $do_images[$nr_images++] = $imageid;
       $imageid = pdb_iter_next($iter);
+    }
+    # Collected all the image IDs, now do them
+    for (my $i = 0; $i < $nr_images; $i++) {
+      generate_image($do_images[$i]);
     }
   } elsif ($arg eq "-all-digital") {
     my $iter = pdb_iter_set_new("20040921");
@@ -149,13 +158,13 @@ sub should_regenerate {
 
   # Always regenerate if forced
   if ($gl_force) {
-    print "$imageid: force $outfile\n";
+    print "$imageid: force $outfile\n" if (!$gl_silent);
     return 1;
   }
 
   # always regenerate if outfile doesn't exist
   if (! -f $outfile) {
-    print "$imageid: doesn't exist: $outfile\n";
+    print "$imageid: doesn't exist: $outfile\n" if (!$gl_silent);
     return 1;
   }
 
@@ -168,7 +177,7 @@ sub should_regenerate {
   }
   if (pfs_get_time($outfile) < $edittime) {
     # target file is older than edited/original, so regenerate
-    print "$imageid: file too old, regenerate $outfile\n";
+    print "$imageid: file too old, regenerate $outfile\n" if (!$gl_silent);
     return 1;
   }
 
@@ -182,7 +191,7 @@ sub should_regenerate {
   if (($actual_portrait && !$is_portrait)
       || ($is_portrait && !$actual_portrait)) {
     # orientation changed
-    print "$imageid: changed orientation, regenerate $outfile\n";
+    print "$imageid: changed orientation, regenerate $outfile\n" if (!$gl_silent);
     return 1;
   }
 
@@ -196,7 +205,7 @@ sub generate_photoapp {
   my $outfile = pfs_get_photoapp_location($imageid, $size_name);
 
   if ($outfile eq "") {
-    print "Can't get size $size_name buffer location for $imageid\n";
+    print "Can't get size $size_name buffer location for $imageid\n" if (!$gl_silent);
   } else {
     my $do_generate = should_regenerate($imageid, $outfile);
 
@@ -205,7 +214,7 @@ sub generate_photoapp {
       my $edited_width = pdb_get_edited_width($imageid);
       my $edited_height = pdb_get_edited_height($imageid);
       if (!$edited_width || !$edited_height) {
-        print "Photo $imageid has no edited size: ($edited_width x $editedHeight)\n";
+        print "Photo $imageid has no edited size: ($edited_width x $editedHeight)\n" if (!$gl_silent);
         return;
       }
       if ($hasEdited || ($edited_width > $edited_height)) {
@@ -272,18 +281,18 @@ sub generate_image {
     || ($oldOrigHeight ne $origHeight)
     || ($oldEditedWidth ne $editedWidth)
     || ($oldEditedHeight ne $editedHeight)) {
-    print "$imageid: Some size changed, discard cache\n";
+    print "$imageid: Some size changed, discard cache\n" if (!$gl_silent);
     if ($origWidth ne $oldOrigWidth) {
-      print "Orig width changed $oldOrigWidth -> $origWidth\n";
+      print "Orig width changed $oldOrigWidth -> $origWidth\n" if (!$gl_silent);
     }
     if ($origHeight ne $oldOrigHeight) {
-      print "Orig width changed $oldOrigHeight -> $origHeight\n";
+      print "Orig width changed $oldOrigHeight -> $origHeight\n" if (!$gl_silent);
     }
     if ($editedWidth ne $oldEditedWidth) {
-      print "Edited width changed $oldEditedWidth -> $editedWidth\n";
+      print "Edited width changed $oldEditedWidth -> $editedWidth\n" if (!$gl_silent);
     }
     if ($editedHeight ne $oldEditedHeight) {
-      print "Edited height changed $oldEditedHeight -> $editedHeight\n";
+      print "Edited height changed $oldEditedHeight -> $editedHeight\n" if (!$gl_silent);
     }
     # Update the database with the corrected values
     pdb_set_orig_width($origWidth);
@@ -303,13 +312,13 @@ sub generate_image {
       print "Can't get large buffer location for $imageid\n";
     } else {
       if (pfs_get_large_location($imageid) eq "") {
-	      print "$imageid: large location is empty\n";
+	      print "$imageid: large location is empty\n" if (!$gl_silent);
         my $rotation = pdb_get_rotation($imageid);
         my $cmd = pfs_cmd_large($imageid, $rotation, $outfile);
-        print $cmd, "\n";
+        print $cmd, "\n" if (!$gl_silent);
         system($cmd);
         $cmd = "chmod a+w $outfile";
-        print $cmd . "\n";
+        print $cmd . "\n" if (!$gl_silent);
         system($cmd);
       }
       # Also check for movies
@@ -332,14 +341,14 @@ sub generate_image {
           #   if (pfs_get_time($outfile) >= $edittime) {
           #     # Generated file is newer than edited one, so no need
           #     # to re-generate
-          #     print "File $outfile already up-to-date\n";
+          #     print "File $outfile already up-to-date\n" if (!$gl_silent);
           #     $do_generate = 0;
           #   }
           # }
 
           if ($do_generate) {
             my $cmd = pfs_cmd_large_movie($imageid, $orientation);
-            print "$cmd\n";
+            print "$cmd\n" if (!$gl_silent);
             system($cmd);
           }
         }
@@ -354,7 +363,7 @@ sub generate_image {
     } else {
       my $rotation = pdb_get_rotation($imageid);
       my $cmd = pfs_cmd_google($imageid, $rotation, $outfile);
-      print $cmd, "\n";
+      print $cmd, "\n" if (!$gl_silent);
       system($cmd);
       system("chmod a+w $outfile");
     }
@@ -367,7 +376,7 @@ sub generate_image {
     } else {
       my $rotation = pdb_get_rotation($imageid);
       my $cmd = pfs_cmd_thumbnail_square($imageid, $rotation, $outfile);
-      print $cmd, "\n";
+      print $cmd, "\n" if (!$gl_silent);
       system($cmd);
       system("chmod a+w $outfile");
     }
@@ -380,7 +389,7 @@ sub generate_image {
     } else {
       my $rotation = pdb_get_rotation($imageid);
       my $cmd = pfs_cmd_normal($imageid, $rotation, $outfile);
-      print $cmd, "\n";
+      print $cmd, "\n" if (!$gl_silent);
       system($cmd);
       system("chmod a+w $outfile");
     }
@@ -403,7 +412,7 @@ sub generate_image {
         if (pfs_get_time($outfile) >= $edittime) {
           # Generated file is newer than edited one, so no need
           # to re-generate
-          print "File $outfile already up-to-date\n";
+          print "File $outfile already up-to-date\n" if (!$gl_silent);
           $do_generate = 0;
         }
       }
@@ -454,7 +463,7 @@ sub generate_image {
       if ($do_generate) {
         my $rotation = pdb_get_rotation($imageid);
         my $cmd = pfs_cmd_thumbnail($imageid, $rotation, $outfile);
-        print $cmd, "\n";
+        print $cmd, "\n" if (!$gl_silent);
         system($cmd);
         system("chmod a+w $outfile");
       }
@@ -525,13 +534,13 @@ sub display_mobile {
     if (pfs_get_time($outfile) < $edittime) {
       # Cached file exists, but is older than the edited file, so
       # it needs to be overwritten
-      print "$cmd\n";
+      print "$cmd\n" if (!$gl_silent);
       system($cmd);
       $did_generate = 1;
     }
   } else {
     # File doesn't exist yet, create it
-    print "$cmd\n";
+    print "$cmd\n" if (!$gl_silent);
     system($cmd);
     $did_generate = 1;
   }
@@ -548,14 +557,14 @@ sub display_mobile {
 sub generate_set {
   my $setid = $_[0];
 
-  print "Do set $setid\n";
+  print "Do set $setid\n" if (!$gl_silent);
   my $img_iter = pdb_iter_new($setid, 50);
   pdb_iter_filter_setid($img_iter, $setid);
   my $imageid = pdb_iter_next($img_iter);
   while (pcom_get_set($imageid) le $setid) {
-    print "Check $imageid\n";
+    print "Check $imageid\n" if (!$gl_silent);
     if (pcom_get_set($imageid) eq $setid) {
-      print "Generate image $imageid\n";
+      print "Generate image $imageid\n" if (!$gl_silent);
       generate_image($imageid);
     }
     $imageid = pdb_iter_next($img_iter);
