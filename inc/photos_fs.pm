@@ -71,7 +71,7 @@ sub pfs_get_setdir {
     return "$basedir";
   }
 
-  pcom_log($PCOM_DEBUG, "None found");
+  pcom_log($PCOM_DEBUG, "No set dir found for $setID");
   return "";
 }
 

@@ -25,8 +25,8 @@ pusr_login("tester", "tester");
 my $gl_sourcedir = ".";
 my $gl_verbose = 1;
 my $gl_testmode = 0;
-my $gl_silent = 0;    # silent + testmode doesn't write out commands
 my $gl_recursive = 0;
+my $gl_silent = 0;    # silent + testmode doesn't write out commands
 my $gl_phone = 0;
 
 my $do_force = 0;

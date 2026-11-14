@@ -310,7 +310,7 @@ sub pdb_image_info {
   return 0 if (!pcom_is_valid($imageid));
   return 1 if ($imageid eq $cur_image);
   return 0 if (!pdb_init());
-  
+
   my $image_exists = 1;
   my $query = "SELECT * FROM images WHERE imageid='$imageid';";
   psql_command($query) || return 0;
@@ -1267,7 +1267,7 @@ sub pdb_iter_new {
 
   if (defined($imageID)) {
     my $sortid = pdb_get_sortid($imageID);
-    if ($sortid eq "") {
+    if (!defined($sortid) || ($sortid eq "")) {
       $sortid = pdb_create_sortid($imageID);
       if ($sortid =~ /^(\d\d\d\d\w)(\d\d\d\d)(\d\d)(\d\d)(.*)$/) {
         my $part1 = $1;
@@ -1344,7 +1344,7 @@ sub pdb_iter_set_new {
 
   if (defined($setid)) {
     my $sortid = pdb_get_setsortid($setid);
-    if ($sortid eq "") {
+    if (!defined($sortid) || ($sortid eq "")) {
       $sortid = pdb_create_setsortid($setid);
       pcom_log($PCOM_DEBUG, "Created sortid $sortid for setid $setid");
     }
@@ -1398,6 +1398,21 @@ sub pdb_iter_filter_category {
     }
     $iter_filter[$iter] .= ")";
   }
+}
+
+sub pdb_iter_filter_status {
+  my $iter = $_[0];
+  my $status = $_[1];
+
+  # If no categories given, we're done
+  return if ($status eq "");
+
+  # Add logical "and" with previous filters
+  if ($iter_filter[$iter] ne "") {
+    $iter_filter[$iter] .= " AND ";
+  }
+
+  $iter_filter[$iter] .= "status='$status' ";
 }
 
 sub pdb_iter_filter_min_quality {
