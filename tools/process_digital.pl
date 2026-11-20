@@ -104,7 +104,7 @@ while (defined($arg = shift)) {
   } elsif (-d $arg) {
     $gl_sourcedir = $arg;
     $gl_sourcedir =~ s/\/$//;
-    print "Set source directory to $arg\n";
+    print "Set source directory to $arg\n" if (!$gl_silent);
   } elsif (-f $arg) {
     # Single file to process (particularly useful for testing)
     if ($arg =~ /^(.*?)\/([^\/]+\.\w+)$/) {

@@ -3,6 +3,9 @@
 # This source is copyright (c) 2006 by Eric Grivel. All Rights Reserved.
 #
 
+use Crypt::URandom qw(urandom);
+use MIME::Base64 qw(encode_base64);
+
 use photos_common;
 use photos_sql;
 
@@ -33,7 +36,15 @@ sub pses_new {
   %session_data = ();
   %name_value_pairs = ();
   while ($now) {
-    $cur_session = "s$now";
+    # urandom() returns the requested number or random bytes. 16 bytes is 128
+    # random bit, which is not a lot, but it will do until we can update the
+    # size of the database field
+    my $random_value = urandom(16);
+    # This encodes the random value in a base64 string. A 16 byte random value
+    # results in a 25-character string, which fits in the current session
+    # database field of 31 characters. The empty string as the last character
+    # avoids adding a line break.
+    $cur_session = encode_base64($random_value, "");
     $session_data{"sessionid"} = $cur_session;
     $session_data{"timestamp"} = $now;
     my $query = "INSERT INTO session SET ";
