@@ -63,7 +63,7 @@ my @image_fields4 = (
   "type",
 );
 
-# List of image fields starting with database version 1.4
+# List of image fields starting with database version 1.5
 my @image_fields5 = (
   "imageid",
   "sortid",
@@ -80,6 +80,10 @@ my @image_fields5 = (
   "origHeight",
   "editedWidth",
   "editedHeight",
+  # Note: the addedDateTime field is driven by the status of the photo. The
+  # photo is considered "added" to the archive when its status changes
+  # from NEW to something else. If a photo's status changes from AVAIL to
+  # NEW and then back to AVAIL, the addedDateTime will be updated.
   "addedDateTime",
   "quality",
   "rotation",

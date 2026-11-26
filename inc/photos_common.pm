@@ -69,6 +69,10 @@ $PCOM_M5_WIDTH = 1920;
 $PCOM_M5_HEIGHT = 1080;
 
 # Statuses
+# Note: the status drives the addedDateTime field of the photo. The
+# photo is considered "added" to the archive when its status changes
+# from NEW to something else. If a photo's status changes from AVAIL to
+# NEW and then back to AVAIL, the addedDateTime will be updated.
 $PCOM_STAT_NEW = "NEW";
 $PCOM_STAT_AVAILABLE = "AVAIL";
 $PCOM_STAT_RESTRICTED = "RESTR";

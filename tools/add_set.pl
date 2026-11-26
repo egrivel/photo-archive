@@ -227,24 +227,26 @@ sub compute_values {
     print "No edited file\n";
   }
 
-  my $origTime = pfs_get_time($orig);
-  my $rawTime = $origTime;
-  if ($raw ne "") {
-    $rawTime = pfs_get_time($raw);
-  }
-  my $time = $origTime;
-  if ($rawTime < $time) {
-    $time = $rawTime;
-  }
-  if ($edited ne "") {
-    my $editedTime = pfs_get_time($edited);
-    if ($editedTime < $time) {
-      $time = $edited;
-    }
-  }
-  if (!$time) {
-    print "$imageId: no time found\n";
-  }
+  # Photos are newly added, so added date time should become "now"
+  # my $origTime = pfs_get_time($orig);
+  # my $rawTime = $origTime;
+  # if ($raw ne "") {
+  #   $rawTime = pfs_get_time($raw);
+  # }
+  # my $time = $origTime;
+  # if ($rawTime < $time) {
+  #   $time = $rawTime;
+  # }
+  # if ($edited ne "") {
+  #   my $editedTime = pfs_get_time($edited);
+  #   if ($editedTime < $time) {
+  #     $time = $edited;
+  #   }
+  # }
+  # if (!$time) {
+  #   print "$imageId: no time found\n";
+  # }
+  my $time = time();
 
   my $addedDateTime = put_format_timestamp($time);
   print "Got added date-time $addedDateTime for this file\n" if ($gl_verbose);

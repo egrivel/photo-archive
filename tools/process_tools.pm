@@ -148,6 +148,7 @@ sub set_database_info {
       pdb_set_edited_width($editedWidth);
       pdb_set_edited_height($editedHeight);
       pdb_set_added_date_time($addedDateTime);
+      pdb_set_status($PCOM_STAT_NEW);
       pdb_close_image();
     } else {
       warn "Cannot recognize image format '$imageid' to add to database\n";
