@@ -19,6 +19,14 @@ if ($current_version eq $version) {
   exit(0);
 }
 
+if ($current_version eq "1.5") {
+  # Upgrading database from 1.4 to 1.5
+  # pdb_add_potd_table();
+  # pdb_add_favorites_table();
+  # Increase session ID
+  # pses_table_to_1_6();
+}
+
 if ($current_version eq "1.4") {
   print "Upgrading database from $current_version to $version.\n";
   pdb_add_group_table();

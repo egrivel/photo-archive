@@ -82,37 +82,73 @@ sub pses_decode_value {
 }
 
 sub pses_restore {
-    my $sessionid = $_[0];
+  my $sessionid = $_[0];
 
-    $cur_session = "";
-    %session_data = ();
-    %name_value_pairs = ();
-    my $query = "SELECT * FROM session WHERE sessionid='$sessionid';";
-    my $i;
-    if (psql_command($query)) {
-        my $record = psql_next_record(psql_iterator());
-        for ($i = 0; defined($session_fields[$i]); $i++) {
-            my $field = $session_fields[$i];
-            my $value = psql_get_field($i, $field, $record);
-            $session_data{$field} = $value;
-            if (!defined($value)) {
-                $value = "(undefined)";
-            }
-	    pcom_log(1, "Retrieve field '" . $field . "' as '" . $value . "'");
-        }
-        pcom_log(1, "Set cur_session to $sessionid");
-        $cur_session = $sessionid;
-    } else {
-        # Could not restore the session; explicitly create one
+  $cur_session = "";
+  %session_data = ();
+  %name_value_pairs = ();
+  my $query = "SELECT * FROM session WHERE sessionid='$sessionid';";
+  my $i;
+  if (psql_command($query)) {
+    my $record = psql_next_record(psql_iterator());
+    for ($i = 0; defined($session_fields[$i]); $i++) {
+      my $field = $session_fields[$i];
+      my $value = psql_get_field($i, $field, $record);
+      $session_data{$field} = $value;
+      if (!defined($value)) {
+        $value = "(undefined)";
+      }
+      pcom_log(1, "Retrieve field '" . $field . "' as '" . $value . "'");
     }
-    if (defined($session_data{"data"})) {
-        my @data = split(/:/, $session_data{"data"});
-        for ($i = 0; defined($data[$i]); $i++) {
-            if ($data[$i] =~ /^(.+?)=(.*)$/) {
-                $name_value_pairs{$1} = pses_decode_value($2);
-            }
-        }
+    pcom_log(1, "Set cur_session to $sessionid");
+    $cur_session = $sessionid;
+
+    # Do some maintenance on the session table
+    if (defined($session_data{"timestamp"})) {
+      my $timestamp = $session_data{"timestamp"};
+      if ($timestamp < (time() - 60 * 60)) {
+        # Timestamp is more than an hour old, refresh its timestamp
+        # This way we can use the timestamp to clean up old sessions
+        $query = ""
+          . "UPDATE session "
+          . "SET timestamp=" . time() . " "
+          . "WHERE sessionid='$sessionid'";
+        psql_command($query);
+
+        # At this point, let's also delete old sessions (more than a year
+        # old for now). This will regularly do cleanup of the session table,
+        # but not on every call, since the current session's timestamp is
+        # only refreshed once an hour. Ideally, this would be done as an
+        # hourly or daily batch job, but that would require having and
+        # maintaining a batch job. This way, cleanup is automatic...
+        #
+        # This means that a user gets logged out after a year of not accessing
+        # the archive. Eventually, we probably want a better time frame, maybe
+        # a month, or three months; some balance between cleaning up (smaller
+        # time frame) and usability (longer time frame).
+        #
+        # Note: this functionality is still commented out; let's first run a
+        # while with the timestamp refresh above, so that regular users will
+        # have an updated timestamp.
+        #
+        # $query = ""
+        #   . "DELETE FROM session "
+        #   . "WHERE CAST(timestamp as signed) < " . (time() - 365 * 24 * 60 * 60);
+        # psql_command($query);
+      }
     }
+  } else {
+    # Could not restore the session; explicitly create one
+  }
+
+  if (defined($session_data{"data"})) {
+    my @data = split(/:/, $session_data{"data"});
+    for ($i = 0; defined($data[$i]); $i++) {
+      if ($data[$i] =~ /^(.+?)=(.*)$/) {
+        $name_value_pairs{$1} = pses_decode_value($2);
+      }
+    }
+  }
 }
 
 sub pses_set {

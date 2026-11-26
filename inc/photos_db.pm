@@ -1,6 +1,18 @@
 # Module: pdb - Photos Database
 # This module handles interactions with the "images", "sets", and "tags"
 # tables.
+# Also handles the following, introduced with database version 1.6
+#  - potd
+#    - imageId
+#    - date
+#    - nr
+#    - description
+#  - favorites
+#    - userId
+#    - imageId
+#    - favoriteType (allow for different types of favorite)
+#    - category (allow people to use their own categories for labeling)
+#    - notes
 
 use photos_common;
 use photos_sql;
