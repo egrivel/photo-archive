@@ -209,7 +209,7 @@ sub compute_values {
   if ($edited ne "") {
     my $editedTime = pfs_get_time($edited);
     if ($editedTime < $time) {
-      $time = $edited;
+      $time = $editedTime;
     }
   }
   if (!$time) {
